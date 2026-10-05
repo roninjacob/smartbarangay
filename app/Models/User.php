@@ -3,15 +3,19 @@
 namespace App\Models;
 
 use App\Enums\UserRole;
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Builder;
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-class User extends Authenticatable
+class User extends Authenticatable implements MustVerifyEmail
 {
+    public const UNVERIFIED_RETENTION_DAYS = 7;
+
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
 
@@ -56,6 +60,30 @@ class User extends Authenticatable
     public function reservations(): HasMany
     {
         return $this->hasMany(Reservation::class);
+    }
+
+    public function homeRouteName(): string
+    {
+        return match ($this->role) {
+            UserRole::Resident => 'resident.home',
+            UserRole::Admin => 'admin.home',
+        };
+    }
+
+    public function entryRouteName(): string
+    {
+        return $this->requiresEmailVerification() ? 'verification.notice' : $this->homeRouteName();
+    }
+
+    public function requiresEmailVerification(): bool
+    {
+        return $this->role === UserRole::Resident && ! $this->hasVerifiedEmail();
+    }
+
+    public function scopeAbandonedResidents(Builder $query, CarbonInterface $cutoff): Builder
+    {
+        return $query->where('role', UserRole::Resident->value)
+            ->whereNull('email_verified_at')->where('created_at', '<=', $cutoff);
     }
 
     public function checkinLogs(): HasMany
