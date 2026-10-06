@@ -9,6 +9,7 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Admin\ServiceController;
 use App\Http\Controllers\Admin\ServiceRequirementController;
+use App\Http\Controllers\Admin\ScheduleController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', HomeController::class)->name('home');
@@ -42,6 +43,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/admin/home', [DashboardController::class, 'admin'])
         ->middleware(['role:'.UserRole::Admin->value, 'verified'])->name('admin.home');
     Route::prefix('admin')->name('admin.')->middleware(['role:'.UserRole::Admin->value, 'verified'])->group(function () {
+        Route::patch('/schedules/{schedule}/status', [ScheduleController::class, 'updateStatus'])->name('schedules.status');
+        Route::resource('schedules', ScheduleController::class)->only(['index', 'create', 'store', 'edit', 'update', 'destroy']);
         Route::patch('/services/{service}/status', [ServiceController::class, 'updateStatus'])->name('services.status');
         Route::resource('services', ServiceController::class)->only(['index', 'create', 'store', 'edit', 'update']);
         Route::resource('services.requirements', ServiceRequirementController::class)

@@ -33,6 +33,9 @@
 .requirement-service-name { overflow-wrap: anywhere; }
 .requirement-delete-modal .modal-content { background: var(--surface); }
 .requirement-delete-modal .btn-close { min-width: 44px; min-height: 44px; padding: 10px; }
+.schedule-table { min-width: 760px; }
+.schedule-table tbody th { width: auto; white-space: nowrap; }
+.schedule-time { white-space: nowrap; }
 @media (max-width: 575.98px) {
     .service-panel-heading, .service-form { padding-left: 16px; padding-right: 16px; }
     .service-create-link { width: 100%; }
