@@ -109,6 +109,15 @@ class ReservationController extends Controller
             if (! $schedule?->is_active) {
                 $this->restartAt('schedule', 'The selected schedule is no longer available. Please choose another schedule.');
             }
+            // Parent locks serialize separate sessions; a locking read sees the latest committed reservation.
+            $duplicate = $request->user()->reservations()->occupyingSlot()
+                ->where('service_id', $service->id)->where('schedule_id', $schedule->id)
+                ->lockForUpdate()->first(['id']);
+            if ($duplicate) {
+                throw ValidationException::withMessages([
+                    'reservation' => 'You already have an active reservation for this service and schedule.',
+                ]);
+            }
             $request->user()->reservations()->create([
                 'service_id' => $service->id, 'schedule_id' => $schedule->id,
                 'status' => ReservationStatus::Pending,
