@@ -23,9 +23,13 @@
     @endforeach
     <div class="app-nav-group">
         <p class="app-nav-heading">Account</p>
+        @if(auth()->user()->role === \App\Enums\UserRole::Resident)
+        <a href="{{ route('resident.profile.edit') }}" @class(['app-nav-link', 'is-current' => request()->routeIs('resident.profile.*')]) @if(request()->routeIs('resident.profile.*')) aria-current="page" @endif data-app-nav-link><x-app-icon name="account"/><span>Profile / Account Settings</span></a>
+        @else
         <button type="button" class="app-nav-link w-100" data-bs-toggle="modal" data-bs-target="#account-summary" data-app-account>
             <x-app-icon name="account"/><span>Profile / Account Settings</span>
         </button>
+        @endif
         <form method="POST" action="{{ route('logout') }}">
             @csrf
             <button type="submit" class="app-nav-link app-logout w-100"><x-app-icon name="logout"/><span>Logout</span></button>

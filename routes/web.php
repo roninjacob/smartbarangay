@@ -15,6 +15,7 @@ use App\Http\Controllers\Resident\ReservationController;
 use App\Http\Controllers\Resident\ReservationViewController;
 use App\Http\Controllers\Resident\RequestStatusController;
 use App\Http\Controllers\Resident\ReservationCancellationController;
+use App\Http\Controllers\Resident\ProfileController;
 use App\Http\Controllers\Admin\ReservationController as AdminReservationController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 
@@ -48,6 +49,14 @@ Route::middleware('auth')->group(function () {
         ->middleware(['role:'.UserRole::Resident->value, 'verified'])->name('resident.home');
     Route::get('/admin/home', [DashboardController::class, 'admin'])
         ->middleware(['role:'.UserRole::Admin->value, 'verified'])->name('admin.home');
+    Route::prefix('resident/profile')->name('resident.profile.')
+        ->middleware(['role:'.UserRole::Resident->value, 'verified'])->group(function () {
+            Route::get('/', [ProfileController::class, 'edit'])->name('edit');
+            Route::put('/', [ProfileController::class, 'update'])->block(10, 10)->name('update');
+            Route::get('/picture', [ProfileController::class, 'picture'])->name('picture');
+            Route::post('/picture', [ProfileController::class, 'updatePicture'])->block(10, 10)->name('picture.update');
+            Route::delete('/picture', [ProfileController::class, 'destroyPicture'])->block(10, 10)->name('picture.destroy');
+        });
     Route::prefix('resident/reservations')->name('resident.reservations.')
         ->middleware(['role:'.UserRole::Resident->value, 'verified'])->group(function () {
             Route::get('/', [ReservationViewController::class, 'index'])->name('index');

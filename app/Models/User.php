@@ -3,11 +3,11 @@
 namespace App\Models;
 
 use App\Enums\UserRole;
-use Illuminate\Contracts\Auth\MustVerifyEmail;
-use Database\Factories\UserFactory;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Builder;
 use Carbon\CarbonInterface;
+use Database\Factories\UserFactory;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -60,6 +60,14 @@ class User extends Authenticatable implements MustVerifyEmail
     public function reservations(): HasMany
     {
         return $this->hasMany(Reservation::class);
+    }
+
+    public function ownedProfilePicturePath(): ?string
+    {
+        $path = $this->profile_picture;
+
+        return is_string($path) && preg_match('#^profile-pictures/'.$this->id.'/[a-zA-Z0-9]+\.(jpg|jpeg|png|webp)$#D', $path)
+            ? $path : null;
     }
 
     public function homeRouteName(): string

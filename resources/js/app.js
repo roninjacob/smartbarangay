@@ -4,3 +4,4 @@ import './auth';
 import './dashboard';
 import './services';
 import './reservations';
+import './profile';

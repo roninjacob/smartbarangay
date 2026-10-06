@@ -299,7 +299,9 @@ class SmartBarangayFoundationTest extends TestCase
         $email = $user->email;
 
         Artisan::call('migrate:rollback', [
-            '--database' => 'sqlite', '--step' => 10, '--force' => true,
+            '--database' => 'sqlite',
+            '--step' => DB::table('migrations')->where('migration', '>=', '2026_10_05_000001')->count(),
+            '--force' => true,
         ]);
 
         foreach ([
@@ -320,6 +322,7 @@ class SmartBarangayFoundationTest extends TestCase
         $this->assertTrue($user->fresh()->is_active);
         $this->assertNull($user->fresh()->contact_number);
         $this->assertNull($user->fresh()->address);
+        $this->assertNull($user->fresh()->profile_picture);
     }
 
     private function createReservation(?Schedule $schedule = null): Reservation
