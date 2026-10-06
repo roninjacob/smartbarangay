@@ -22,6 +22,7 @@
                         <td class="service-description">{{ \Illuminate\Support\Str::limit($service->description ?? 'No description provided.', 140) }}</td>
                         <td><span @class(['service-status', 'is-active' => $service->is_active])>{{ $service->is_active ? 'Active' : 'Inactive' }}</span></td>
                         <td><div class="service-actions">
+                            <a href="{{ route('admin.services.requirements.index', $service) }}" class="btn btn-sm btn-outline-primary" aria-label="Requirements for {{ $service->name }}">Requirements</a>
                             <a href="{{ route('admin.services.edit', $service) }}" class="btn btn-sm btn-outline-primary" aria-label="Edit {{ $service->name }}">Edit</a>
                             <form method="POST" action="{{ route('admin.services.status', $service) }}" data-service-submit>
                                 @csrf @method('PATCH')

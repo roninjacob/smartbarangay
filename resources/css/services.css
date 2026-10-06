@@ -22,7 +22,7 @@
 .service-pagination .pagination { margin-bottom: 0; flex-wrap: wrap; }
 .service-back-link { display: inline-block; margin-bottom: 20px; font-size: 13px; }
 .service-form { padding: 0 22px 24px; }
-.service-form .form-control { background: var(--surface); }
+.service-form .form-control, .service-form .form-select { background-color: var(--surface); }
 .service-form .form-label { font-size: 13px; font-weight: 600; }
 .service-form .form-text { font-size: 12px; }
 .service-required { font-weight: 400; color: var(--muted-text); }
@@ -30,6 +30,9 @@
 .service-form-note { padding: 24px; }
 .service-form-note h2 { font-size: 15px; font-weight: 600; }
 .service-form-note p { font-size: 13px; color: var(--muted-text); line-height: 1.7; }
+.requirement-service-name { overflow-wrap: anywhere; }
+.requirement-delete-modal .modal-content { background: var(--surface); }
+.requirement-delete-modal .btn-close { min-width: 44px; min-height: 44px; padding: 10px; }
 @media (max-width: 575.98px) {
     .service-panel-heading, .service-form { padding-left: 16px; padding-right: 16px; }
     .service-create-link { width: 100%; }

@@ -8,6 +8,7 @@ use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Admin\ServiceController;
+use App\Http\Controllers\Admin\ServiceRequirementController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', HomeController::class)->name('home');
@@ -43,5 +44,8 @@ Route::middleware('auth')->group(function () {
     Route::prefix('admin')->name('admin.')->middleware(['role:'.UserRole::Admin->value, 'verified'])->group(function () {
         Route::patch('/services/{service}/status', [ServiceController::class, 'updateStatus'])->name('services.status');
         Route::resource('services', ServiceController::class)->only(['index', 'create', 'store', 'edit', 'update']);
+        Route::resource('services.requirements', ServiceRequirementController::class)
+            ->parameters(['requirements' => 'serviceRequirement'])->scoped()
+            ->only(['index', 'create', 'store', 'edit', 'update', 'destroy']);
     });
 });
