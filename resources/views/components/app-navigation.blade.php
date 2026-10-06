@@ -7,8 +7,8 @@
                 @foreach($items as $item)
                     <li>
                         @if(isset($item['route']))
-                            <a href="{{ route($item['route']) }}" @class(['app-nav-link', 'is-current' => request()->routeIs($item['route'])])
-                                @if(request()->routeIs($item['route'])) aria-current="page" @endif data-app-nav-link>
+                            <a href="{{ route($item['route']) }}" @class(['app-nav-link', 'is-current' => request()->routeIs($item['active'] ?? $item['route'])])
+                                @if(request()->routeIs($item['active'] ?? $item['route'])) aria-current="page" @endif data-app-nav-link>
                                 <x-app-icon :name="$item['icon']"/><span>{{ $item['label'] }}</span>
                             </a>
                         @else

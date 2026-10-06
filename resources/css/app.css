@@ -1,5 +1,6 @@
 @import 'bootstrap/dist/css/bootstrap.min.css';
 @import './dashboard.css';
+@import './services.css';
 
 /* SmartBarangay civic identity, shared by authentication and the application shell. */
 :root {

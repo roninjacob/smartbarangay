@@ -1,5 +1,5 @@
 @extends('layouts.app')
-@section('title', $roleLabel.' Dashboard')
+@section('title', $pageTitle ?? $roleLabel.' Dashboard')
 
 @section('content')
 <div class="app-shell">
@@ -30,7 +30,7 @@
 
         <main id="main-content" class="app-main" tabindex="-1">
             <div class="app-page-heading">
-                <div><span class="app-eyebrow">{{ $roleLabel }} / Overview</span><h1>Dashboard</h1></div>
+                <div><span class="app-eyebrow">{{ $roleLabel }} / {{ $pageSection ?? 'Overview' }}</span><h1>{{ $pageHeading ?? 'Dashboard' }}</h1></div>
                 <time datetime="{{ $dashboardDate->toDateString() }}" class="app-date"><x-app-icon name="calendar"/>{{ $dashboardDate->format('D, M j, Y') }}</time>
             </div>
             @if(session('status'))<div class="alert alert-success" role="status">{{ session('status') }}</div>@endif

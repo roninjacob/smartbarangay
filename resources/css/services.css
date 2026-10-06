@@ -1,0 +1,38 @@
+/* Service catalog extends the existing authenticated civic workspace. */
+.service-panel-heading { align-items: center; flex-wrap: wrap; }
+.service-create-link { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.service-catalog .table-responsive { overflow-y: hidden; }
+.service-table { min-width: 690px; table-layout: fixed; }
+.service-table th:nth-child(1) { width: 27%; }
+.service-table th:nth-child(2) { width: 31%; }
+.service-table th:nth-child(3) { width: 13%; }
+.service-table th:nth-child(4) { width: 29%; }
+.service-name, .service-description { overflow-wrap: anywhere; }
+.service-name { display: block; font-weight: 600; }
+.service-description { color: var(--muted-text); line-height: 1.65; }
+.service-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.service-actions .btn { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; }
+.service-status { display: inline-block; font-size: 11px; font-weight: 600; padding: 5px 9px; border-radius: 5px; background: #EEF1F5; color: #536174; }
+.service-status.is-active { background: #EAF5EF; color: #286F4B; }
+.service-empty { text-align: center; padding: 42px 24px 48px; }
+.service-empty-icon { display: inline-grid; place-items: center; width: 48px; height: 48px; border-radius: 12px; color: var(--civic-blue); background: #EDF3FA; margin-bottom: 16px; }
+.service-empty h3 { font-size: 18px; font-weight: 600; }
+.service-empty p { color: var(--muted-text); font-size: 13px; }
+.service-pagination { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; padding: 18px 22px; border-top: 1px solid var(--border-color); }
+.service-pagination .pagination { margin-bottom: 0; flex-wrap: wrap; }
+.service-back-link { display: inline-block; margin-bottom: 20px; font-size: 13px; }
+.service-form { padding: 0 22px 24px; }
+.service-form .form-control { background: var(--surface); }
+.service-form .form-label { font-size: 13px; font-weight: 600; }
+.service-form .form-text { font-size: 12px; }
+.service-required { font-weight: 400; color: var(--muted-text); }
+.service-form-actions { display: flex; gap: 12px; flex-wrap: wrap; padding-top: 8px; }
+.service-form-note { padding: 24px; }
+.service-form-note h2 { font-size: 15px; font-weight: 600; }
+.service-form-note p { font-size: 13px; color: var(--muted-text); line-height: 1.7; }
+@media (max-width: 575.98px) {
+    .service-panel-heading, .service-form { padding-left: 16px; padding-right: 16px; }
+    .service-create-link { width: 100%; }
+    .service-form-actions .btn { flex: 1; }
+    .service-pagination { padding: 16px; }
+}

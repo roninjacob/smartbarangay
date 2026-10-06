@@ -21,7 +21,7 @@ return [
             ['label' => 'Schedule & Slot Management', 'icon' => 'calendar'],
             ['label' => 'QR Verification / Check-in', 'icon' => 'qr'],
             ['label' => 'Request Status Management', 'icon' => 'status'],
-            ['label' => 'Services & Document Management', 'icon' => 'services'],
+            ['label' => 'Services & Document Management', 'icon' => 'services', 'route' => 'admin.services.index', 'active' => 'admin.services.*'],
             ['label' => 'User Management', 'icon' => 'users'],
             ['label' => 'Check-in / Reservation Logs', 'icon' => 'history'],
         ],

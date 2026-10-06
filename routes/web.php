@@ -7,6 +7,7 @@ use App\Http\Controllers\Auth\EmailVerificationController;
 use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\Admin\ServiceController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', HomeController::class)->name('home');
@@ -39,4 +40,8 @@ Route::middleware('auth')->group(function () {
         ->middleware(['role:'.UserRole::Resident->value, 'verified'])->name('resident.home');
     Route::get('/admin/home', [DashboardController::class, 'admin'])
         ->middleware(['role:'.UserRole::Admin->value, 'verified'])->name('admin.home');
+    Route::prefix('admin')->name('admin.')->middleware(['role:'.UserRole::Admin->value, 'verified'])->group(function () {
+        Route::patch('/services/{service}/status', [ServiceController::class, 'updateStatus'])->name('services.status');
+        Route::resource('services', ServiceController::class)->only(['index', 'create', 'store', 'edit', 'update']);
+    });
 });
