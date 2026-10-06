@@ -11,6 +11,17 @@ enum ReservationStatus: string
     case Completed = 'completed';
     case Rejected = 'rejected';
 
+    public function allowedTransitions(): array
+    {
+        return match ($this) {
+            self::Pending => [self::UnderReview, self::Rejected],
+            self::UnderReview => [self::Approved, self::Rejected],
+            self::Approved => [self::ReadyForPickup],
+            self::ReadyForPickup => [self::Completed],
+            self::Completed, self::Rejected => [],
+        };
+    }
+
     public function label(): string
     {
         return match ($this) {

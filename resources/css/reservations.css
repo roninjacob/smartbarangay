@@ -44,6 +44,27 @@
 .resident-reservation-list .reservation-status, .reservation-detail .reservation-status { font-size: .8rem; }
 .reservation-service-description { color: var(--muted-text); white-space: pre-line; line-height: 1.7; margin-top: 1rem; }
 .reservation-details-back .app-icon { transform: rotate(180deg); }
+.reservation-filters { margin: 0; padding: 0 1.25rem 1.5rem; }
+.reservation-filter-actions { display: flex; align-items: flex-end; gap: .5rem; flex-wrap: wrap; }
+.admin-reservation-table { min-width: 800px; }
+.admin-reservation-catalog .table-responsive { overflow-y: hidden; }
+.admin-reservation-table .reservation-service { margin: .35rem 0; font-size: .9rem; font-weight: 600; }
+.reservation-list-resident { display: block; overflow-wrap: anywhere; color: var(--muted-text); }
+.mobile-field-label { display: none; }
+.reservation-history { list-style: none; padding: 0; margin: 0; }
+.reservation-history li { border-top: 1px solid var(--border-color); padding: 1rem 0; }
+.reservation-history li > div { display: flex; gap: .5rem; flex-wrap: wrap; align-items: center; margin-bottom: .6rem; }
+.history-note { white-space: pre-line; overflow-wrap: anywhere; margin-bottom: 0; }
+@media (max-width: 991.98px) {
+    .admin-reservation-table { display: block; min-width: 0; }
+    .admin-reservation-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+    .admin-reservation-table tbody { display: block; }
+    .admin-reservation-table tbody tr { display: grid; grid-template-columns: minmax(0, 1fr); padding: 1.25rem; border-top: 1px solid var(--border-color); gap: .85rem; }
+    .admin-reservation-table tbody tr > * { display: block; width: auto; padding: 0; border: 0; }
+    .admin-reservation-table th:first-child, .admin-reservation-table td:last-child { padding: 0; }
+    .mobile-field-label { display: block; color: var(--muted-text); font-size: .75rem; margin-bottom: .25rem; }
+    .admin-reservation-table .reservation-details-link { width: 100%; }
+}
 @media (max-width: 1199.98px) {
     .resident-reservation-row { grid-template-columns: minmax(0, 1fr) auto; }
     .reservation-row-service { grid-column: 1 / -1; }

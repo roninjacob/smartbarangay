@@ -22,7 +22,7 @@ return [
             ['label' => 'Dashboard', 'icon' => 'dashboard', 'route' => 'admin.home'],
         ],
         'Barangay operations' => [
-            ['label' => 'Reservation Management', 'icon' => 'document'],
+            ['label' => 'Reservation Management', 'icon' => 'document', 'route' => 'admin.reservations.index', 'active' => 'admin.reservations.*'],
             ['label' => 'Schedule & Slot Management', 'icon' => 'calendar', 'route' => 'admin.schedules.index', 'active' => 'admin.schedules.*'],
             ['label' => 'QR Verification / Check-in', 'icon' => 'qr'],
             ['label' => 'Request Status Management', 'icon' => 'status'],
