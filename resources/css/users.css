@@ -1,0 +1,26 @@
+.resident-account-filters { margin: 0; padding: 0 1.25rem 1.5rem; }
+.resident-account-filter-actions { display: flex; align-items: flex-end; flex-wrap: wrap; gap: .5rem; }
+.resident-account-table { min-width: 800px; }
+.resident-account-catalog .table-responsive { overflow-y: hidden; }
+.resident-account-name { display: block; font-weight: 600; font-size: .9rem; overflow-wrap: anywhere; }
+.resident-account-contact { display: block; color: var(--muted-text); font-weight: 400; margin-top: .35rem; font-size: .85rem; overflow-wrap: anywhere; }
+.resident-account-field-label { display: none; }
+.account-status { display: inline-block; padding: .35rem .65rem; border-radius: 6px; font-size: .8rem; font-weight: 600; }
+.account-status-active { color: #216343; background: #edf8f1; }
+.account-status-inactive { color: #972d37; background: #fff0f1; }
+.resident-account-details .reservation-summary > div { grid-template-columns: 145px minmax(0, 1fr); }
+.resident-account-details-link, .resident-account-details button[type="submit"] { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; white-space: normal; }
+@media (max-width: 1199.98px) {
+    .resident-account-table { display: block; min-width: 0; }
+    .resident-account-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+    .resident-account-table tbody { display: block; }
+    .resident-account-table tbody tr { display: grid; grid-template-columns: minmax(0, 1fr); padding: 1.25rem; border-top: 1px solid var(--border-color); gap: .85rem; }
+    .resident-account-table tbody tr > * { display: block; width: auto; padding: 0; border: 0; }
+    .resident-account-table th:first-child, .resident-account-table td:last-child { padding: 0; }
+    .resident-account-field-label { display: block; color: var(--muted-text); font-size: .75rem; margin-bottom: .25rem; }
+    .resident-account-details-link { width: 100%; }
+}
+@media (max-width: 479.98px) {
+    .resident-account-details .reservation-summary > div { grid-template-columns: 1fr; gap: .25rem; }
+    .resident-account-details button[type="submit"] { width: 100%; }
+}

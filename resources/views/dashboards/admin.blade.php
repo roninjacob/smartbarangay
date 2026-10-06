@@ -19,6 +19,7 @@
     <div class="col-xl-4 dashboard-aside"><x-dashboard-statuses :statuses="$statuses" :counts="$counts" :total="$totalReservations"/>
         <section class="dashboard-quick-actions" aria-labelledby="quick-actions-heading"><h2 id="quick-actions-heading">Quick access</h2>
             <a class="account-quick-link" href="{{ route('admin.reservations.index') }}"><x-app-icon name="document"/><span>Reservation Management</span><x-app-icon name="arrow"/></a>
+            <a class="account-quick-link" href="{{ route('admin.users.index') }}"><x-app-icon name="users"/><span>User Management</span><x-app-icon name="arrow"/></a>
             <button type="button" class="account-quick-link" data-bs-toggle="modal" data-bs-target="#account-summary"><x-app-icon name="account"/><span>View my profile</span><x-app-icon name="arrow"/></button>
             <p class="app-note mb-0">Items marked “Soon” are not yet available. Your dashboard reflects current database records.</p>
         </section>

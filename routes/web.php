@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Resident\ReservationController;
 use App\Http\Controllers\Resident\ReservationViewController;
 use App\Http\Controllers\Admin\ReservationController as AdminReservationController;
+use App\Http\Controllers\Admin\UserController as AdminUserController;
 
 Route::get('/', HomeController::class)->name('home');
 
@@ -59,6 +60,9 @@ Route::middleware('auth')->group(function () {
             Route::get('/{reservation}', [ReservationViewController::class, 'show'])->whereNumber('reservation')->name('show');
         });
     Route::prefix('admin')->name('admin.')->middleware(['role:'.UserRole::Admin->value, 'verified'])->group(function () {
+        Route::get('/users', [AdminUserController::class, 'index'])->name('users.index');
+        Route::get('/users/{user}', [AdminUserController::class, 'show'])->whereNumber('user')->name('users.show');
+        Route::patch('/users/{user}/status', [AdminUserController::class, 'updateStatus'])->whereNumber('user')->name('users.status');
         Route::get('/reservations', [AdminReservationController::class, 'index'])->name('reservations.index');
         Route::get('/reservations/{reservation}', [AdminReservationController::class, 'show'])->whereNumber('reservation')->name('reservations.show');
         Route::patch('/reservations/{reservation}/status', [AdminReservationController::class, 'updateStatus'])->whereNumber('reservation')->name('reservations.status');

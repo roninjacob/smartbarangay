@@ -27,7 +27,7 @@ return [
             ['label' => 'QR Verification / Check-in', 'icon' => 'qr'],
             ['label' => 'Request Status Management', 'icon' => 'status'],
             ['label' => 'Services & Document Management', 'icon' => 'services', 'route' => 'admin.services.index', 'active' => 'admin.services.*'],
-            ['label' => 'User Management', 'icon' => 'users'],
+            ['label' => 'User Management', 'icon' => 'users', 'route' => 'admin.users.index', 'active' => 'admin.users.*'],
             ['label' => 'Check-in / Reservation Logs', 'icon' => 'history'],
         ],
     ],
