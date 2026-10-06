@@ -15,7 +15,7 @@ use App\Http\Controllers\Resident\ReservationController;
 use App\Http\Controllers\Resident\ReservationViewController;
 use App\Http\Controllers\Resident\RequestStatusController;
 use App\Http\Controllers\Resident\ReservationCancellationController;
-use App\Http\Controllers\Resident\ProfileController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Admin\ReservationController as AdminReservationController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 
@@ -77,6 +77,12 @@ Route::middleware('auth')->group(function () {
             Route::get('/{reservation}', [RequestStatusController::class, 'show'])->whereNumber('reservation')->name('show');
         });
     Route::prefix('admin')->name('admin.')->middleware(['role:'.UserRole::Admin->value, 'verified'])->group(function () {
+        Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+        Route::put('/profile', [ProfileController::class, 'update'])->block(10, 10)->name('profile.update');
+        Route::get('/profile/picture', [ProfileController::class, 'picture'])->name('profile.picture');
+        Route::post('/profile/picture', [ProfileController::class, 'updatePicture'])->block(10, 10)->name('profile.picture.update');
+        Route::delete('/profile/picture', [ProfileController::class, 'destroyPicture'])->block(10, 10)->name('profile.picture.destroy');
+        Route::get('/users/{user}/picture', [ProfileController::class, 'residentPicture'])->whereNumber('user')->name('users.picture');
         Route::get('/users', [AdminUserController::class, 'index'])->name('users.index');
         Route::get('/users/{user}', [AdminUserController::class, 'show'])->whereNumber('user')->name('users.show');
         Route::patch('/users/{user}/status', [AdminUserController::class, 'updateStatus'])->whereNumber('user')->name('users.status');

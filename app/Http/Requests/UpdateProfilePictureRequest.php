@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Requests\Resident;
+namespace App\Http\Requests;
 
 use App\Enums\UserRole;
 use Closure;
@@ -12,7 +12,7 @@ class UpdateProfilePictureRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->role === UserRole::Resident;
+        return $this->user()?->role === ($this->routeIs('admin.profile.*') ? UserRole::Admin : UserRole::Resident);
     }
 
     public function rules(): array

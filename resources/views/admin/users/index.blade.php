@@ -18,7 +18,7 @@
                 <thead><tr><th scope="col">Resident / Contact</th><th scope="col">Account status</th><th scope="col">Verification</th><th scope="col">Registered</th><th scope="col">Action</th></tr></thead>
                 <tbody>@foreach($users as $resident)
                     <tr>
-                        <th scope="row"><span class="resident-account-name">{{ $resident->name }}</span><span class="resident-account-contact">{{ $resident->email }}</span><span class="resident-account-contact">{{ $resident->contact_number ?: 'No contact number provided' }}</span></th>
+                        <th scope="row"><div class="resident-identity"><x-resident-avatar :user="$resident"/><div class="min-w-0"><span class="resident-account-name">{{ $resident->name }}</span><span class="resident-account-contact">{{ $resident->email }}</span><span class="resident-account-contact">{{ $resident->contact_number ?: 'No contact number provided' }}</span></div></div></th>
                         <td><span class="resident-account-field-label" aria-hidden="true">Account status</span><x-account-status :active="$resident->is_active"/></td>
                         <td><span class="resident-account-field-label" aria-hidden="true">Verification</span><span class="requirement-label">{{ $resident->hasVerifiedEmail() ? 'Verified' : 'Unverified' }}</span></td>
                         <td><span class="resident-account-field-label" aria-hidden="true">Registered</span><time datetime="{{ $resident->created_at->toIso8601String() }}">{{ $resident->created_at->timezone('Asia/Manila')->format('M j, Y') }}</time></td>

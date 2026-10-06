@@ -22,7 +22,7 @@
                 <div class="app-topbar-location"><strong>Barangay Calayo</strong><span>Nasugbu, Batangas</span></div>
             </div>
             <button type="button" class="app-user-button" data-bs-toggle="modal" data-bs-target="#account-summary" aria-label="View your profile overview">
-                <span class="app-avatar" aria-hidden="true">@if(auth()->user()->role === \App\Enums\UserRole::Resident && auth()->user()->ownedProfilePicturePath())<img src="{{ route('resident.profile.picture') }}" alt="">@else{{ mb_substr(auth()->user()->name, 0, 1) }}@endif</span>
+                <span class="app-avatar" aria-hidden="true">@if(auth()->user()->ownedProfilePicturePath())<img src="{{ route(auth()->user()->role->value.'.profile.picture') }}" alt="">@else{{ mb_substr(auth()->user()->name, 0, 1) }}@endif</span>
                 <span class="app-user-text"><strong>{{ auth()->user()->name }}</strong><small>{{ $roleLabel }}</small></span>
                 <x-app-icon name="account" class="app-user-icon"/>
             </button>

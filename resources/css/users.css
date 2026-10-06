@@ -1,4 +1,7 @@
 .resident-account-filters { margin: 0; padding: 0 1.25rem 1.5rem; }
+.resident-identity { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.resident-avatar { display: grid; place-items: center; flex: 0 0 48px; width: 48px; height: 48px; border-radius: 50%; object-fit: cover; background: #EDF3FA; color: var(--civic-dark); border: 2px solid #DCE7F5; font-size: 20px; font-weight: 600; text-transform: uppercase; }
+.resident-avatar-large { flex-basis: 80px; width: 80px; height: 80px; font-size: 30px; }
 .resident-account-filter-actions { display: flex; align-items: flex-end; flex-wrap: wrap; gap: .5rem; }
 .resident-account-table { min-width: 800px; }
 .resident-account-catalog .table-responsive { overflow-y: hidden; }

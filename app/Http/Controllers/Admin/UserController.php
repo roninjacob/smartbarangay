@@ -20,7 +20,7 @@ class UserController extends Controller
         $filters = $request->validated();
         $search = $filters['search'] ?? '';
         $users = User::query()->where('role', UserRole::Resident->value)
-            ->select(['id', 'name', 'email', 'contact_number', 'is_active', 'email_verified_at', 'created_at'])
+            ->select(['id', 'name', 'email', 'contact_number', 'profile_picture', 'is_active', 'email_verified_at', 'created_at'])
             ->when($search !== '', function (Builder $query) use ($search) {
                 $query->where(function (Builder $query) use ($search) {
                     $query->where('name', 'like', '%'.$search.'%')

@@ -1,11 +1,10 @@
 <?php
 
-namespace App\Http\Controllers\Resident;
+namespace App\Http\Controllers;
 
 use App\Enums\UserRole;
-use App\Http\Controllers\Controller;
-use App\Http\Requests\Resident\UpdateProfilePictureRequest;
-use App\Http\Requests\Resident\UpdateProfileRequest;
+use App\Http\Requests\UpdateProfilePictureRequest;
+use App\Http\Requests\UpdateProfileRequest;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -20,8 +19,11 @@ class ProfileController extends Controller
 {
     public function edit(Request $request): View
     {
-        return view('resident.profile.edit', [
-            'user' => $request->user(), 'roleLabel' => 'Resident', 'navigation' => config('navigation.resident'),
+        $role = $this->profileRole($request);
+
+        return view('profile.edit', [
+            'user' => $request->user(), 'roleLabel' => $role === UserRole::Admin ? 'Admin' : 'Resident',
+            'navigation' => config('navigation.'.$role->value), 'profileRoutePrefix' => $role->value.'.profile',
             'dashboardDate' => now('Asia/Manila'), 'pageTitle' => 'Profile / Account Settings',
             'pageHeading' => 'Profile / Account Settings', 'pageSection' => 'Account',
         ]);
@@ -34,7 +36,7 @@ class ProfileController extends Controller
             $user->fill($request->safe()->only(['name', 'contact_number', 'address']))->save();
         });
 
-        return to_route('resident.profile.edit')->with('status', 'Your profile information has been updated.');
+        return to_route($this->profileRole($request)->value.'.profile.edit')->with('status', 'Your profile information has been updated.');
     }
 
     public function updatePicture(UpdateProfilePictureRequest $request): RedirectResponse
@@ -63,7 +65,7 @@ class ProfileController extends Controller
             Storage::disk('local')->delete($oldPath);
         }
 
-        return to_route('resident.profile.edit')->with('status', 'Your profile picture has been updated.');
+        return to_route($this->profileRole($request)->value.'.profile.edit')->with('status', 'Your profile picture has been updated.');
     }
 
     public function destroyPicture(Request $request): RedirectResponse
@@ -80,12 +82,24 @@ class ProfileController extends Controller
             Storage::disk('local')->delete($oldPath);
         }
 
-        return to_route('resident.profile.edit')->with('status', 'Your profile picture has been removed.');
+        return to_route($this->profileRole($request)->value.'.profile.edit')->with('status', 'Your profile picture has been removed.');
     }
 
     public function picture(Request $request): StreamedResponse
     {
-        $path = $request->user()->ownedProfilePicturePath();
+        return $this->pictureResponse($request->user());
+    }
+
+    public function residentPicture(User $user): StreamedResponse
+    {
+        abort_unless($user->role === UserRole::Resident, 404);
+
+        return $this->pictureResponse($user);
+    }
+
+    private function pictureResponse(User $user): StreamedResponse
+    {
+        $path = $user->ownedProfilePicturePath();
         abort_unless($path && Storage::disk('local')->exists($path), 404);
 
         return Storage::disk('local')->response($path, null, [
@@ -96,8 +110,13 @@ class ProfileController extends Controller
     private function lockedUser(Request $request): User
     {
         $user = User::whereKey($request->user()->id)->lockForUpdate()->firstOrFail();
-        abort_unless($user->role === UserRole::Resident && $user->is_active && $user->hasVerifiedEmail(), 403);
+        abort_unless($user->role === $this->profileRole($request) && $user->is_active && $user->hasVerifiedEmail(), 403);
 
         return $user;
+    }
+
+    private function profileRole(Request $request): UserRole
+    {
+        return $request->routeIs('admin.profile.*') ? UserRole::Admin : UserRole::Resident;
     }
 }

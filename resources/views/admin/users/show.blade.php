@@ -3,7 +3,7 @@
 <div class="reservation-wizard resident-account-details">
     <a href="{{ route('admin.users.index') }}" class="btn btn-link px-0 mb-3 reservation-details-back"><x-app-icon name="arrow"/> Back to residents</a>
     <section class="dashboard-panel reservation-panel" aria-labelledby="resident-name">
-        <div class="reservation-detail-header"><div><span class="reservation-step-label">RESIDENT ACCOUNT #{{ $resident->id }}</span><h2 id="resident-name">{{ $resident->name }}</h2></div><x-account-status :active="$resident->is_active"/></div>
+        <div class="reservation-detail-header"><div class="resident-identity"><x-resident-avatar :user="$resident" :large="true"/><div class="min-w-0"><span class="reservation-step-label">RESIDENT ACCOUNT #{{ $resident->id }}</span><h2 id="resident-name">{{ $resident->name }}</h2></div></div><x-account-status :active="$resident->is_active"/></div>
         <p class="panel-description">Registered with SmartBarangay · Barangay Calayo, Nasugbu, Batangas</p>
         <dl class="reservation-summary">
             <div><dt>Email</dt><dd>{{ $resident->email }}</dd></div>

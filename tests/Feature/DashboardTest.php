@@ -170,7 +170,7 @@ class DashboardTest extends TestCase
         $response = $this->actingAs($user)->get($path)->assertOk()
             ->assertSee('aria-disabled="true"', false)->assertSee('Soon')
             ->assertSee('Profile overview')->assertSee($user->email)
-            ->assertSee($role === UserRole::Resident ? 'Manage your profile and optional picture' : 'Account editing will be available in a future update.')
+            ->assertSee('Manage your profile and optional picture')
             ->assertDontSee('href="#"', false)->assertDontSee('name="role"', false)
             ->assertDontSee('name="password"', false);
         $document = new \DOMDocument;

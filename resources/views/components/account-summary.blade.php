@@ -13,11 +13,7 @@
                     <dt>Account type</dt><dd>{{ $roleLabel }}</dd>
                     <dt>Member since</dt><dd>{{ $user->created_at->timezone('Asia/Manila')->format('F j, Y') }}</dd>
                 </dl>
-                @if($user->role === \App\Enums\UserRole::Resident)
-                <p id="account-summary-note" class="app-note mb-0"><a href="{{ route('resident.profile.edit') }}">Manage your profile and optional picture</a> in Profile / Account Settings.</p>
-                @else
-                <p id="account-summary-note" class="app-note mb-0">Account editing will be available in a future update. For assistance, please contact the Barangay Calayo office.</p>
-                @endif
+                <p id="account-summary-note" class="app-note mb-0"><a href="{{ route($user->role->value.'.profile.edit') }}">Manage your profile and optional picture</a> in Profile / Account Settings.</p>
             </div>
             <div class="modal-footer"><button type="button" class="btn btn-outline-primary" data-bs-dismiss="modal">Close</button></div>
         </section>
