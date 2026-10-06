@@ -16,6 +16,7 @@
             <div><dt>Last updated</dt><dd><time datetime="{{ $reservation->updated_at->toIso8601String() }}">{{ $reservation->updated_at->timezone('Asia/Manila')->format('F j, Y, g:i A') }}</time></dd></div>
         </dl>
         <p class="app-note">Submission and update times are shown in Philippine time.</p>
+        <a href="{{ route('resident.request-status.show', $reservation) }}" class="btn btn-outline-primary reservation-details-link">Track request status</a>
         <h3 class="h6 mt-4">Service requirements</h3>
         <p class="text-secondary">The barangay’s current requirements for this service. Review what to prepare.</p>
         @include('resident.reservations.requirements-list', ['service' => $reservation->service])

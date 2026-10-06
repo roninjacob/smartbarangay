@@ -13,6 +13,7 @@ use App\Http\Controllers\Admin\ScheduleController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Resident\ReservationController;
 use App\Http\Controllers\Resident\ReservationViewController;
+use App\Http\Controllers\Resident\RequestStatusController;
 use App\Http\Controllers\Admin\ReservationController as AdminReservationController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 
@@ -58,6 +59,11 @@ Route::middleware('auth')->group(function () {
             Route::get('/confirm', [ReservationController::class, 'confirm'])->block(10, 10)->name('confirm');
             Route::post('/', [ReservationController::class, 'store'])->block(10, 10)->name('store');
             Route::get('/{reservation}', [ReservationViewController::class, 'show'])->whereNumber('reservation')->name('show');
+        });
+    Route::prefix('resident/request-status')->name('resident.request-status.')
+        ->middleware(['role:'.UserRole::Resident->value, 'verified'])->group(function () {
+            Route::get('/', [RequestStatusController::class, 'index'])->name('index');
+            Route::get('/{reservation}', [RequestStatusController::class, 'show'])->whereNumber('reservation')->name('show');
         });
     Route::prefix('admin')->name('admin.')->middleware(['role:'.UserRole::Admin->value, 'verified'])->group(function () {
         Route::get('/users', [AdminUserController::class, 'index'])->name('users.index');

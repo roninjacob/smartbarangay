@@ -14,7 +14,7 @@ return [
                 'resident.reservations.index', 'resident.reservations.show',
             ]],
             ['label' => 'My QR Tickets', 'icon' => 'qr'],
-            ['label' => 'Request Status', 'icon' => 'status'],
+            ['label' => 'Request Status', 'icon' => 'status', 'route' => 'resident.request-status.index', 'active' => 'resident.request-status.*'],
         ],
     ],
     'admin' => [

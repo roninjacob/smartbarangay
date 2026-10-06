@@ -1,0 +1,25 @@
+.request-tracking-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 1.25rem; padding: 1.5rem; border-top: 1px solid var(--border-color); }
+.request-tracking-row .reservation-details-link { justify-self: start; }
+.request-status-message { font-size: .9rem; line-height: 1.65; color: var(--muted-text); margin: .8rem 0 0; }
+.request-tracking-facts { margin: 0; display: grid; gap: .8rem; overflow-wrap: anywhere; }
+.request-tracking-facts dt { font-size: .75rem; font-weight: 500; color: var(--muted-text); margin-bottom: .25rem; }
+.request-tracking-facts dd { font-size: .85rem; margin: 0; }
+.request-progress { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); list-style: none; padding: 0; gap: .5rem; margin: 1.5rem 0; }
+.request-progress li { display: flex; gap: .5rem; align-items: flex-start; padding: .8rem .4rem; border-bottom: 3px solid var(--border-color); font-size: .8rem; }
+.request-progress-number { flex: 0 0 24px; height: 24px; display: grid; place-items: center; background: #edf3fa; border-radius: 50%; }
+.request-progress small { display: block; margin-top: .25rem; }
+.request-progress .is-current { color: var(--civic-dark); font-weight: 600; border-color: var(--civic-blue); }
+.request-progress .is-current .request-progress-number { background: var(--civic-blue); color: white; }
+.request-timeline { list-style: none; padding: 0 0 0 1.25rem; margin: 1.5rem 0; }
+.request-timeline li { position: relative; border-left: 2px solid var(--border-color); padding: 0 0 1.75rem 1.5rem; }
+.request-timeline li:last-child { padding-bottom: .5rem; }
+.request-timeline-marker { position: absolute; width: 12px; height: 12px; left: -7px; top: .2rem; border-radius: 50%; background: var(--civic-blue); border: 2px solid white; }
+.request-timeline time { display: block; margin-top: .5rem; color: var(--muted-text); font-size: .85rem; }
+.request-timeline-transition { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
+@media (max-width: 767.98px) {
+    .request-tracking-row { grid-template-columns: minmax(0, 1fr); padding: 1.25rem; }
+    .request-tracking-row .reservation-details-link { justify-self: stretch; }
+    .request-progress { grid-template-columns: minmax(0, 1fr); gap: .25rem; }
+    .request-progress li { border-bottom: 0; border-left: 3px solid var(--border-color); padding: .6rem .75rem; align-items: center; }
+    .request-progress .is-current { border-left-color: var(--civic-blue); }
+}
