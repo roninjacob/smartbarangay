@@ -97,15 +97,20 @@ class ResidentRequestStatusTest extends TestCase
     }
 
     #[DataProvider('statuses')]
-    public function test_each_status_has_clear_message_and_no_mutation_controls(Status $status): void
+    public function test_each_status_has_clear_message_and_only_pending_offers_cancellation(Status $status): void
     {
         $resident = $this->user();
         $reservation = $this->reservation($resident, 'Clearance', $status);
         $this->actingAs($resident)->get('/resident/request-status')->assertSee($status->label())->assertSee($status->residentMessage());
         $response = $this->get('/resident/request-status/'.$reservation->id)->assertOk()->assertSee($status->label())->assertSee($status->residentMessage())
             ->assertSee('Request timeline')->assertSee('Reservation submitted')->assertSee('No status changes recorded yet')
-            ->assertDontSee('Cancel reservation')->assertDontSee('method="POST" action="http://localhost/resident/request-status', false);
-        if ($status === Status::Rejected) {
+            ->assertDontSee('method="POST" action="http://localhost/resident/request-status', false);
+        if ($status->canBeCancelledByResident()) {
+            $response->assertSee('Cancel reservation');
+        } else {
+            $response->assertDontSee('Cancel reservation');
+        }
+        if (in_array($status, [Status::Rejected, Status::Cancelled], true)) {
             $response->assertDontSee('aria-current="step"', false);
         } else {
             $response->assertSee('aria-current="step"', false)->assertSee('Current status');
@@ -165,7 +170,7 @@ class ResidentRequestStatusTest extends TestCase
         $this->post('/resident/request-status', ['status' => 'cancelled'])->assertStatus(405);
         $this->patch('/resident/request-status/'.$reservation->id, ['status' => 'cancelled'])->assertStatus(405);
         $this->delete('/resident/request-status/'.$reservation->id)->assertStatus(405);
-        $this->post('/resident/reservations/'.$reservation->id.'/cancel')->assertNotFound();
+        $this->post('/resident/reservations/'.$reservation->id.'/cancel')->assertSessionHasErrors('reason');
         $this->app['env'] = 'local';
         $this->actingAs($this->user(UserRole::Admin))->patch('/admin/reservations/'.$reservation->id.'/status', ['status' => 'under_review', 'expected_status' => 'pending'])->assertStatus(419);
         $this->assertSame($before, $reservation->fresh()->getRawOriginal());

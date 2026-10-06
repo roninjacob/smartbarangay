@@ -69,7 +69,7 @@ class AdminReservationProcessingTest extends TestCase
         $this->get('/admin/reservations?status=pending')->assertSee('Alice Calayo')->assertDontSee('Bob Calayo');
         $this->get('/admin/reservations?search=Clearance&status=pending')->assertSee('No matching reservations')->assertDontSee('Bob Calayo');
         $this->get('/admin/reservations?search=%27%20OR%201%3D1')->assertSee('No matching reservations');
-        $this->get('/admin/reservations?status=cancelled')->assertRedirect(route('admin.reservations.index'))->assertSessionHasErrors('status');
+        $this->get('/admin/reservations?status=unknown')->assertRedirect(route('admin.reservations.index'))->assertSessionHasErrors('status');
         $this->get('/admin/reservations?search[]=bad')->assertRedirect(route('admin.reservations.index'))->assertSessionHasErrors('search');
         $this->assertSame(Status::Pending, $alice->fresh()->status);
         $this->assertSame(Status::UnderReview, $bob->fresh()->status);
@@ -134,7 +134,7 @@ class AdminReservationProcessingTest extends TestCase
     public function test_all_other_transition_pairs_are_rejected_without_history(): void
     {
         $this->actingAs($this->user());
-        $allowed = ['pending' => ['under_review', 'rejected'], 'under_review' => ['approved', 'rejected'], 'approved' => ['ready_for_pickup'], 'ready_for_pickup' => ['completed'], 'completed' => [], 'rejected' => []];
+        $allowed = ['pending' => ['under_review', 'rejected'], 'under_review' => ['approved', 'rejected'], 'approved' => ['ready_for_pickup'], 'ready_for_pickup' => ['completed'], 'completed' => [], 'rejected' => [], 'cancelled' => []];
         foreach (Status::cases() as $from) {
             foreach (Status::cases() as $to) {
                 if (in_array($to->value, $allowed[$from->value], true)) {

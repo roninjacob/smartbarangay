@@ -28,4 +28,9 @@ class Schedule extends Model
     {
         return $this->hasMany(Reservation::class);
     }
+
+    public function occupiedReservations(): HasMany
+    {
+        return $this->reservations()->occupyingSlot();
+    }
 }

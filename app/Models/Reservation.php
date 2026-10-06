@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\ReservationStatus;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -59,5 +60,10 @@ class Reservation extends Model
     public function statusHistories(): HasMany
     {
         return $this->hasMany(ReservationStatusHistory::class);
+    }
+
+    public function scopeOccupyingSlot(Builder $query): Builder
+    {
+        return $query->whereIn('status', array_map(fn ($status) => $status->value, ReservationStatus::occupyingStatuses()));
     }
 }

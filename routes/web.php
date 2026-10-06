@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Resident\ReservationController;
 use App\Http\Controllers\Resident\ReservationViewController;
 use App\Http\Controllers\Resident\RequestStatusController;
+use App\Http\Controllers\Resident\ReservationCancellationController;
 use App\Http\Controllers\Admin\ReservationController as AdminReservationController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 
@@ -59,6 +60,7 @@ Route::middleware('auth')->group(function () {
             Route::get('/confirm', [ReservationController::class, 'confirm'])->block(10, 10)->name('confirm');
             Route::post('/', [ReservationController::class, 'store'])->block(10, 10)->name('store');
             Route::get('/{reservation}', [ReservationViewController::class, 'show'])->whereNumber('reservation')->name('show');
+            Route::post('/{reservation}/cancel', ReservationCancellationController::class)->whereNumber('reservation')->block(10, 10)->name('cancel');
         });
     Route::prefix('resident/request-status')->name('resident.request-status.')
         ->middleware(['role:'.UserRole::Resident->value, 'verified'])->group(function () {

@@ -97,6 +97,7 @@ a.app-nav-link:hover, button.app-nav-link:hover { background: #F1F5FA; color: va
 .status-ready_for_pickup { background: #DDF1E7; color: #225F43; }
 .status-completed { background: #EEF1F5; color: #536174; }
 .status-rejected { background: #FCECEE; color: #A82C3B; }
+.status-cancelled { background: #edf0f4; color: #4b5563; }
 .dashboard-status-list { padding: 0 22px 12px; }
 .dashboard-status-list > div { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 11px 0; border-top: 1px solid #EDF0F5; }
 .dashboard-status-list dt { font-weight: 400; }

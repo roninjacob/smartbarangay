@@ -101,7 +101,7 @@ class DashboardTest extends TestCase
         }
 
         $response = $this->actingAs($resident)->get('/resident/home')->assertOk()
-            ->assertViewHas('totalReservations', 7)->assertViewHas('inProgress', 4)
+            ->assertViewHas('totalReservations', count(ReservationStatus::cases()) + 1)->assertViewHas('inProgress', 4)
             ->assertViewHas('counts', fn ($counts) => $counts['pending'] === 2
                 && $counts['ready_for_pickup'] === 1 && $counts['completed'] === 1 && $counts['rejected'] === 1)
             ->assertViewHas('recentReservations', fn ($rows) => $rows->count() === 6
@@ -126,8 +126,8 @@ class DashboardTest extends TestCase
         $this->reservation($resident, ReservationStatus::Approved, 'Tomorrow service', '2026-10-08');
 
         $this->actingAs($admin)->get('/admin/home')->assertOk()
-            ->assertViewHas('totalResidents', 2)->assertViewHas('totalReservations', 8)
-            ->assertViewHas('needsAttention', 3)->assertViewHas('todayReservations', 6)
+            ->assertViewHas('totalResidents', 2)->assertViewHas('totalReservations', count(ReservationStatus::cases()) + 2)
+            ->assertViewHas('needsAttention', 3)->assertViewHas('todayReservations', count(ReservationStatus::cases()))
             ->assertViewHas('counts', fn ($counts) => $counts['pending'] === 2
                 && $counts['under_review'] === 1 && $counts['approved'] === 2
                 && $counts['ready_for_pickup'] === 1 && $counts['completed'] === 1 && $counts['rejected'] === 1)

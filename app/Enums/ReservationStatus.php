@@ -10,6 +10,7 @@ enum ReservationStatus: string
     case ReadyForPickup = 'ready_for_pickup';
     case Completed = 'completed';
     case Rejected = 'rejected';
+    case Cancelled = 'cancelled';
 
     public function allowedTransitions(): array
     {
@@ -18,7 +19,7 @@ enum ReservationStatus: string
             self::UnderReview => [self::Approved, self::Rejected],
             self::Approved => [self::ReadyForPickup],
             self::ReadyForPickup => [self::Completed],
-            self::Completed, self::Rejected => [],
+            self::Completed, self::Rejected, self::Cancelled => [],
         };
     }
 
@@ -31,6 +32,7 @@ enum ReservationStatus: string
             self::ReadyForPickup => 'Ready for Pickup',
             self::Completed => 'Completed',
             self::Rejected => 'Rejected',
+            self::Cancelled => 'Cancelled',
         };
     }
 
@@ -43,6 +45,23 @@ enum ReservationStatus: string
             self::ReadyForPickup => 'Your document is ready for pickup. Contact the Barangay Calayo office for collection guidance.',
             self::Completed => 'Your request has been completed.',
             self::Rejected => 'Your request was rejected. Contact the Barangay Calayo office for clarification and next steps.',
+            self::Cancelled => 'You cancelled this request. It will no longer be processed. You may submit a new reservation if needed.',
         };
+    }
+
+    public function canBeCancelledByResident(): bool
+    {
+        return $this === self::Pending;
+    }
+
+    public static function occupyingStatuses(): array
+    {
+        return [self::Pending, self::UnderReview, self::Approved, self::ReadyForPickup];
+    }
+
+    // A denial guard for future eligibility rules, not permission to generate a ticket for every other status.
+    public function blocksQrEligibility(): bool
+    {
+        return in_array($this, [self::Cancelled, self::Rejected], true);
     }
 }

@@ -299,7 +299,7 @@ class SmartBarangayFoundationTest extends TestCase
         $email = $user->email;
 
         Artisan::call('migrate:rollback', [
-            '--database' => 'sqlite', '--step' => 9, '--force' => true,
+            '--database' => 'sqlite', '--step' => 10, '--force' => true,
         ]);
 
         foreach ([

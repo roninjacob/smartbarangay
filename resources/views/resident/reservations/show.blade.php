@@ -21,6 +21,7 @@
         <p class="text-secondary">The barangay’s current requirements for this service. Review what to prepare.</p>
         @include('resident.reservations.requirements-list', ['service' => $reservation->service])
     </section>
+    @include('resident.reservations.cancellation-form')
     <p class="reservation-help">For assistance with your request, contact the Barangay Calayo office in Nasugbu, Batangas.</p>
 </div>
 @endsection

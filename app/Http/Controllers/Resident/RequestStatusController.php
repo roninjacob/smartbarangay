@@ -24,8 +24,9 @@ class RequestStatusController extends Controller
         return view('resident.request-status.show', [...$this->shellData('Request Progress'), 'reservation' => $owned,
             // Processing notes and actor details are Admin-only. Do not even select them for Resident views.
             'histories' => $owned->statusHistories()->select(['id', 'reservation_id', 'from_status', 'to_status', 'changed_at'])
+                ->selectRaw('CASE WHEN to_status = ? AND changed_by = ? THEN notes ELSE NULL END AS cancellation_reason', [ReservationStatus::Cancelled->value, $request->user()->id])
                 ->orderBy('changed_at')->orderBy('id')->paginate(10),
-            'steps' => array_values(array_filter(ReservationStatus::cases(), fn ($status) => $status !== ReservationStatus::Rejected))]);
+            'steps' => array_values(array_filter(ReservationStatus::cases(), fn ($status) => ! in_array($status, [ReservationStatus::Rejected, ReservationStatus::Cancelled], true)))]);
     }
 
     private function shellData(string $heading): array
