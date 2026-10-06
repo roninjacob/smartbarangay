@@ -11,6 +11,7 @@ use App\Http\Controllers\Admin\ServiceController;
 use App\Http\Controllers\Admin\ServiceRequirementController;
 use App\Http\Controllers\Admin\ScheduleController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Resident\ReservationController;
 
 Route::get('/', HomeController::class)->name('home');
 
@@ -42,6 +43,17 @@ Route::middleware('auth')->group(function () {
         ->middleware(['role:'.UserRole::Resident->value, 'verified'])->name('resident.home');
     Route::get('/admin/home', [DashboardController::class, 'admin'])
         ->middleware(['role:'.UserRole::Admin->value, 'verified'])->name('admin.home');
+    Route::prefix('resident/reservations')->name('resident.reservations.')
+        ->middleware(['role:'.UserRole::Resident->value, 'verified'])->group(function () {
+            Route::get('/create', [ReservationController::class, 'create'])->block(10, 10)->name('create');
+            Route::post('/service', [ReservationController::class, 'selectService'])->block(10, 10)->name('service');
+            Route::get('/requirements', [ReservationController::class, 'requirements'])->block(10, 10)->name('requirements');
+            Route::post('/requirements', [ReservationController::class, 'reviewRequirements'])->block(10, 10)->name('requirements.review');
+            Route::get('/schedule', [ReservationController::class, 'schedule'])->block(10, 10)->name('schedule');
+            Route::post('/schedule', [ReservationController::class, 'selectSchedule'])->block(10, 10)->name('schedule.select');
+            Route::get('/confirm', [ReservationController::class, 'confirm'])->block(10, 10)->name('confirm');
+            Route::post('/', [ReservationController::class, 'store'])->block(10, 10)->name('store');
+        });
     Route::prefix('admin')->name('admin.')->middleware(['role:'.UserRole::Admin->value, 'verified'])->group(function () {
         Route::patch('/schedules/{schedule}/status', [ScheduleController::class, 'updateStatus'])->name('schedules.status');
         Route::resource('schedules', ScheduleController::class)->only(['index', 'create', 'store', 'edit', 'update', 'destroy']);

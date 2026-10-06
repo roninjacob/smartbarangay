@@ -22,15 +22,16 @@
                 @elseif($inProgress > 0)
                     <p>Your requests are being processed. Check this dashboard for updates from Barangay Calayo.</p>
                 @else
-                    <p>Need a barangay document? Online reservation is coming soon. For now, contact the Barangay Calayo office for assistance.</p>
+                    <p>Need a barangay document? Start a new reservation to choose your service and schedule.</p>
                 @endif
             </div>
         </section>
     </div>
     <div class="col-xl-4 dashboard-aside"><x-dashboard-statuses :statuses="$statuses" :counts="$counts" :total="$totalReservations"/>
         <section class="dashboard-quick-actions" aria-labelledby="quick-actions-heading"><h2 id="quick-actions-heading">Quick access</h2>
+            <a class="account-quick-link" href="{{ route('resident.reservations.create') }}"><x-app-icon name="plus"/><span>New Reservation</span><x-app-icon name="arrow"/></a>
             <button type="button" class="account-quick-link" data-bs-toggle="modal" data-bs-target="#account-summary"><x-app-icon name="account"/><span>View my profile</span><x-app-icon name="arrow"/></button>
-            <p class="app-note mb-0">Reservation, tracking and QR ticket modules are being prepared. Items marked “Soon” are not yet available.</p>
+            <p class="app-note mb-0">Choose New Reservation to submit a document request. Items marked “Soon” are not yet available.</p>
         </section>
     </div>
 </div>

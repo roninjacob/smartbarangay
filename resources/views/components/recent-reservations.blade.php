@@ -5,7 +5,7 @@
         <div class="dashboard-empty">
             <span class="empty-icon"><x-app-icon name="document"/></span>
             <h3>No reservations yet</h3>
-            <p>{{ $admin ? 'When residents submit document requests, their latest reservations will appear here.' : 'Your document requests will appear here. The New Reservation module will be available in a future update.' }}</p>
+            <p>{{ $admin ? 'When residents submit document requests, their latest reservations will appear here.' : 'Your document requests will appear here. Choose New Reservation to submit your first request.' }}</p>
             <span class="empty-footnote">{{ $admin ? 'There are no requests to review right now.' : 'Your account is ready. Thank you for joining SmartBarangay.' }}</span>
         </div>
     @else

@@ -6,7 +6,7 @@ return [
             ['label' => 'Dashboard', 'icon' => 'dashboard', 'route' => 'resident.home'],
         ],
         'My services' => [
-            ['label' => 'New Reservation', 'icon' => 'plus'],
+            ['label' => 'New Reservation', 'icon' => 'plus', 'route' => 'resident.reservations.create', 'active' => 'resident.reservations.*'],
             ['label' => 'My Reservations', 'icon' => 'document'],
             ['label' => 'My QR Tickets', 'icon' => 'qr'],
             ['label' => 'Request Status', 'icon' => 'status'],
