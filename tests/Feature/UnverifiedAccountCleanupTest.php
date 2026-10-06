@@ -205,8 +205,8 @@ class UnverifiedAccountCleanupTest extends TestCase
         $this->get('/email/change')->assertRedirect('/resident/home');
         $admin = $this->resident(0);
         $admin->forceFill(['role' => UserRole::Admin])->save();
-        $this->actingAs($admin)->get('/email/change')->assertRedirect('/admin/home');
-        $this->get('/email/verify')->assertRedirect('/admin/home');
+        $this->actingAs($admin)->get('/email/change')->assertRedirect(route('verification.notice'));
+        $this->get('/email/verify')->assertOk()->assertDontSee('Change Email Address');
         $this->put('/email/change', ['email' => 'admin-new@example.com', 'current_password' => 'password'])->assertForbidden();
         $this->travel(61)->seconds();
         $admin->forceFill(['email_verified_at' => now()])->save();

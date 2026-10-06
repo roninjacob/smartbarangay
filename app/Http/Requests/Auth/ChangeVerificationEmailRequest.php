@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Auth;
 
+use App\Enums\UserRole;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -9,7 +10,8 @@ class ChangeVerificationEmailRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->requiresEmailVerification() === true;
+        return $this->user()?->role === UserRole::Resident
+            && $this->user()->requiresEmailVerification();
     }
 
     protected function prepareForValidation(): void

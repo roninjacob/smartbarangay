@@ -77,7 +77,7 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function requiresEmailVerification(): bool
     {
-        return $this->role === UserRole::Resident && ! $this->hasVerifiedEmail();
+        return ! $this->hasVerifiedEmail();
     }
 
     public function scopeAbandonedResidents(Builder $query, CarbonInterface $cutoff): Builder

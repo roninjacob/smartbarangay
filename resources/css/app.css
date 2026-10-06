@@ -1,6 +1,7 @@
 @import 'bootstrap/dist/css/bootstrap.min.css';
+@import './dashboard.css';
 
-/* SmartBarangay civic identity, shared by authentication and temporary home pages. */
+/* SmartBarangay civic identity, shared by authentication and the application shell. */
 :root {
     --civic-blue: #1F5EA8;
     --civic-dark: #174A85;
@@ -287,7 +288,7 @@ button, a, input, textarea { touch-action: manipulation; }
 .back-link { display: inline-block; margin-bottom: 26px; font-size: 12px; font-weight: 600; text-decoration: none; }
 .back-link span { margin-right: 5px; }
 
-/* Temporary role home pages have no dashboard modules. */
+/* Retained for the access-restricted error page. */
 .home-header { padding: 22px 0; background: var(--surface); border-bottom: 1px solid var(--border-color); }
 .home-header .brand-mark { background: #EDF3FA; color: var(--civic-blue); border-color: #D6E2F0; }
 .home-header .brand-name { color: var(--civic-dark); }

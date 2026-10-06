@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Auth;
 
+use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\ChangeVerificationEmailRequest;
 use App\Models\User;
@@ -57,16 +58,16 @@ class EmailVerificationController extends Controller
 
     public function editEmail(Request $request): View|RedirectResponse
     {
-        return $request->user()->requiresEmailVerification()
+        return $request->user()->role === UserRole::Resident && $request->user()->requiresEmailVerification()
             ? view('auth.change-verification-email')
-            : redirect()->route($request->user()->homeRouteName());
+            : redirect()->route($request->user()->entryRouteName());
     }
 
     public function updateEmail(ChangeVerificationEmailRequest $request): RedirectResponse
     {
         $user = DB::transaction(function () use ($request) {
             $user = User::whereKey($request->user()->id)->lockForUpdate()->firstOrFail();
-            abort_unless($user->is_active && $user->requiresEmailVerification(), 403);
+            abort_unless($user->is_active && $user->role === UserRole::Resident && $user->requiresEmailVerification(), 403);
             abort_unless(Hash::check($request->validated('current_password'), $user->password), 403);
             DB::table('password_reset_tokens')->where('email', $user->email)->delete();
             $user->email = $request->validated('email');

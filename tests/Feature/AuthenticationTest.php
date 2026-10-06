@@ -318,6 +318,14 @@ class AuthenticationTest extends TestCase
         $this->assertNotSame('AdminTest123', $admin->password);
         $this->assertFalse($admin->hasVerifiedEmail());
         Notification::assertSentTo($admin, VerifyEmail::class);
+        $this->post('/login', ['email' => $admin->email, 'password' => 'AdminTest123'])
+            ->assertRedirect(route('verification.notice'));
+        $this->get('/admin/home')->assertRedirect(route('verification.notice'));
+        $this->get('/email/verify')->assertOk()->assertSee('Resend Verification Email');
+        $link = Notification::sent($admin, VerifyEmail::class)->sole()->toMail($admin)->actionUrl;
+        $this->get($link)->assertRedirect('/admin/home');
+        $this->assertTrue($admin->fresh()->hasVerifiedEmail());
+        $this->get('/admin/home')->assertOk();
     }
 
     public function test_admin_command_rejects_duplicate_email_without_overwriting(): void

@@ -68,24 +68,23 @@ class AuthenticationAdditionsTest extends TestCase
     }
 
     #[DataProvider('roles')]
-    public function test_residents_require_verification_while_manually_created_admins_enter_their_role_area(UserRole $role, string $home): void
+    public function test_both_roles_require_verification_and_can_resend_before_dashboard_access(UserRole $role, string $home): void
     {
         $user = $this->user($role);
-        $destination = $role === UserRole::Admin ? $home : route('verification.notice');
+        $destination = route('verification.notice');
         $this->post('/login', ['email' => $user->email, 'password' => 'password'])
             ->assertRedirect($destination);
         foreach (['/', '/login', '/register'] as $path) {
             $this->get($path)->assertRedirect($destination);
         }
+        $this->get($home)->assertRedirect($destination);
+        $notice = $this->get('/email/verify')->assertOk()->assertSee($user->email)
+            ->assertSee('Resend Verification Email')->assertSee('Logout');
         if ($role === UserRole::Admin) {
-            $this->get($home)->assertOk()->assertDontSee('Check your inbox');
-            $this->get('/email/verify')->assertRedirect($home);
-            $this->post('/email/verification-notification')->assertRedirect($home);
-            Notification::assertNothingSent();
-        } else {
-            $this->get($home)->assertRedirect($destination);
-            $this->get('/email/verify')->assertOk()->assertSee($user->email)->assertSee('Resend Verification Email')->assertSee('Logout');
+            $notice->assertDontSee('Change Email Address')->assertDontSee('7 days after registration');
         }
+        $this->post('/email/verification-notification')->assertRedirect($destination);
+        Notification::assertSentTo($user, VerifyEmail::class);
         $this->get($role === UserRole::Admin ? '/resident/home' : '/admin/home')->assertForbidden();
         $this->assertNull($user->fresh()->email_verified_at);
     }
@@ -106,10 +105,11 @@ class AuthenticationAdditionsTest extends TestCase
         Event::assertDispatchedTimes(Verified::class, 1);
     }
 
-    public function test_tampered_expired_and_mismatched_verification_links_never_verify(): void
+    #[DataProvider('roles')]
+    public function test_tampered_expired_and_mismatched_verification_links_never_verify(UserRole $role, string $home): void
     {
-        $user = $this->user();
-        $other = $this->user();
+        $user = $this->user($role);
+        $other = $this->user($role);
         $this->actingAs($user);
         foreach ([
             $this->signedLink($user).'tampered',
@@ -345,14 +345,10 @@ class AuthenticationAdditionsTest extends TestCase
         Event::assertNotDispatched(PasswordReset::class);
 
         $this->post('/login', ['email' => $user->email, 'password' => 'password'])
-            ->assertRedirect($role === UserRole::Admin ? $home : route('verification.notice'));
+            ->assertRedirect(route('verification.notice'));
         $this->post('/email/verification-notification')
-            ->assertRedirect($role === UserRole::Admin ? $home : route('verification.notice'));
-        if ($role === UserRole::Resident) {
-            Notification::assertSentTo($user, VerifyEmail::class);
-        } else {
-            Notification::assertNothingSent();
-        }
+            ->assertRedirect(route('verification.notice'));
+        Notification::assertSentTo($user, VerifyEmail::class);
     }
 
     public function test_reset_is_blocked_if_email_verification_is_removed_after_link_was_issued(): void

@@ -6,6 +6,7 @@ use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\Auth\EmailVerificationController;
 use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\DashboardController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', HomeController::class)->name('home');
@@ -34,8 +35,8 @@ Route::middleware('auth')->group(function () {
         ->middleware(['signed', 'throttle:6,1'])->name('verification.verify');
     Route::post('/email/verification-notification', [EmailVerificationController::class, 'resend'])
         ->middleware('throttle:verification-email')->name('verification.send');
-    Route::view('/resident/home', 'home', ['area' => 'Resident'])
+    Route::get('/resident/home', [DashboardController::class, 'resident'])
         ->middleware(['role:'.UserRole::Resident->value, 'verified'])->name('resident.home');
-    Route::view('/admin/home', 'home', ['area' => 'Admin'])
-        ->middleware(['role:'.UserRole::Admin->value])->name('admin.home');
+    Route::get('/admin/home', [DashboardController::class, 'admin'])
+        ->middleware(['role:'.UserRole::Admin->value, 'verified'])->name('admin.home');
 });
