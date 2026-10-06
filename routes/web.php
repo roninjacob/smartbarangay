@@ -12,6 +12,7 @@ use App\Http\Controllers\Admin\ServiceRequirementController;
 use App\Http\Controllers\Admin\ScheduleController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Resident\ReservationController;
+use App\Http\Controllers\Resident\ReservationViewController;
 
 Route::get('/', HomeController::class)->name('home');
 
@@ -45,6 +46,7 @@ Route::middleware('auth')->group(function () {
         ->middleware(['role:'.UserRole::Admin->value, 'verified'])->name('admin.home');
     Route::prefix('resident/reservations')->name('resident.reservations.')
         ->middleware(['role:'.UserRole::Resident->value, 'verified'])->group(function () {
+            Route::get('/', [ReservationViewController::class, 'index'])->name('index');
             Route::get('/create', [ReservationController::class, 'create'])->block(10, 10)->name('create');
             Route::post('/service', [ReservationController::class, 'selectService'])->block(10, 10)->name('service');
             Route::get('/requirements', [ReservationController::class, 'requirements'])->block(10, 10)->name('requirements');
@@ -53,6 +55,7 @@ Route::middleware('auth')->group(function () {
             Route::post('/schedule', [ReservationController::class, 'selectSchedule'])->block(10, 10)->name('schedule.select');
             Route::get('/confirm', [ReservationController::class, 'confirm'])->block(10, 10)->name('confirm');
             Route::post('/', [ReservationController::class, 'store'])->block(10, 10)->name('store');
+            Route::get('/{reservation}', [ReservationViewController::class, 'show'])->whereNumber('reservation')->name('show');
         });
     Route::prefix('admin')->name('admin.')->middleware(['role:'.UserRole::Admin->value, 'verified'])->group(function () {
         Route::patch('/schedules/{schedule}/status', [ScheduleController::class, 'updateStatus'])->name('schedules.status');

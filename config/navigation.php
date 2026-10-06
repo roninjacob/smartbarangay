@@ -6,8 +6,13 @@ return [
             ['label' => 'Dashboard', 'icon' => 'dashboard', 'route' => 'resident.home'],
         ],
         'My services' => [
-            ['label' => 'New Reservation', 'icon' => 'plus', 'route' => 'resident.reservations.create', 'active' => 'resident.reservations.*'],
-            ['label' => 'My Reservations', 'icon' => 'document'],
+            ['label' => 'New Reservation', 'icon' => 'plus', 'route' => 'resident.reservations.create', 'active' => [
+                'resident.reservations.create', 'resident.reservations.service', 'resident.reservations.requirements*',
+                'resident.reservations.schedule*', 'resident.reservations.confirm', 'resident.reservations.store',
+            ]],
+            ['label' => 'My Reservations', 'icon' => 'document', 'route' => 'resident.reservations.index', 'active' => [
+                'resident.reservations.index', 'resident.reservations.show',
+            ]],
             ['label' => 'My QR Tickets', 'icon' => 'qr'],
             ['label' => 'Request Status', 'icon' => 'status'],
         ],

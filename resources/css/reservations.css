@@ -30,9 +30,30 @@
 .reservation-summary dt { color: var(--muted-text); font-weight: 500; }
 .reservation-summary dd { margin: 0; font-weight: 600; }
 .reservation-help { font-size: .85rem; margin-top: 1.25rem; }
+.reservation-list-heading { flex-wrap: wrap; gap: 1rem; }
+.resident-reservation-row { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1.6fr) auto; align-items: center; gap: 1.5rem; padding: 1.5rem; border-top: 1px solid var(--border-color); }
+.reservation-row-service { min-width: 0; overflow-wrap: anywhere; }
+.reservation-row-service h3 { font-size: 1rem; font-weight: 600; margin: .4rem 0 .65rem; line-height: 1.5; }
+.reservation-row-facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; margin: 0; }
+.reservation-row-facts dt { font-size: .75rem; font-weight: 500; color: var(--muted-text); margin-bottom: .35rem; }
+.reservation-row-facts dd { font-size: .85rem; margin: 0; line-height: 1.6; }
+.reservation-details-link { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; }
+.reservation-detail-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+.reservation-detail-header > div { flex: 1 1 250px; min-width: 0; }
+.reservation-detail-header .reservation-status { margin-top: .3rem; }
+.resident-reservation-list .reservation-status, .reservation-detail .reservation-status { font-size: .8rem; }
+.reservation-service-description { color: var(--muted-text); white-space: pre-line; line-height: 1.7; margin-top: 1rem; }
+.reservation-details-back .app-icon { transform: rotate(180deg); }
+@media (max-width: 1199.98px) {
+    .resident-reservation-row { grid-template-columns: minmax(0, 1fr) auto; }
+    .reservation-row-service { grid-column: 1 / -1; }
+}
 @media (max-width: 767.98px) {
     .reservation-steps { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .reservation-steps li { padding: .65rem .3rem; }
+    .resident-reservation-row { grid-template-columns: minmax(0, 1fr); gap: 1.15rem; padding: 1.25rem; }
+    .reservation-row-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .reservation-list-heading .btn { width: 100%; }
 }
 @media (max-width: 479.98px) {
     .reservation-actions { flex-direction: column-reverse; }
