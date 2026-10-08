@@ -18,7 +18,7 @@
                 <tbody>
                 @foreach($services as $service)
                     <tr>
-                        <th scope="row"><span class="service-name">{{ $service->name }}</span></th>
+                        <th scope="row"><span class="service-name">{{ $service->name }}</span><span class="app-note d-block mt-1">Template: {{ $service->documentTemplate?->format() ?? 'Not uploaded' }}</span></th>
                         <td class="service-description">{{ \Illuminate\Support\Str::limit($service->description ?? 'No description provided.', 140) }}</td>
                         <td><span @class(['service-status', 'is-active' => $service->is_active])>{{ $service->is_active ? 'Active' : 'Inactive' }}</span></td>
                         <td><div class="service-actions">

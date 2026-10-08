@@ -4,6 +4,7 @@ use App\Enums\UserRole;
 use App\Http\Controllers\Admin\ReservationController as AdminReservationController;
 use App\Http\Controllers\Admin\ScheduleController;
 use App\Http\Controllers\Admin\ServiceController;
+use App\Http\Controllers\Admin\ServiceDocumentTemplateController;
 use App\Http\Controllers\Admin\ServiceRequirementController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
@@ -104,6 +105,8 @@ Route::middleware('auth')->group(function () {
         Route::patch('/schedules/{schedule}/status', [ScheduleController::class, 'updateStatus'])->name('schedules.status');
         Route::resource('schedules', ScheduleController::class)->only(['index', 'create', 'store', 'edit', 'update', 'destroy']);
         Route::patch('/services/{service}/status', [ServiceController::class, 'updateStatus'])->name('services.status');
+        Route::get('/services/{service}/template', [ServiceDocumentTemplateController::class, 'download'])->whereNumber('service')->name('services.template.download');
+        Route::delete('/services/{service}/template', [ServiceDocumentTemplateController::class, 'destroy'])->whereNumber('service')->name('services.template.destroy');
         Route::resource('services', ServiceController::class)->only(['index', 'create', 'store', 'edit', 'update']);
         Route::resource('services.requirements', ServiceRequirementController::class)
             ->parameters(['requirements' => 'serviceRequirement'])->scoped()
