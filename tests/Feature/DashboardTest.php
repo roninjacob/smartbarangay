@@ -164,15 +164,20 @@ class DashboardTest extends TestCase
     }
 
     #[DataProvider('roles')]
-    public function test_later_modules_are_unavailable_and_account_summary_is_read_only(UserRole $role, string $path, string $label): void
+    public function test_navigation_phase_boundaries_and_read_only_account_summary(UserRole $role, string $path, string $label): void
     {
         $user = $this->user($role);
         $response = $this->actingAs($user)->get($path)->assertOk()
-            ->assertSee('aria-disabled="true"', false)->assertSee('Soon')
             ->assertSee('Profile overview')->assertSee($user->email)
             ->assertSee('Manage your profile and optional picture')
             ->assertDontSee('href="#"', false)->assertDontSee('name="role"', false)
             ->assertDontSee('name="password"', false);
+        if ($role === UserRole::Admin) {
+            $response->assertSee('aria-disabled="true"', false)->assertSee('Soon');
+        } else {
+            $response->assertDontSee('aria-disabled="true"', false)
+                ->assertSee(route('resident.qr-tickets.index'), false);
+        }
         $document = new \DOMDocument;
         @$document->loadHTML($response->getContent());
         $xpath = new \DOMXPath($document);

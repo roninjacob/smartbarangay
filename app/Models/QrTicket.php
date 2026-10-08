@@ -7,6 +7,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class QrTicket extends Model
 {
+    protected $hidden = ['ticket_code', 'qr_payload'];
+
+    public function encodedPayload(): string
+    {
+        return 'SBQ1:'.$this->qr_payload;
+    }
+
     protected $fillable = [
         'reservation_id',
         'ticket_code',

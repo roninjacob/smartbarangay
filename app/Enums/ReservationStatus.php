@@ -59,6 +59,16 @@ enum ReservationStatus: string
         return [self::Pending, self::UnderReview, self::Approved, self::ReadyForPickup];
     }
 
+    public function canReceiveQrTicket(): bool
+    {
+        return ! $this->blocksQrEligibility() && in_array($this, [self::Approved, self::ReadyForPickup], true);
+    }
+
+    public function canDisplayQrTicket(): bool
+    {
+        return $this->canReceiveQrTicket() || $this === self::Completed;
+    }
+
     // A denial guard for future eligibility rules, not permission to generate a ticket for every other status.
     public function blocksQrEligibility(): bool
     {

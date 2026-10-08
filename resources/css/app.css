@@ -5,6 +5,7 @@
 @import './users.css';
 @import './request-status.css';
 @import './profile.css';
+@import './qr-tickets.css';
 
 /* SmartBarangay civic identity, shared by authentication and the application shell. */
 :root {

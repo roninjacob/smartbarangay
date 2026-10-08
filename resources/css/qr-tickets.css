@@ -1,0 +1,13 @@
+.qr-ticket-content { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; gap: 2rem; margin-top: 2rem; }
+.qr-ticket-figure { margin: 0; min-width: 0; text-align: center; }
+.qr-ticket-image { padding: .75rem; margin: 0 auto; width: min(100%, 346px); background: #fff; border: 1px solid var(--border-color); border-radius: 12px; }
+.qr-ticket-image img { display: block; width: 100%; height: auto; aspect-ratio: 1; }
+.qr-ticket-figure figcaption { display: grid; gap: .4rem; margin-top: 1rem; font-size: .85rem; color: var(--muted-text); line-height: 1.6; }
+.qr-ticket-figure figcaption strong { color: var(--civic-dark); font-size: 1rem; }
+.qr-ticket-information { min-width: 0; }
+.qr-ticket-information .reservation-summary { margin-top: .5rem; }
+.qr-ticket-information .btn { white-space: normal; }
+@media (max-width: 767.98px) {
+    .qr-ticket-content { grid-template-columns: minmax(0, 1fr); gap: 1.5rem; }
+    .qr-ticket-information .btn { width: 100%; }
+}

@@ -13,7 +13,7 @@ return [
             ['label' => 'My Reservations', 'icon' => 'document', 'route' => 'resident.reservations.index', 'active' => [
                 'resident.reservations.index', 'resident.reservations.show',
             ]],
-            ['label' => 'My QR Tickets', 'icon' => 'qr'],
+            ['label' => 'My QR Tickets', 'icon' => 'qr', 'route' => 'resident.qr-tickets.index', 'active' => 'resident.qr-tickets.*'],
             ['label' => 'Request Status', 'icon' => 'status', 'route' => 'resident.request-status.index', 'active' => 'resident.request-status.*'],
         ],
     ],

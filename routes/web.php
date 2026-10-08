@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Resident\ReservationController;
 use App\Http\Controllers\Resident\ReservationViewController;
 use App\Http\Controllers\Resident\RequestStatusController;
+use App\Http\Controllers\Resident\QrTicketController;
 use App\Http\Controllers\Resident\ReservationCancellationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Admin\ReservationController as AdminReservationController;
@@ -70,6 +71,12 @@ Route::middleware('auth')->group(function () {
             Route::post('/', [ReservationController::class, 'store'])->block(10, 10)->name('store');
             Route::get('/{reservation}', [ReservationViewController::class, 'show'])->whereNumber('reservation')->name('show');
             Route::post('/{reservation}/cancel', ReservationCancellationController::class)->whereNumber('reservation')->block(10, 10)->name('cancel');
+        });
+    Route::prefix('resident/qr-tickets')->name('resident.qr-tickets.')
+        ->middleware(['role:'.UserRole::Resident->value, 'verified'])->group(function () {
+            Route::get('/', [QrTicketController::class, 'index'])->name('index');
+            Route::get('/{qrTicket}', [QrTicketController::class, 'show'])->whereNumber('qrTicket')->name('show');
+            Route::get('/{qrTicket}/image', [QrTicketController::class, 'image'])->whereNumber('qrTicket')->name('image');
         });
     Route::prefix('resident/request-status')->name('resident.request-status.')
         ->middleware(['role:'.UserRole::Resident->value, 'verified'])->group(function () {

@@ -31,9 +31,10 @@
         <section class="dashboard-quick-actions" aria-labelledby="quick-actions-heading"><h2 id="quick-actions-heading">Quick access</h2>
             <a class="account-quick-link" href="{{ route('resident.reservations.create') }}"><x-app-icon name="plus"/><span>New Reservation</span><x-app-icon name="arrow"/></a>
             <a class="account-quick-link" href="{{ route('resident.reservations.index') }}"><x-app-icon name="document"/><span>My Reservations</span><x-app-icon name="arrow"/></a>
+            <a class="account-quick-link" href="{{ route('resident.qr-tickets.index') }}"><x-app-icon name="qr"/><span>My QR Tickets</span><x-app-icon name="arrow"/></a>
             <a class="account-quick-link" href="{{ route('resident.request-status.index') }}"><x-app-icon name="status"/><span>Request Status</span><x-app-icon name="arrow"/></a>
             <a class="account-quick-link" href="{{ route('resident.profile.edit') }}"><x-app-icon name="account"/><span>View my profile</span><x-app-icon name="arrow"/></a>
-            <p class="app-note mb-0">Choose New Reservation to submit a document request. Items marked “Soon” are not yet available.</p>
+            <p class="app-note mb-0">Choose New Reservation to submit a document request. QR tickets become available after approval.</p>
         </section>
     </div>
 </div>

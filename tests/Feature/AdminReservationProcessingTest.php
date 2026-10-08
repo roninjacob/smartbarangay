@@ -126,7 +126,8 @@ class AdminReservationProcessingTest extends TestCase
         $this->assertDatabaseCount('reservation_status_histories', 4);
         $this->get('/admin/reservations/1')->assertOk()->assertSee('Checked 0')->assertSee('Checked 3')->assertSee($admin->name)->assertDontSee('id="next-status"', false);
         $this->actingAs($reservation->user)->get('/resident/reservations/1')->assertOk()->assertSee('Completed')->assertDontSee('Checked 0');
-        foreach (['qr_tickets', 'checkin_logs', 'reservation_attachments'] as $table) {
+        $this->assertDatabaseCount('qr_tickets', 1);
+        foreach (['checkin_logs', 'reservation_attachments'] as $table) {
             $this->assertDatabaseCount($table, 0);
         }
     }

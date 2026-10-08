@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\FilterReservationsRequest;
 use App\Http\Requests\Admin\UpdateReservationStatusRequest;
 use App\Models\Reservation;
+use App\Services\QrTicketIssuer;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
@@ -34,7 +35,7 @@ class ReservationController extends Controller
 
     public function show(Reservation $reservation): View
     {
-        $reservation->load(['user', 'service.serviceRequirements', 'schedule']);
+        $reservation->load(['user', 'service.serviceRequirements', 'schedule', 'qrTicket']);
 
         return view('admin.reservations.show', [
             ...$this->shellData('Reservation Details'), 'reservation' => $reservation,
@@ -43,10 +44,10 @@ class ReservationController extends Controller
         ]);
     }
 
-    public function updateStatus(UpdateReservationStatusRequest $request, Reservation $reservation): RedirectResponse
+    public function updateStatus(UpdateReservationStatusRequest $request, Reservation $reservation, QrTicketIssuer $tickets): RedirectResponse
     {
         $data = $request->validated();
-        DB::transaction(function () use ($request, $reservation, $data) {
+        DB::transaction(function () use ($request, $reservation, $data, $tickets) {
             $locked = Reservation::lockForUpdate()->findOrFail($reservation->id);
             $next = ReservationStatus::from($data['status']);
             if ($locked->status->value !== $data['expected_status']) {
@@ -57,6 +58,9 @@ class ReservationController extends Controller
             }
             $previous = $locked->status;
             $locked->update(['status' => $next]);
+            if ($next === ReservationStatus::Approved) {
+                $tickets->issue($locked);
+            }
             $locked->statusHistories()->create([
                 'from_status' => $previous, 'to_status' => $next, 'changed_by' => $request->user()->id,
                 'notes' => $data['notes'] ?? null, 'changed_at' => now(),
