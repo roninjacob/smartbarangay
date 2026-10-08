@@ -20,6 +20,7 @@
         </dl>
         <h3 class="h6 mt-4">Current service requirements</h3>
         @include('resident.reservations.requirements-list', ['service' => $reservation->service])
+        @include('resident.reservations.attachments', ['attachmentRoute' => 'admin.reservations.attachments.download'])
     </section>
     <section class="card dashboard-panel reservation-panel mt-4" aria-labelledby="processing-heading">
         <h2 id="processing-heading">Process this request</h2>

@@ -161,7 +161,7 @@ class ScheduleManagementTest extends TestCase
         $this->delete('/admin/schedules/999')->assertNotFound();
     }
 
-    public function test_schedule_list_is_paginated_chronological_and_uses_no_reservation_count_query(): void
+    public function test_schedule_list_is_paginated_chronological_and_batches_occupancy_counts(): void
     {
         for ($i = 0; $i < 16; $i++) {
             $this->schedule(['date' => sprintf('2026-11-%02d', 16 - $i)]);
@@ -172,9 +172,8 @@ class ScheduleManagementTest extends TestCase
         $queries = DB::getQueryLog();
         DB::disableQueryLog();
         $this->assertLessThanOrEqual(4, count(array_filter($queries, fn ($query) => str_starts_with(strtolower($query['query']), 'select'))));
-        foreach ($queries as $query) {
-            $this->assertDoesNotMatchRegularExpression('/count\([^)]*\).*from ["`]?reservations/i', $query['query']);
-        }
+        $this->assertCount(1, array_filter($queries, fn ($query) => str_contains($query['query'], 'occupied_reservations_count')));
+        $this->assertCount(0, array_filter($queries, fn ($query) => preg_match('/^select count\(\*\).*from ["`]?reservations/i', $query['query'])));
         $this->get('/admin/schedules?page=2')->assertOk()->assertSee('Nov 16, 2026');
     }
 

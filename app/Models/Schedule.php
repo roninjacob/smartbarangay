@@ -33,4 +33,15 @@ class Schedule extends Model
     {
         return $this->reservations()->occupyingSlot();
     }
+
+    public function remainingSlots(): int
+    {
+        return max(0, $this->capacity - ($this->occupied_reservations_count ?? $this->occupiedReservations()->count()));
+    }
+
+    // Call inside a transaction after locking this schedule. A locking read avoids stale MySQL snapshots.
+    public function lockedOccupancy(): int
+    {
+        return $this->occupiedReservations()->lockForUpdate()->get(['id'])->count();
+    }
 }

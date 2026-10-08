@@ -1,24 +1,25 @@
 <?php
 
 use App\Enums\UserRole;
-use App\Http\Controllers\Auth\AuthenticatedSessionController;
-use App\Http\Controllers\Auth\RegisteredUserController;
-use App\Http\Controllers\Auth\EmailVerificationController;
-use App\Http\Controllers\Auth\PasswordResetController;
-use App\Http\Controllers\HomeController;
-use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\Admin\ReservationController as AdminReservationController;
+use App\Http\Controllers\Admin\ScheduleController;
 use App\Http\Controllers\Admin\ServiceController;
 use App\Http\Controllers\Admin\ServiceRequirementController;
-use App\Http\Controllers\Admin\ScheduleController;
-use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Admin\UserController as AdminUserController;
+use App\Http\Controllers\Auth\AuthenticatedSessionController;
+use App\Http\Controllers\Auth\EmailVerificationController;
+use App\Http\Controllers\Auth\PasswordResetController;
+use App\Http\Controllers\Auth\RegisteredUserController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\HomeController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ReservationAttachmentController;
+use App\Http\Controllers\Resident\QrTicketController;
+use App\Http\Controllers\Resident\RequestStatusController;
+use App\Http\Controllers\Resident\ReservationCancellationController;
 use App\Http\Controllers\Resident\ReservationController;
 use App\Http\Controllers\Resident\ReservationViewController;
-use App\Http\Controllers\Resident\RequestStatusController;
-use App\Http\Controllers\Resident\QrTicketController;
-use App\Http\Controllers\Resident\ReservationCancellationController;
-use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\Admin\ReservationController as AdminReservationController;
-use App\Http\Controllers\Admin\UserController as AdminUserController;
+use Illuminate\Support\Facades\Route;
 
 Route::get('/', HomeController::class)->name('home');
 
@@ -60,6 +61,8 @@ Route::middleware('auth')->group(function () {
         });
     Route::prefix('resident/reservations')->name('resident.reservations.')
         ->middleware(['role:'.UserRole::Resident->value, 'verified'])->group(function () {
+            Route::get('/{reservation}/attachments/{attachment}', [ReservationAttachmentController::class, 'resident'])
+                ->whereNumber(['reservation', 'attachment'])->name('attachments.download');
             Route::get('/', [ReservationViewController::class, 'index'])->name('index');
             Route::get('/create', [ReservationController::class, 'create'])->block(10, 10)->name('create');
             Route::post('/service', [ReservationController::class, 'selectService'])->block(10, 10)->name('service');
@@ -84,6 +87,8 @@ Route::middleware('auth')->group(function () {
             Route::get('/{reservation}', [RequestStatusController::class, 'show'])->whereNumber('reservation')->name('show');
         });
     Route::prefix('admin')->name('admin.')->middleware(['role:'.UserRole::Admin->value, 'verified'])->group(function () {
+        Route::get('/reservations/{reservation}/attachments/{attachment}', [ReservationAttachmentController::class, 'admin'])
+            ->whereNumber(['reservation', 'attachment'])->name('reservations.attachments.download');
         Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
         Route::put('/profile', [ProfileController::class, 'update'])->block(10, 10)->name('profile.update');
         Route::get('/profile/picture', [ProfileController::class, 'picture'])->name('profile.picture');

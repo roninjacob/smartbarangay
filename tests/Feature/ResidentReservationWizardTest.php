@@ -82,9 +82,9 @@ class ResidentReservationWizardTest extends TestCase
         DB::enableQueryLog();
         DB::flushQueryLog();
         $this->get('/resident/reservations/schedule')->assertOk()->assertSee('November 1, 2026')->assertDontSee('December 31, 2026');
-        foreach (DB::getQueryLog() as $query) {
-            $this->assertDoesNotMatchRegularExpression('/count\([^)]*\).*from ["`]?reservations/i', $query['query']);
-        }
+        $queries = collect(DB::getQueryLog());
+        $this->assertCount(1, $queries->filter(fn ($query) => str_contains($query['query'], 'occupied_reservations_count')));
+        $this->assertCount(0, $queries->filter(fn ($query) => preg_match('/^select count\(\*\).*from ["`]?reservations/i', $query['query'])));
         DB::disableQueryLog();
     }
 
@@ -215,7 +215,7 @@ class ResidentReservationWizardTest extends TestCase
         }
         foreach (Route::getRoutes() as $route) {
             if (str_starts_with($route->getName() ?? '', 'resident.reservations.')
-                && ! in_array($route->getName(), ['resident.reservations.index', 'resident.reservations.show'], true)) {
+                && ! in_array($route->getName(), ['resident.reservations.index', 'resident.reservations.show', 'resident.reservations.attachments.download'], true)) {
                 $this->assertTrue($route->locksFor() > 0);
             }
         }

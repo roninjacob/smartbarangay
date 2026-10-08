@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ReservationAttachment extends Model
 {
+    protected $hidden = ['stored_path'];
+
     protected $fillable = [
         'reservation_id',
         'service_requirement_id',

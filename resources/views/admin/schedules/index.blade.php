@@ -18,7 +18,7 @@
                     <tr>
                         <th scope="row"><time datetime="{{ $schedule->date->toDateString() }}">{{ $schedule->date->format('M j, Y') }}</time><span class="reservation-reference">{{ $schedule->date->format('l') }}</span></th>
                         <td class="schedule-time">{{ \Illuminate\Support\Carbon::createFromFormat('H:i:s', $schedule->start_time)->format('g:i A') }} – {{ \Illuminate\Support\Carbon::createFromFormat('H:i:s', $schedule->end_time)->format('g:i A') }}</td>
-                        <td>{{ number_format($schedule->capacity) }}</td>
+                        <td>{{ number_format($schedule->capacity) }} capacity<span class="reservation-reference">{{ $schedule->occupied_reservations_count }} occupied · {{ $schedule->remainingSlots() }} remaining</span></td>
                         <td><span @class(['service-status', 'is-active' => $schedule->is_active])>{{ $schedule->is_active ? 'Active' : 'Inactive' }}</span></td>
                         <td><div class="service-actions">
                             <a href="{{ route('admin.schedules.edit', $schedule) }}" class="btn btn-sm btn-outline-primary" aria-label="Edit schedule {{ $schedule->id }}">Edit</a>

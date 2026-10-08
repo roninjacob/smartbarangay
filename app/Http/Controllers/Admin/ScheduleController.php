@@ -18,7 +18,7 @@ class ScheduleController extends Controller
     {
         return view('admin.schedules.index', [
             ...$this->shellData('Schedules & Slots'),
-            'schedules' => Schedule::withExists('reservations')->orderBy('date')->orderBy('start_time')->orderBy('id')->paginate(15),
+            'schedules' => Schedule::withExists('reservations')->withCount('occupiedReservations')->orderBy('date')->orderBy('start_time')->orderBy('id')->paginate(15),
         ]);
     }
 
@@ -46,7 +46,13 @@ class ScheduleController extends Controller
     public function update(SaveScheduleRequest $request, Schedule $schedule): RedirectResponse
     {
         try {
-            $schedule->update($request->scheduleData());
+            DB::transaction(function () use ($request, $schedule) {
+                $locked = Schedule::lockForUpdate()->findOrFail($schedule->id);
+                if ($request->integer('capacity') < $locked->lockedOccupancy()) {
+                    throw ValidationException::withMessages(['capacity' => 'Capacity cannot be lower than the number of occupying reservations.']);
+                }
+                $locked->update($request->scheduleData());
+            });
         } catch (UniqueConstraintViolationException $exception) {
             throw ValidationException::withMessages(['date' => 'A schedule with this date and time range already exists.']);
         }

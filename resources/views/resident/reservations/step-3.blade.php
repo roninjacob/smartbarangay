@@ -10,8 +10,8 @@
             <div class="reservation-options">
                 @foreach($schedules as $option)
                     <label class="reservation-option" for="schedule-{{ $option->id }}">
-                        <input id="schedule-{{ $option->id }}" type="radio" name="schedule_id" value="{{ $option->id }}" required @checked((string) old('schedule_id', $draft['schedule_id'] ?? '') === (string) $option->id)>
-                        <span><strong>{{ $option->date->format('l, F j, Y') }}</strong><span class="option-description">{{ \Illuminate\Support\Carbon::parse($option->start_time)->format('g:i A') }} – {{ \Illuminate\Support\Carbon::parse($option->end_time)->format('g:i A') }}</span></span>
+                        <input id="schedule-{{ $option->id }}" type="radio" name="schedule_id" value="{{ $option->id }}" required @disabled($option->remainingSlots() === 0) @checked($option->remainingSlots() > 0 && (string) old('schedule_id', $draft['schedule_id'] ?? '') === (string) $option->id)>
+                        <span><strong>{{ $option->date->format('l, F j, Y') }}</strong><span class="option-description">{{ \Illuminate\Support\Carbon::parse($option->start_time)->format('g:i A') }} – {{ \Illuminate\Support\Carbon::parse($option->end_time)->format('g:i A') }}</span><span class="requirement-label d-inline-block mt-2">{{ $option->remainingSlots() === 0 ? 'Full' : $option->remainingSlots().' slots remaining' }}</span></span>
                     </label>
                 @endforeach
             </div>

@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Resident\ReservationWizardRequest;
 use App\Models\Schedule;
 use App\Models\Service;
+use App\Services\ReservationFileUploads;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -14,6 +15,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
+use Throwable;
 
 class ReservationController extends Controller
 {
@@ -63,7 +65,7 @@ class ReservationController extends Controller
 
         return $this->page(3, [
             'service' => $this->service($request, $draft), 'draft' => $draft,
-            'schedules' => Schedule::where('is_active', true)->orderBy('date')->orderBy('start_time')->get(),
+            'schedules' => Schedule::where('is_active', true)->withCount('occupiedReservations')->orderBy('date')->orderBy('start_time')->get(),
         ]);
     }
 
@@ -71,6 +73,10 @@ class ReservationController extends Controller
     {
         $draft = $this->draft($request, true);
         $this->service($request, $draft);
+        $selected = Schedule::findOrFail($request->validated('schedule_id'));
+        if ($selected->remainingSlots() === 0) {
+            $this->restartAt('schedule', 'This schedule has just reached full capacity. Please choose another available schedule.');
+        }
         $draft['schedule_id'] = (int) $request->validated('schedule_id');
         $draft['confirmation_token'] = (string) Str::uuid();
         $request->session()->put(self::SESSION_KEY, $draft);
@@ -88,7 +94,7 @@ class ReservationController extends Controller
         ]);
     }
 
-    public function store(ReservationWizardRequest $request): RedirectResponse
+    public function store(ReservationWizardRequest $request, ReservationFileUploads $uploads): RedirectResponse
     {
         $draft = $this->draft($request, true);
         if (! isset($draft['schedule_id'], $draft['confirmation_token'])) {
@@ -98,31 +104,44 @@ class ReservationController extends Controller
             throw ValidationException::withMessages(['confirmation_token' => 'This confirmation has expired. Review your current selection and try again.']);
         }
 
-        DB::transaction(function () use ($request, $draft) {
-            // Serialize final checks against Admin edits to these same records.
-            $service = Service::lockForUpdate()->find($draft['service_id']);
-            $schedule = Schedule::lockForUpdate()->find($draft['schedule_id']);
-            if (! $service?->is_active) {
-                $request->session()->forget(self::SESSION_KEY);
-                $this->restartAt('create', 'The selected service is no longer available. Please choose another service.');
-            }
-            if (! $schedule?->is_active) {
-                $this->restartAt('schedule', 'The selected schedule is no longer available. Please choose another schedule.');
-            }
-            // Parent locks serialize separate sessions; a locking read sees the latest committed reservation.
-            $duplicate = $request->user()->reservations()->occupyingSlot()
-                ->where('service_id', $service->id)->where('schedule_id', $schedule->id)
-                ->lockForUpdate()->first(['id']);
-            if ($duplicate) {
-                throw ValidationException::withMessages([
-                    'reservation' => 'You already have an active reservation for this service and schedule.',
+        $storedPaths = [];
+        try {
+            DB::transaction(function () use ($request, $draft, $uploads, &$storedPaths) {
+                // Serialize final checks against Admin edits to these same records.
+                $service = Service::lockForUpdate()->find($draft['service_id']);
+                $schedule = Schedule::lockForUpdate()->find($draft['schedule_id']);
+                if (! $service?->is_active) {
+                    $request->session()->forget(self::SESSION_KEY);
+                    $this->restartAt('create', 'The selected service is no longer available. Please choose another service.');
+                }
+                if (! $schedule?->is_active) {
+                    $this->restartAt('schedule', 'The selected schedule is no longer available. Please choose another schedule.');
+                }
+                // Parent locks serialize separate sessions; a locking read sees the latest committed reservation.
+                $duplicate = $request->user()->reservations()->occupyingSlot()
+                    ->where('service_id', $service->id)->where('schedule_id', $schedule->id)
+                    ->lockForUpdate()->first(['id']);
+                if ($duplicate) {
+                    throw ValidationException::withMessages([
+                        'reservation' => 'You already have an active reservation for this service and schedule.',
+                    ]);
+                }
+                if ($schedule->lockedOccupancy() >= $schedule->capacity) {
+                    $request->session()->forget([self::SESSION_KEY.'.schedule_id', self::SESSION_KEY.'.confirmation_token']);
+                    $this->restartAt('schedule', 'This schedule has just reached full capacity. Please choose another available schedule.');
+                }
+                $requirements = $service->serviceRequirements()->lockForUpdate()->get();
+                $files = $uploads->validate($request, $requirements);
+                $reservation = $request->user()->reservations()->create([
+                    'service_id' => $service->id, 'schedule_id' => $schedule->id,
+                    'status' => ReservationStatus::Pending,
                 ]);
-            }
-            $request->user()->reservations()->create([
-                'service_id' => $service->id, 'schedule_id' => $schedule->id,
-                'status' => ReservationStatus::Pending,
-            ]);
-        });
+                $uploads->store($reservation, $files, $storedPaths);
+            });
+        } catch (Throwable $exception) {
+            $uploads->cleanup($storedPaths);
+            throw $exception;
+        }
         // Routes lock the session; subsequent submissions cannot consume this draft again.
         $request->session()->forget(self::SESSION_KEY);
 

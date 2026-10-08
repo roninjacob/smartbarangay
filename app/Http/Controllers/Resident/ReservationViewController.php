@@ -21,7 +21,7 @@ class ReservationViewController extends Controller
     {
         // Scope the lookup before loading related information. Foreign and missing IDs both return 404.
         $ownedReservation = $request->user()->reservations()->whereKey($reservation)->firstOrFail();
-        $ownedReservation->load(['service.serviceRequirements', 'schedule']);
+        $ownedReservation->load(['service.serviceRequirements', 'schedule', 'attachments.serviceRequirement']);
 
         return view('resident.reservations.show', [
             ...$this->shellData('Reservation Details'), 'reservation' => $ownedReservation,
