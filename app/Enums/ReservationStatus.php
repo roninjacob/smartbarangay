@@ -54,6 +54,11 @@ enum ReservationStatus: string
         return $this === self::Pending;
     }
 
+    public function canPrepareDocument(): bool
+    {
+        return in_array($this, [self::Approved, self::ReadyForPickup], true);
+    }
+
     public static function occupyingStatuses(): array
     {
         return [self::Pending, self::UnderReview, self::Approved, self::ReadyForPickup];

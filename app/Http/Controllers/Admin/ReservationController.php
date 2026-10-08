@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\FilterReservationsRequest;
 use App\Http\Requests\Admin\UpdateReservationStatusRequest;
 use App\Models\Reservation;
+use App\Services\DocumentMergeFields;
 use App\Services\QrTicketIssuer;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
@@ -35,11 +36,12 @@ class ReservationController extends Controller
 
     public function show(Reservation $reservation): View
     {
-        $reservation->load(['user', 'service.serviceRequirements', 'schedule', 'qrTicket', 'attachments.serviceRequirement']);
+        $reservation->load(['user', 'service.serviceRequirements', 'service.documentTemplate', 'document.generator', 'schedule', 'qrTicket', 'attachments.serviceRequirement']);
 
         return view('admin.reservations.show', [
             ...$this->shellData('Reservation Details'), 'reservation' => $reservation,
             'transitions' => $reservation->status->allowedTransitions(),
+            'mergeValues' => app(DocumentMergeFields::class)->values($reservation),
             'histories' => $reservation->statusHistories()->with('changedBy')->orderByDesc('changed_at')->orderByDesc('id')->paginate(10),
         ]);
     }

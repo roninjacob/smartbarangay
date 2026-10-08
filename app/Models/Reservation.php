@@ -47,6 +47,11 @@ class Reservation extends Model
         return $this->hasMany(ReservationAttachment::class);
     }
 
+    public function document(): HasOne
+    {
+        return $this->hasOne(ReservationDocument::class);
+    }
+
     public function qrTicket(): HasOne
     {
         return $this->hasOne(QrTicket::class);

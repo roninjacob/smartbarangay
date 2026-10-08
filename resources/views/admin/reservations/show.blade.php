@@ -2,7 +2,7 @@
 @section('dashboard')
 <div class="reservation-wizard">
     <a href="{{ route('admin.reservations.index') }}" class="service-back-link reservation-details-back"><x-app-icon name="arrow"/>Back to reservations</a>
-    @if($errors->any())<div class="alert alert-danger" role="alert"><strong>Please check the status update.</strong><ul class="mb-0">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
+    @if($errors->any())<div class="alert alert-danger" role="alert"><strong>Please check your request.</strong><ul class="mb-0">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
     <section class="card dashboard-panel reservation-panel reservation-detail" aria-labelledby="admin-request-heading">
         <div class="reservation-detail-header"><div><span class="reservation-step-label">REQUEST #{{ $reservation->id }}</span><h2 id="admin-request-heading">{{ $reservation->service->name }}</h2></div><x-reservation-status :status="$reservation->status"/></div>
         @if($reservation->service->description)<p class="reservation-service-description">{{ $reservation->service->description }}</p>@endif
@@ -22,6 +22,7 @@
         @include('resident.reservations.requirements-list', ['service' => $reservation->service])
         @include('resident.reservations.attachments', ['attachmentRoute' => 'admin.reservations.attachments.download'])
     </section>
+    @include('admin.reservations.document-preparation')
     <section class="card dashboard-panel reservation-panel mt-4" aria-labelledby="processing-heading">
         <h2 id="processing-heading">Process this request</h2>
         @if(count($transitions) === 0)

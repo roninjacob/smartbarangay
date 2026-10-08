@@ -37,9 +37,9 @@
                     @endif
                     <label class="form-label d-block" for="official-template">{{ $service->exists && $service->documentTemplate ? 'Replace Template' : 'Official template (optional)' }}</label>
                     <input id="official-template" type="file" name="official_template" accept=".docx,.pdf" @class(['form-control', 'is-invalid' => $errors->has('official_template')]) aria-describedby="template-help{{ $errors->has('official_template') ? ' template-error' : '' }}">
-                    <div id="template-help" class="form-text">DOCX or PDF · Maximum 10 MB. Upload the official Barangay Calayo master document used for this service. DOCX is recommended for future ready-to-print document generation. PDF is suitable as a static official template/reference. Select the file again if validation fails.</div>
+                    <div id="template-help" class="form-text">DOCX or PDF · Maximum 10 MB. Upload the official Barangay Calayo master document used for this service. DOCX supports ready-to-print document preparation. PDF is suitable as a static official template/reference. Select the file again if validation fails.</div>
                     @error('official_template')<div id="template-error" class="invalid-feedback">{{ $message }}</div>@enderror
-                    <p class="app-note mt-3">Automatic Resident information insertion will be implemented in the document preparation phase.</p>
+                    @include('admin.services.merge-fields')
                 </fieldset>
                 <div class="service-form-actions"><button class="btn btn-primary" type="submit" data-saving-label="Saving…">{{ $service->exists ? 'Save Changes' : 'Create Service' }}</button><a class="btn btn-outline-secondary" href="{{ route('admin.services.index') }}">Cancel</a></div>
             </form>

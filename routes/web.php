@@ -2,6 +2,7 @@
 
 use App\Enums\UserRole;
 use App\Http\Controllers\Admin\ReservationController as AdminReservationController;
+use App\Http\Controllers\Admin\ReservationDocumentController;
 use App\Http\Controllers\Admin\ScheduleController;
 use App\Http\Controllers\Admin\ServiceController;
 use App\Http\Controllers\Admin\ServiceDocumentTemplateController;
@@ -100,6 +101,8 @@ Route::middleware('auth')->group(function () {
         Route::get('/users/{user}', [AdminUserController::class, 'show'])->whereNumber('user')->name('users.show');
         Route::patch('/users/{user}/status', [AdminUserController::class, 'updateStatus'])->whereNumber('user')->name('users.status');
         Route::get('/reservations', [AdminReservationController::class, 'index'])->name('reservations.index');
+        Route::post('/reservations/{reservation}/document', [ReservationDocumentController::class, 'store'])->whereNumber('reservation')->name('reservations.document.store');
+        Route::get('/reservations/{reservation}/document', [ReservationDocumentController::class, 'download'])->whereNumber('reservation')->name('reservations.document.download');
         Route::get('/reservations/{reservation}', [AdminReservationController::class, 'show'])->whereNumber('reservation')->name('reservations.show');
         Route::patch('/reservations/{reservation}/status', [AdminReservationController::class, 'updateStatus'])->whereNumber('reservation')->name('reservations.status');
         Route::patch('/schedules/{schedule}/status', [ScheduleController::class, 'updateStatus'])->name('schedules.status');
