@@ -30,7 +30,7 @@ class SaveServiceRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:255', Rule::unique('services', 'name')->ignore($this->route('service'))],
             'description' => ['nullable', 'string', 'max:5000'],
-            'official_template' => ['bail', 'nullable', 'file', 'extensions:docx,pdf', 'max:10240', new OfficialDocumentTemplate],
+            'official_template' => ['bail', 'nullable', 'file', 'extensions:pdf', 'max:10240', new OfficialDocumentTemplate],
         ];
     }
 }

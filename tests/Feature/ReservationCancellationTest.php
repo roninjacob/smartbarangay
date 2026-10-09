@@ -122,7 +122,7 @@ class ReservationCancellationTest extends TestCase
         $this->post($this->path($reservation), ['reason' => 'Second reason'])->assertSessionHasErrors('reason');
         $this->actingAs($admin);
         foreach (Status::cases() as $next) {
-            $this->patch(route('admin.reservations.status', $reservation), ['status' => $next->value, 'expected_status' => 'cancelled', 'notes' => 'Admin note'])->assertSessionHasErrors('status');
+            $this->patch(route('admin.reservations.status', $reservation), ['status' => $next->value, 'expected_status' => 'cancelled', 'notes' => 'Admin note', 'confirm_ready' => $next === Status::ReadyForPickup ? '1' : null])->assertSessionHasErrors('status');
         }
         $this->patch(route('admin.reservations.status', $reservation), ['status' => 'under_review', 'expected_status' => 'pending'])->assertSessionHasErrors('status');
         $this->assertSame(Status::Cancelled, $reservation->fresh()->status);

@@ -169,7 +169,8 @@ class QrTicketsTest extends TestCase
         $ticket = $this->ticket($reservation)->fresh();
         $this->actingAs($this->user(UserRole::Admin));
         foreach ([[Status::Approved, Status::ReadyForPickup], [Status::ReadyForPickup, Status::Completed]] as [$from, $to]) {
-            $this->patch(route('admin.reservations.status', $reservation), ['expected_status' => $from->value, 'status' => $to->value])->assertSessionHas('status');
+            $this->patch(route('admin.reservations.status', $reservation), ['expected_status' => $from->value, 'status' => $to->value,
+                'confirm_ready' => $to === Status::ReadyForPickup ? 1 : null, 'notes' => $to === Status::ReadyForPickup ? 'Certificate prepared manually.' : null])->assertSessionHas('status');
             $this->assertSame($ticket->getAttributes(), $ticket->fresh()->getAttributes());
         }
         $this->actingAs($resident)->get(route('resident.qr-tickets.show', $ticket))->assertOk()

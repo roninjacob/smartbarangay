@@ -110,7 +110,7 @@ class AdminReservationProcessingTest extends TestCase
         $previous = Status::Pending;
         foreach ([Status::UnderReview, Status::Approved, Status::ReadyForPickup, Status::Completed] as $index => $next) {
             $this->patch('/admin/reservations/1/status', ['status' => $next->value, 'expected_status' => $previous->value,
-                'notes' => 'Checked '.$index, 'changed_by' => $reservation->user_id, 'user_id' => $admin->id, 'service_id' => 999])
+                'notes' => 'Checked '.$index, 'confirm_ready' => $next === Status::ReadyForPickup ? 1 : null, 'changed_by' => $reservation->user_id, 'user_id' => $admin->id, 'service_id' => 999])
                 ->assertRedirect(route('admin.reservations.show', $reservation))->assertSessionHas('status');
             $history = $reservation->statusHistories()->latest('id')->firstOrFail();
             $this->assertSame($previous, $history->from_status);
@@ -142,7 +142,7 @@ class AdminReservationProcessingTest extends TestCase
                     continue;
                 }
                 $reservation = $this->reservation('Test '.$from->value, 'Resident Example', $from);
-                $this->patch(route('admin.reservations.status', $reservation), ['status' => $to->value, 'expected_status' => $from->value, 'notes' => 'Test reason'])->assertSessionHasErrors('status');
+                $this->patch(route('admin.reservations.status', $reservation), ['status' => $to->value, 'expected_status' => $from->value, 'notes' => 'Test reason', 'confirm_ready' => $to === Status::ReadyForPickup ? 1 : null])->assertSessionHasErrors('status');
                 $this->assertSame($from, $reservation->fresh()->status);
             }
         }

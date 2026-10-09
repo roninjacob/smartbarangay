@@ -29,16 +29,40 @@
             <p class="mb-0 text-secondary">This request is {{ strtolower($reservation->status->label()) }}. No further status changes are available.</p>
         @else
             <p class="text-secondary">Choose the next allowed status. Each change is recorded with your name and timestamp.</p>
-            <form method="POST" action="{{ route('admin.reservations.status', $reservation) }}" data-service-submit>
+            <form method="POST" action="{{ route('admin.reservations.status', $reservation) }}" data-service-submit @if($reservation->status === \App\Enums\ReservationStatus::Approved) data-ready-modal @endif>
                 @csrf @method('PATCH')
                 <input type="hidden" name="expected_status" value="{{ $reservation->status->value }}">
                 <label class="form-label" for="next-status">Next status</label>
                 <select id="next-status" name="status" class="form-select" required data-reservation-status><option value="">Choose a status</option>@foreach($transitions as $next)<option value="{{ $next->value }}" @selected(old('status') === $next->value)>{{ $next->label() }}</option>@endforeach</select>
+                @if($reservation->status === \App\Enums\ReservationStatus::Approved)
+                    <div class="mt-3" data-ready-confirmation data-certificate-prepared="{{ $hasPreparedCertificate ? '1' : '0' }}" @if(old('status') !== 'ready_for_pickup') hidden @endif>
+                        @if(! $hasPreparedCertificate)
+                            <div class="alert alert-warning" role="alert">No prepared certificate/document was found for this request. The resident may arrive without a system-generated certificate. Do you want to continue? Enter a reason below, such as “Existing certificate was prepared manually.”</div>
+                        @endif
+                        <div class="form-check"><input class="form-check-input" type="checkbox" id="confirm-ready" name="confirm_ready" value="1" data-ready-accepted><label class="form-check-label" for="confirm-ready">Mark this request as Ready for Pickup?</label></div>
+                        @error('confirm_ready')<p class="text-danger mb-0" role="alert">{{ $message }}</p>@enderror
+                    </div>
+                    <noscript><p class="app-note mt-3">Before marking Ready for Pickup, confirm the action below. If no prepared certificate exists, a reason is required.</p><div class="form-check"><input class="form-check-input" type="checkbox" id="confirm-ready-noscript" name="confirm_ready" value="1"><label class="form-check-label" for="confirm-ready-noscript">Mark this request as Ready for Pickup?</label></div></noscript>
+                @endif
                 <label class="form-label mt-3" for="processing-notes">Processing note</label>
                 <textarea class="form-control" id="processing-notes" name="notes" rows="3" maxlength="2000" aria-describedby="notes-help" data-reservation-notes>{{ old('notes') }}</textarea>
-                <p id="notes-help" class="form-text">A reason is required when rejecting a request. Notes are visible to Admin users.</p>
+                <p id="notes-help" class="form-text">A reason is required for rejection or when marking Ready for Pickup without a prepared certificate. Notes are visible to Admin users.</p>
                 <button type="submit" class="btn btn-primary mt-3" data-saving-label="Saving…">Update status</button>
             </form>
+            @if($reservation->status === \App\Enums\ReservationStatus::Approved)
+                <div class="modal fade" id="ready-confirmation-modal" tabindex="-1" aria-labelledby="ready-modal-heading" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-header"><h3 class="modal-title h5" id="ready-modal-heading">Mark this request as Ready for Pickup?</h3><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+                        <div class="modal-body">
+                            @if(! $hasPreparedCertificate)
+                                <p class="alert alert-warning">No prepared certificate/document was found for this request. Confirm that the certificate was prepared manually before continuing.</p>
+                                <label class="form-label" for="ready-reason">Reason</label><textarea id="ready-reason" class="form-control" rows="3" maxlength="2000" required placeholder="Existing certificate was prepared manually." data-ready-reason></textarea>
+                                <p class="form-text">The reason will be recorded in the request's status history.</p>
+                            @else<p>The prepared certificate is available. This status change will be recorded in history.</p>@endif
+                        </div>
+                        <div class="modal-footer"><button class="btn btn-outline-secondary" type="button" data-bs-dismiss="modal">Cancel</button><button class="btn btn-primary" type="button" data-ready-continue>{{ $hasPreparedCertificate ? 'Confirm Ready for Pickup' : 'Continue Anyway' }}</button></div>
+                    </div></div>
+                </div>
+            @endif
         @endif
     </section>
     <section class="card dashboard-panel reservation-panel mt-4" aria-labelledby="history-heading">

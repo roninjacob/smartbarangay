@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\DataProvider;
+use Tests\Support\CertificatePdf;
 use Tests\TestCase;
 use ZipArchive;
 
@@ -39,14 +40,14 @@ class ServiceDocumentTemplateTest extends TestCase
 
     public static function formats(): array
     {
-        return [['docx'], ['pdf']];
+        return [['pdf']];
     }
 
     #[DataProvider('formats')]
     public function test_create_service_with_private_template_and_secure_download(string $format): void
     {
         $admin = $this->admin();
-        $file = $format === 'docx' ? $this->docx() : $this->pdf();
+        $file = $this->pdf();
         $this->actingAs($admin)->post('/admin/services', ['name' => 'Clearance', 'official_template' => $file,
             'uploaded_by' => 999, 'stored_path' => '../../secret', 'service_id' => 999])->assertSessionHas('status');
         $service = Service::sole();
@@ -58,9 +59,9 @@ class ServiceDocumentTemplateTest extends TestCase
         $this->assertMatchesRegularExpression('#^service-document-templates/'.$service->id.'/[A-Za-z0-9]{40}\.'.$format.'$#', $template->stored_path);
         Storage::disk('local')->assertExists($template->stored_path);
         $this->assertSame([], Storage::disk('public')->allFiles());
-        $this->get('/admin/services')->assertSee('Template: '.strtoupper($format))->assertDontSee($template->stored_path, false);
+        $this->get('/admin/services')->assertSee('Official File')->assertSee(strtoupper($format))->assertDontSee($template->stored_path, false);
         $this->get(route('admin.services.edit', $service))->assertSee($template->original_filename)
-            ->assertSee('Download Template')->assertSee('Replace Template')->assertSee('Remove Template')
+            ->assertSee('Download PDF')->assertSee('Replace Template')->assertSee('Remove Template')
             ->assertDontSee($template->stored_path, false);
         $response = $this->get(route('admin.services.template.download', $service))->assertOk()->assertHeader('X-Content-Type-Options', 'nosniff');
         $this->assertStringContainsString('no-store', $response->headers->get('Cache-Control'));
@@ -310,7 +311,7 @@ class ServiceDocumentTemplateTest extends TestCase
 
     private function createTemplate(): Service
     {
-        $this->actingAs($this->admin())->post('/admin/services', ['name' => 'Clearance', 'official_template' => $this->docx()])->assertSessionHas('status');
+        $this->actingAs($this->admin())->post('/admin/services', ['name' => 'Clearance', 'official_template' => $this->pdf()])->assertSessionHas('status');
 
         return Service::sole();
     }
@@ -333,7 +334,7 @@ class ServiceDocumentTemplateTest extends TestCase
 
     private function pdf(string $name = 'Calayo-master.pdf'): UploadedFile
     {
-        return UploadedFile::fake()->createWithContent($name, "%PDF-1.4\n1 0 obj\n<< /Type /Catalog >>\nendobj\n%%EOF\n");
+        return UploadedFile::fake()->createWithContent($name, CertificatePdf::bytes());
     }
 
     private function docx(string $kind = 'valid'): UploadedFile

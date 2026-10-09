@@ -11,30 +11,42 @@
     @if($services->isEmpty())
         <div class="service-empty"><span class="service-empty-icon"><x-app-icon name="services"/></span><h3>No services yet</h3><p>Create the first service or document for Barangay Calayo.</p><a href="{{ route('admin.services.create') }}" class="btn btn-outline-primary">Create your first service</a></div>
     @else
-        <div class="table-responsive" role="region" aria-label="Service catalog table" tabindex="0">
-            <table class="table dashboard-table service-table align-middle mb-0">
-                <caption class="visually-hidden">Barangay Calayo services, descriptions, availability and management actions.</caption>
-                <thead><tr><th scope="col">Service / Document</th><th scope="col">Description</th><th scope="col">Status</th><th scope="col">Actions</th></tr></thead>
-                <tbody>
+        <ul class="service-catalog-list list-unstyled mb-0" aria-label="Barangay Calayo services">
                 @foreach($services as $service)
-                    <tr>
-                        <th scope="row"><span class="service-name">{{ $service->name }}</span><span class="app-note d-block mt-1">Template: {{ $service->documentTemplate?->format() ?? 'Not uploaded' }}</span></th>
-                        <td class="service-description">{{ \Illuminate\Support\Str::limit($service->description ?? 'No description provided.', 140) }}</td>
-                        <td><span @class(['service-status', 'is-active' => $service->is_active])>{{ $service->is_active ? 'Active' : 'Inactive' }}</span></td>
-                        <td><div class="service-actions">
-                            <a href="{{ route('admin.services.requirements.index', $service) }}" class="btn btn-sm btn-outline-primary" aria-label="Requirements for {{ $service->name }}">Requirements</a>
-                            <a href="{{ route('admin.services.edit', $service) }}" class="btn btn-sm btn-outline-primary" aria-label="Edit {{ $service->name }}">Edit</a>
-                            <form method="POST" action="{{ route('admin.services.status', $service) }}" data-service-submit>
-                                @csrf @method('PATCH')
-                                <input type="hidden" name="is_active" value="{{ $service->is_active ? '0' : '1' }}">
-                                <button type="submit" class="btn btn-sm btn-outline-secondary" aria-label="{{ $service->is_active ? 'Deactivate' : 'Activate' }} {{ $service->name }}">{{ $service->is_active ? 'Deactivate' : 'Activate' }}</button>
-                            </form>
-                        </div></td>
-                    </tr>
+                    <li>
+                        <article class="service-catalog-card" aria-labelledby="service-heading-{{ $service->id }}">
+                            <div class="service-card-details">
+                                <h3 id="service-heading-{{ $service->id }}" class="service-card-name">{{ $service->name }}</h3>
+                                <p class="service-description mb-3">{{ $service->description ?? 'No description provided.' }}</p>
+                                <dl class="service-card-metadata mb-0">
+                                    <div><dt>Official File</dt><dd>{{ $service->documentTemplate?->format() ?? 'Not uploaded' }}
+                                        @if($service->documentTemplate)<span class="service-card-filename">{{ $service->documentTemplate->original_filename }}</span>@endif
+                                    </dd></div>
+                                    <div><dt>Status</dt><dd><span @class(['service-status', 'is-active' => $service->is_active])>{{ $service->is_active ? 'Active' : 'Inactive' }}</span></dd></div>
+                                </dl>
+                            </div>
+                            <div class="service-card-actions" role="group" aria-label="Actions for {{ $service->name }}">
+                                <a href="{{ route('admin.services.certificates.index', $service) }}" class="btn btn-primary service-card-primary" aria-label="Preview Certificate for {{ $service->name }}">Preview Certificate</a>
+                                @if($service->documentTemplate?->format() === 'PDF')
+                                    <div class="service-card-secondary">
+                                        <a href="{{ route('admin.services.template.print', $service) }}" class="btn btn-outline-primary" aria-label="Print Certificate for {{ $service->name }}">Print Certificate</a>
+                                        <a href="{{ route('admin.services.template.download', $service) }}" class="btn btn-outline-primary" aria-label="Download PDF for {{ $service->name }}">Download PDF</a>
+                                    </div>
+                                @endif
+                                <div class="service-card-management">
+                                    <a href="{{ route('admin.services.requirements.index', $service) }}" class="btn btn-outline-secondary" aria-label="Requirements for {{ $service->name }}">Requirements</a>
+                                    <a href="{{ route('admin.services.edit', $service) }}" class="btn btn-outline-secondary" aria-label="Edit {{ $service->name }}">Edit</a>
+                                    <form method="POST" action="{{ route('admin.services.status', $service) }}" data-service-submit>
+                                        @csrf @method('PATCH')
+                                        <input type="hidden" name="is_active" value="{{ $service->is_active ? '0' : '1' }}">
+                                        <button type="submit" @class(['btn', 'btn-outline-danger' => $service->is_active, 'btn-outline-success' => ! $service->is_active]) aria-label="{{ $service->is_active ? 'Deactivate' : 'Activate' }} {{ $service->name }}">{{ $service->is_active ? 'Deactivate' : 'Activate' }}</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </article>
+                    </li>
                 @endforeach
-                </tbody>
-            </table>
-        </div>
+        </ul>
         <div class="service-pagination"><span class="app-note">Showing {{ $services->firstItem() }}–{{ $services->lastItem() }} of {{ $services->total() }} services</span>{{ $services->links('pagination::bootstrap-5') }}</div>
     @endif
 </section>

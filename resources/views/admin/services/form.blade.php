@@ -22,8 +22,8 @@
                     @error('description')<div id="service-description-error" class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
                 <fieldset class="mb-4 border-top pt-4">
-                    <legend class="h5 float-none w-auto">Official Document Template</legend>
-                    <p class="app-note">This is the Barangay Calayo master document used to prepare the issued document. Service Requirements are the files a Resident submits with a reservation.</p>
+                    <legend class="h5 float-none w-auto">Official Certificate PDF</legend>
+                    <p class="app-note">This is the official Barangay Calayo PDF used for certificate printing. Service Requirements are the files a Resident submits with a reservation.</p>
                     @if($service->exists && $service->documentTemplate)
                         @php($template = $service->documentTemplate)
                         <dl class="mb-3">
@@ -31,15 +31,14 @@
                             <dt>Format / Size</dt><dd>{{ $template->format() }} · {{ number_format($template->file_size / 1024, 1) }} KB</dd>
                             <dt>Uploaded</dt><dd>{{ $template->uploaded_at->timezone('Asia/Manila')->format('F j, Y, g:i A') }} · Philippine time</dd>
                         </dl>
-                        <a href="{{ route('admin.services.template.download', $service) }}" class="btn btn-outline-primary mb-3">Download Template</a>
+                        @if($template->format() === 'PDF')<a href="{{ route('admin.services.template.download', $service) }}" class="btn btn-outline-primary mb-3">Download PDF</a>@else<p class="alert alert-warning">Replace this legacy file with a PDF to preview or print certificates.</p>@endif
                     @else
                         <p class="app-note">No template uploaded. Services can be saved without a template.</p>
                     @endif
                     <label class="form-label d-block" for="official-template">{{ $service->exists && $service->documentTemplate ? 'Replace Template' : 'Official template (optional)' }}</label>
-                    <input id="official-template" type="file" name="official_template" accept=".docx,.pdf" @class(['form-control', 'is-invalid' => $errors->has('official_template')]) aria-describedby="template-help{{ $errors->has('official_template') ? ' template-error' : '' }}">
-                    <div id="template-help" class="form-text">DOCX or PDF · Maximum 10 MB. Upload the official Barangay Calayo master document used for this service. DOCX supports ready-to-print document preparation. PDF is suitable as a static official template/reference. Select the file again if validation fails.</div>
+                    <input id="official-template" type="file" name="official_template" accept=".pdf,application/pdf" @class(['form-control', 'is-invalid' => $errors->has('official_template')]) aria-describedby="template-help{{ $errors->has('official_template') ? ' template-error' : '' }}">
+                    <div id="template-help" class="form-text">PDF only · Maximum 10 MB. Upload the official Barangay Calayo certificate PDF used for this service. Select the file again if validation fails.</div>
                     @error('official_template')<div id="template-error" class="invalid-feedback">{{ $message }}</div>@enderror
-                    @include('admin.services.merge-fields')
                 </fieldset>
                 <div class="service-form-actions"><button class="btn btn-primary" type="submit" data-saving-label="Saving…">{{ $service->exists ? 'Save Changes' : 'Create Service' }}</button><a class="btn btn-outline-secondary" href="{{ route('admin.services.index') }}">Cancel</a></div>
             </form>

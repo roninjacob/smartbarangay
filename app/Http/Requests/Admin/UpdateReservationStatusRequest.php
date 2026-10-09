@@ -20,6 +20,7 @@ class UpdateReservationStatusRequest extends FormRequest
             'status' => ['required', Rule::enum(ReservationStatus::class)],
             'expected_status' => ['required', Rule::enum(ReservationStatus::class)],
             'notes' => [Rule::requiredIf($this->input('status') === ReservationStatus::Rejected->value), 'nullable', 'string', 'max:2000'],
+            'confirm_ready' => [Rule::when($this->input('status') === ReservationStatus::ReadyForPickup->value, ['required', 'accepted'], ['nullable'])],
         ];
     }
 }

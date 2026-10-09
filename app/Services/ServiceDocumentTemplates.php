@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Models\Service;
-use App\Rules\OfficialDocumentTemplate;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -26,7 +25,7 @@ class ServiceDocumentTemplates
         $name = preg_replace('/[\x00-\x1F\x7F]/u', '', $name) ?: 'Official template.'.$extension;
         $service->documentTemplate()->updateOrCreate([], [
             'original_filename' => mb_substr($name, 0, 240), 'stored_path' => $path,
-            'mime_type' => $extension === 'pdf' ? 'application/pdf' : OfficialDocumentTemplate::DOCX_MIME,
+            'mime_type' => 'application/pdf',
             'file_size' => $file->getSize(), 'uploaded_by' => $adminId, 'uploaded_at' => now(),
         ]);
 

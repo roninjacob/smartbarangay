@@ -28,7 +28,7 @@ class ServiceDocumentTemplate extends Model
 
     public function format(): string
     {
-        return $this->mime_type === 'application/pdf' ? 'PDF' : 'DOCX';
+        return $this->mime_type === 'application/pdf' ? 'PDF' : 'Legacy file — replace with PDF';
     }
 
     public function revision(): string

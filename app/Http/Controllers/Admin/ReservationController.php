@@ -7,7 +7,8 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\FilterReservationsRequest;
 use App\Http\Requests\Admin\UpdateReservationStatusRequest;
 use App\Models\Reservation;
-use App\Services\DocumentMergeFields;
+use App\Services\CertificatePreparationState;
+use App\Services\CertificatePreview;
 use App\Services\QrTicketIssuer;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
@@ -34,22 +35,23 @@ class ReservationController extends Controller
         return view('admin.reservations.index', [...$this->shellData('Reservation Management'), 'reservations' => $reservations, 'filters' => $filters, 'statuses' => ReservationStatus::cases()]);
     }
 
-    public function show(Reservation $reservation): View
+    public function show(Reservation $reservation, CertificatePreparationState $documents, CertificatePreview $preview): View
     {
         $reservation->load(['user', 'service.serviceRequirements', 'service.documentTemplate', 'document.generator', 'schedule', 'qrTicket', 'attachments.serviceRequirement']);
 
         return view('admin.reservations.show', [
             ...$this->shellData('Reservation Details'), 'reservation' => $reservation,
             'transitions' => $reservation->status->allowedTransitions(),
-            'mergeValues' => app(DocumentMergeFields::class)->values($reservation),
+            'hasPreparedCertificate' => $documents->isPrepared($reservation),
+            'preview' => $preview->reservation($reservation),
             'histories' => $reservation->statusHistories()->with('changedBy')->orderByDesc('changed_at')->orderByDesc('id')->paginate(10),
         ]);
     }
 
-    public function updateStatus(UpdateReservationStatusRequest $request, Reservation $reservation, QrTicketIssuer $tickets): RedirectResponse
+    public function updateStatus(UpdateReservationStatusRequest $request, Reservation $reservation, QrTicketIssuer $tickets, CertificatePreparationState $documents): RedirectResponse
     {
         $data = $request->validated();
-        DB::transaction(function () use ($request, $reservation, $data, $tickets) {
+        DB::transaction(function () use ($request, $reservation, $data, $tickets, $documents) {
             $locked = Reservation::lockForUpdate()->findOrFail($reservation->id);
             $next = ReservationStatus::from($data['status']);
             if ($locked->status->value !== $data['expected_status']) {
@@ -59,6 +61,9 @@ class ReservationController extends Controller
                 throw ValidationException::withMessages(['status' => 'This status transition is not allowed.']);
             }
             $previous = $locked->status;
+            if ($next === ReservationStatus::ReadyForPickup && ! $documents->isPrepared($locked) && blank($data['notes'] ?? null)) {
+                throw ValidationException::withMessages(['notes' => 'No prepared certificate/document was found for this request. Enter a reason to continue, such as "Existing certificate was prepared manually."']);
+            }
             $locked->update(['status' => $next]);
             if ($next === ReservationStatus::Approved) {
                 $tickets->issue($locked);
