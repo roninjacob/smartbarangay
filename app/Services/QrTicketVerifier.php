@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\ReservationStatus;
 use App\Enums\UserRole;
 use App\Models\QrTicket;
 
@@ -22,6 +23,10 @@ class QrTicketVerifier
             || ! $reservation->user || ! $reservation->service || ! $reservation->schedule
             || $reservation->user->role !== UserRole::Resident) {
             return $invalid;
+        }
+        // Completed legacy tickets stay unusable even if their historical usage metadata is absent.
+        if ($ticket->isUsed() || $reservation->status === ReservationStatus::Completed) {
+            return ['valid' => false, 'message' => 'This QR ticket has already completed its transaction.'];
         }
         if (! $reservation->status->canReceiveQrTicket()) {
             return ['valid' => false, 'message' => 'This reservation is not eligible for QR verification.'];

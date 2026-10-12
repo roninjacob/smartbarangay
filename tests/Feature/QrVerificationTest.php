@@ -115,7 +115,8 @@ class QrVerificationTest extends TestCase
         $ticket->reservation->update(['status' => $status]);
         $before = $this->snapshot();
         $this->actingAs($this->user(UserRole::Admin))->postJson('/admin/qr-verification', ['payload' => $ticket->encodedPayload()])
-            ->assertOk()->assertExactJson(['valid' => false, 'message' => 'This reservation is not eligible for QR verification.']);
+            ->assertOk()->assertExactJson(['valid' => false, 'message' => $status === Status::Completed
+                ? 'This QR ticket has already completed its transaction.' : 'This reservation is not eligible for QR verification.']);
         $this->assertSame($before, $this->snapshot());
     }
 

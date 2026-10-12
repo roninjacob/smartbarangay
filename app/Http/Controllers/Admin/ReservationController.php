@@ -37,7 +37,7 @@ class ReservationController extends Controller
 
     public function show(Reservation $reservation, CertificatePreparationState $documents, CertificatePreview $preview): View
     {
-        $reservation->load(['user', 'service.serviceRequirements', 'service.documentTemplate', 'document.generator', 'schedule', 'qrTicket', 'attachments.serviceRequirement']);
+        $reservation->load(['user', 'service.serviceRequirements', 'service.documentTemplate', 'document.generator', 'schedule', 'qrTicket.usedBy', 'attachments.serviceRequirement']);
 
         return view('admin.reservations.show', [
             ...$this->shellData('Reservation Details'), 'reservation' => $reservation,
@@ -64,13 +64,21 @@ class ReservationController extends Controller
             if ($next === ReservationStatus::ReadyForPickup && ! $documents->isPrepared($locked) && blank($data['notes'] ?? null)) {
                 throw ValidationException::withMessages(['notes' => 'No prepared certificate/document was found for this request. Enter a reason to continue, such as "Existing certificate was prepared manually."']);
             }
+            $changedAt = now();
             $locked->update(['status' => $next]);
             if ($next === ReservationStatus::Approved) {
                 $tickets->issue($locked);
             }
+            if ($next === ReservationStatus::Completed) {
+                $ticket = $locked->qrTicket()->lockForUpdate()->first();
+                if ($ticket && ! $ticket->isUsed()) {
+                    // Server-controlled audit fields. The reservation lock also serializes completion replays.
+                    $ticket->forceFill(['used_at' => $changedAt, 'used_by' => $request->user()->id])->save();
+                }
+            }
             $locked->statusHistories()->create([
                 'from_status' => $previous, 'to_status' => $next, 'changed_by' => $request->user()->id,
-                'notes' => $data['notes'] ?? null, 'changed_at' => now(),
+                'notes' => $data['notes'] ?? null, 'changed_at' => $changedAt,
             ]);
         });
 

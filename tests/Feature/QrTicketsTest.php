@@ -171,7 +171,9 @@ class QrTicketsTest extends TestCase
         foreach ([[Status::Approved, Status::ReadyForPickup], [Status::ReadyForPickup, Status::Completed]] as [$from, $to]) {
             $this->patch(route('admin.reservations.status', $reservation), ['expected_status' => $from->value, 'status' => $to->value,
                 'confirm_ready' => $to === Status::ReadyForPickup ? 1 : null, 'notes' => $to === Status::ReadyForPickup ? 'Certificate prepared manually.' : null])->assertSessionHas('status');
-            $this->assertSame($ticket->getAttributes(), $ticket->fresh()->getAttributes());
+            $original = array_intersect_key($ticket->getAttributes(), array_flip(['id', 'reservation_id', 'ticket_code', 'qr_payload', 'generated_at', 'created_at']));
+            $this->assertSame($original, array_intersect_key($ticket->fresh()->getAttributes(), $original));
+            $this->assertSame($to === Status::Completed, $ticket->fresh()->isUsed());
         }
         $this->actingAs($resident)->get(route('resident.qr-tickets.show', $ticket))->assertOk()
             ->assertSee('Historical ticket')->assertSee('not an active pickup ticket')->assertSee('Sunday, November 1, 2026')->assertSee('9:00 AM');

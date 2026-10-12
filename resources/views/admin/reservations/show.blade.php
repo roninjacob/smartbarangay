@@ -22,6 +22,20 @@
         @include('resident.reservations.requirements-list', ['service' => $reservation->service])
         @include('resident.reservations.attachments', ['attachmentRoute' => 'admin.reservations.attachments.download'])
     </section>
+    @if($reservation->qrTicket)
+        <section class="card dashboard-panel reservation-panel mt-4" aria-labelledby="qr-lifecycle-heading">
+            <h2 id="qr-lifecycle-heading">QR Ticket</h2>
+            <dl class="reservation-summary mb-0">
+                <div><dt>Status</dt><dd>{{ $reservation->qrTicket->isUsed() || $reservation->status === \App\Enums\ReservationStatus::Completed ? 'Used / Historical' : ($reservation->status->canReceiveQrTicket() ? 'Active' : 'Unavailable') }}</dd></div>
+                @if($reservation->qrTicket->isUsed())
+                    <div><dt>Completed</dt><dd><time datetime="{{ $reservation->qrTicket->used_at->toIso8601String() }}">{{ $reservation->qrTicket->used_at->timezone('Asia/Manila')->format('F j, Y, g:i A') }}</time></dd></div>
+                    <div><dt>Processed by</dt><dd>{{ $reservation->qrTicket->usedBy?->name ?? 'Former account' }}</dd></div>
+                @endif
+            </dl>
+            <p class="app-note mt-3 mb-0">{{ $reservation->qrTicket->isUsed() || $reservation->status === \App\Enums\ReservationStatus::Completed ? 'This ticket cannot be reused. Its original credential is retained as a historical record.' : 'Scanning verifies this ticket only. It becomes used when an Admin completes the reservation.' }}</p>
+            @if($reservation->status === \App\Enums\ReservationStatus::Completed && ! $reservation->qrTicket->isUsed())<p class="app-note mt-2 mb-0">QR usage metadata was not recorded for this earlier completion. Refer to the status history below.</p>@endif
+        </section>
+    @endif
     @include('admin.reservations.document-preparation')
     <section class="card dashboard-panel reservation-panel mt-4" aria-labelledby="processing-heading">
         <h2 id="processing-heading">Process this request</h2>
