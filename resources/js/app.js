@@ -6,3 +6,4 @@ import './services';
 import './document-preview';
 import './reservations';
 import './profile';
+import './qr-verification';

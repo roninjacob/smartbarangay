@@ -2,6 +2,7 @@
 
 use App\Enums\UserRole;
 use App\Http\Controllers\Admin\CertificatePrintController;
+use App\Http\Controllers\Admin\QrVerificationController;
 use App\Http\Controllers\Admin\ReservationController as AdminReservationController;
 use App\Http\Controllers\Admin\ReservationDocumentController;
 use App\Http\Controllers\Admin\ScheduleController;
@@ -91,6 +92,8 @@ Route::middleware('auth')->group(function () {
             Route::get('/{reservation}', [RequestStatusController::class, 'show'])->whereNumber('reservation')->name('show');
         });
     Route::prefix('admin')->name('admin.')->middleware(['role:'.UserRole::Admin->value, 'verified'])->group(function () {
+        Route::get('/qr-verification', [QrVerificationController::class, 'index'])->name('qr-verification.index');
+        Route::post('/qr-verification', [QrVerificationController::class, 'verify'])->middleware('throttle:30,1')->name('qr-verification.verify');
         Route::get('/reservations/{reservation}/attachments/{attachment}', [ReservationAttachmentController::class, 'admin'])
             ->whereNumber(['reservation', 'attachment'])->name('reservations.attachments.download');
         Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
