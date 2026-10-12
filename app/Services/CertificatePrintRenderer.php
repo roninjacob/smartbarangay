@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-use App\Enums\ReservationStatus;
 use App\Models\Reservation;
 use App\Models\Service;
 use App\Models\User;
@@ -78,7 +77,7 @@ class CertificatePrintRenderer
         $source = Service::find($artifact['service_id'])?->documentTemplate;
         if ($artifact['reservation_id']) {
             $reservation = Reservation::find($artifact['reservation_id']);
-            abort_unless($reservation && $reservation->service_id === $artifact['service_id'] && $reservation->status === ReservationStatus::Approved, 404);
+            abort_unless($reservation && $reservation->service_id === $artifact['service_id'] && $reservation->status->canPrepareDocument(), 404);
         }
         $disk = Storage::disk('local');
         abort_unless($source && $source->mime_type === 'application/pdf'

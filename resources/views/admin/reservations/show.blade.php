@@ -61,7 +61,7 @@
                 <label class="form-label mt-3" for="processing-notes">Processing note</label>
                 <textarea class="form-control" id="processing-notes" name="notes" rows="3" maxlength="2000" aria-describedby="notes-help" data-reservation-notes>{{ old('notes') }}</textarea>
                 <p id="notes-help" class="form-text">A reason is required for rejection or when marking Ready for Pickup without a prepared certificate. Notes are visible to Admin users.</p>
-                <button type="submit" class="btn btn-primary mt-3" data-saving-label="Saving…">Update status</button>
+                <button type="submit" class="btn btn-primary mt-3" data-saving-label="Saving…">{{ $reservation->status === \App\Enums\ReservationStatus::ReadyForPickup ? 'Mark Completed' : 'Update status' }}</button>
             </form>
             @if($reservation->status === \App\Enums\ReservationStatus::Approved)
                 <div class="modal fade" id="ready-confirmation-modal" tabindex="-1" aria-labelledby="ready-modal-heading" aria-hidden="true">

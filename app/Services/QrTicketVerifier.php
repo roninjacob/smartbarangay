@@ -35,12 +35,13 @@ class QrTicketVerifier
             return $invalid;
         }
 
-        return ['valid' => true, 'message' => 'Valid QR Ticket', 'reservation' => [
-            'resident' => $reservation->user->name,
-            'service' => $reservation->service->name,
-            'schedule' => $reservation->schedule->date->format('F j, Y').' · '.
-                substr($reservation->schedule->start_time, 0, 5).'–'.substr($reservation->schedule->end_time, 0, 5),
-            'status' => $reservation->status->label(),
-        ]];
+        return ['valid' => true, 'message' => 'Valid QR Ticket',
+            'reservation_url' => route('admin.reservations.show', $reservation), 'reservation' => [
+                'resident' => $reservation->user->name,
+                'service' => $reservation->service->name,
+                'schedule' => $reservation->schedule->date->format('F j, Y').' · '.
+                    substr($reservation->schedule->start_time, 0, 5).'–'.substr($reservation->schedule->end_time, 0, 5),
+                'status' => $reservation->status->label(),
+            ]];
     }
 }

@@ -14,8 +14,8 @@
             <noscript><p class="alert alert-warning mt-3">Enable JavaScript to use QR camera scanning.</p></noscript>
         </div>
     </section>
-    <section class="dashboard-panel qr-result-panel" aria-labelledby="result-heading" aria-live="polite" aria-atomic="true" data-qr-result>
-        <div class="dashboard-panel-heading"><div><h2 id="result-heading">Verification result</h2><p class="panel-description" data-qr-result-message>No ticket scanned yet.</p></div></div>
+    <section class="dashboard-panel qr-result-panel" tabindex="-1" aria-labelledby="result-heading" aria-live="polite" aria-atomic="true" data-qr-result>
+        <div class="dashboard-panel-heading"><div><h2 id="result-heading"><span class="qr-success-icon" data-qr-success-icon hidden><x-app-icon name="check"/></span><span data-qr-result-title>Verification result</span></h2><p class="panel-description" data-qr-result-message>No ticket scanned yet.</p></div></div>
         <div class="qr-result-body">
             <p class="qr-verification-note">Verification only. Scanning does not check in the Resident or change the reservation status.</p>
             <dl class="qr-result-details" data-qr-details hidden>
@@ -23,5 +23,21 @@
             </dl>
         </div>
     </section>
+    <div class="modal qr-success-modal" tabindex="-1" aria-labelledby="qr-success-heading" aria-describedby="qr-success-message" data-qr-success-modal>
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header"><h2 class="modal-title h5" id="qr-success-heading"><span class="qr-success-icon"><x-app-icon name="check"/></span>QR Verified Successfully</h2></div>
+                <div class="modal-body">
+                    <dl class="qr-result-details mt-0">
+                        <div><dt>Resident</dt><dd data-qr-modal-resident></dd></div>
+                        <div><dt>Service</dt><dd data-qr-modal-service></dd></div>
+                        <div><dt>Schedule</dt><dd data-qr-modal-schedule></dd></div>
+                        <div><dt>Status</dt><dd data-qr-modal-status></dd></div>
+                    </dl>
+                    <p class="qr-verification-note mt-4 mb-0" id="qr-success-message" role="status">This QR ticket is valid. Opening reservation details…</p>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 @endsection

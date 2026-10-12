@@ -17,5 +17,11 @@
 .qr-verification-note { font-size: 13px; line-height: 1.7; margin: 0; color: var(--muted-text); }
 .qr-result-panel.is-valid { border-top: 3px solid var(--community-green); }
 .qr-result-panel.is-invalid { border-top: 3px solid var(--danger); }
+.qr-result-panel h2 { overflow-wrap: anywhere; }
+.qr-success-icon { display: inline-flex; color: var(--community-green); margin-right: 8px; vertical-align: middle; }
+.qr-success-icon .app-icon { width: 24px; height: 24px; }
+.qr-success-modal .modal-title { overflow-wrap: anywhere; line-height: 1.5; }
+.qr-success-modal .modal-content { border-top: 3px solid var(--community-green); }
+.qr-result-panel:focus { outline: 2px solid var(--civic-blue); outline-offset: 3px; }
 @media (max-width: 1199.98px) { .qr-verification { grid-template-columns: minmax(0, 1fr); } }
 @media (max-width: 575.98px) { .qr-verification { gap: 16px; } .qr-scanner-body, .qr-result-body { padding: 0 16px 20px; } .qr-scanner-actions .btn { width: 100%; } }

@@ -71,10 +71,11 @@ class QrVerificationTest extends TestCase
         for ($i = 0; $i < 2; $i++) {
             $response = $this->postJson('/admin/qr-verification', ['payload' => $ticket->encodedPayload(),
                 'reservation_id' => 999, 'user_id' => 999, 'status' => 'completed', 'valid' => true]);
-            $response->assertOk()->assertExactJson(['valid' => true, 'message' => 'Valid QR Ticket', 'reservation' => [
-                'resident' => $resident->name, 'service' => 'Barangay Clearance',
-                'schedule' => 'November 1, 2026 · 09:00–10:00', 'status' => $status->label(),
-            ]])->assertHeader('X-Content-Type-Options', 'nosniff');
+            $response->assertOk()->assertExactJson(['valid' => true, 'message' => 'Valid QR Ticket',
+                'reservation_url' => route('admin.reservations.show', $ticket->reservation), 'reservation' => [
+                    'resident' => $resident->name, 'service' => 'Barangay Clearance',
+                    'schedule' => 'November 1, 2026 · 09:00–10:00', 'status' => $status->label(),
+                ]])->assertHeader('X-Content-Type-Options', 'nosniff');
             $this->assertStringContainsString('no-store', $response->headers->get('Cache-Control'));
             foreach ([$resident->email, $resident->password, $resident->address, $ticket->qr_payload] as $private) {
                 $this->assertStringNotContainsString($private, $response->getContent());
@@ -129,6 +130,32 @@ class QrVerificationTest extends TestCase
         // Admin verification intentionally accepts presented tickets from any Resident.
         $this->actingAs($this->user(UserRole::Admin))->postJson('/admin/qr-verification', ['payload' => $ticket->encodedPayload(), 'user_id' => $other->id])
             ->assertJsonPath('reservation.resident', $ticket->reservation->user->name);
+    }
+
+    public function test_success_destination_is_resolved_only_from_verified_credential_and_viewing_does_not_consume(): void
+    {
+        $ticket = $this->ticket(Status::ReadyForPickup);
+        $other = $this->ticket(Status::Approved);
+        $before = $this->snapshot();
+        $this->actingAs($this->user(UserRole::Admin));
+        $response = $this->postJson('/admin/qr-verification', ['payload' => $ticket->encodedPayload(),
+            'reservation_id' => $other->reservation_id, 'user_id' => $other->reservation->user_id,
+            'reservation_url' => route('admin.reservations.show', $other->reservation)]);
+        $response->assertOk()->assertJsonPath('reservation_url', route('admin.reservations.show', $ticket->reservation))
+            ->assertJsonMissingPath('reservation.id')->assertDontSee($ticket->qr_payload, false);
+        $this->get($response->json('reservation_url'))->assertOk()->assertSee($ticket->reservation->user->name)
+            ->assertSee('Active')->assertSee('Mark Completed')->assertDontSee($other->reservation->user->name);
+        $this->assertSame($before, $this->snapshot());
+        $this->assertFalse($ticket->fresh()->isUsed());
+    }
+
+    public function test_success_link_retains_guest_resident_and_cross_resident_access_protection(): void
+    {
+        $ticket = $this->ticket(Status::Approved);
+        $destination = route('admin.reservations.show', $ticket->reservation);
+        $this->get($destination)->assertRedirect(route('login'));
+        $this->actingAs($this->user())->get($destination)->assertForbidden()->assertDontSee($ticket->reservation->user->name);
+        $this->get(route('resident.reservations.show', $ticket->reservation))->assertNotFound();
     }
 
     public function test_corrupt_ticket_and_missing_reservation_are_invalid(): void
@@ -197,7 +224,7 @@ class QrVerificationTest extends TestCase
     private function ticket(Status $status): QrTicket
     {
         $service = Service::create(['name' => 'Barangay Clearance']);
-        $schedule = Schedule::create(['date' => '2026-11-01', 'start_time' => '09:00:00', 'end_time' => '10:00:00', 'capacity' => 5]);
+        $schedule = Schedule::first() ?? Schedule::create(['date' => '2026-11-01', 'start_time' => '09:00:00', 'end_time' => '10:00:00', 'capacity' => 5]);
         $reservation = $this->user()->reservations()->create(['service_id' => $service->id, 'schedule_id' => $schedule->id, 'status' => $status]);
 
         return app(QrTicketIssuer::class)->issue($reservation);

@@ -1,3 +1,5 @@
+import { Modal } from 'bootstrap';
+
 const root = document.querySelector('[data-qr-verification]');
 if (root) {
     const element = (name) => root.querySelector(`[data-qr-${name}]`);
@@ -11,14 +13,33 @@ if (root) {
     let generation = 0;
     let scanning = false;
     let busy = false;
+    let redirectTimer;
+    let pendingNavigation;
+    const successModal = Modal.getOrCreateInstance(element('success-modal'), { backdrop: 'static', keyboard: false });
+    element('success-modal').addEventListener('shown.bs.modal', () => {
+        const navigation = pendingNavigation;
+        if (! navigation || navigation.generation !== generation) return;
+        // Begin the delay only after the confirmation is visible.
+        redirectTimer = setTimeout(() => {
+            if (pendingNavigation !== navigation || navigation.generation !== generation || document.hidden) return;
+            pendingNavigation = undefined;
+            window.location.assign(navigation.url);
+        }, 1500);
+    });
 
     const status = (message) => { element('status').textContent = message; };
     const clearResult = () => {
         element('result').classList.remove('is-valid', 'is-invalid');
         element('details').hidden = true;
+        element('success-icon').hidden = true;
+        clearTimeout(redirectTimer);
+        redirectTimer = undefined;
+        pendingNavigation = undefined;
+        successModal.hide();
+        ['resident', 'service', 'schedule', 'status'].forEach((name) => { element(`modal-${name}`).textContent = ''; });
         ['resident', 'service', 'schedule', 'reservation-status'].forEach((name) => { element(name).textContent = ''; });
         element('result-message').textContent = 'No ticket scanned yet.';
-        element('result').querySelector('h2').textContent = 'Verification result';
+        element('result-title').textContent = 'Verification result';
     };
     const releaseCamera = () => {
         scanning = false;
@@ -71,19 +92,35 @@ if (root) {
             if (typeof result.valid !== 'boolean' || (result.valid && ! result.reservation)) {
                 throw new Error('Verification is unavailable. Please try again.');
             }
+            let reservationUrl;
+            if (result.valid) {
+                // Only use the server-generated destination. Never build a URL from scanned/client IDs.
+                if (typeof result.reservation_url !== 'string') throw new Error('Verification is unavailable. Please try again.');
+                reservationUrl = new URL(result.reservation_url, window.location.href);
+                if (reservationUrl.origin !== window.location.origin || reservationUrl.search || reservationUrl.hash
+                    || ! /^\/admin\/reservations\/[1-9]\d*$/.test(reservationUrl.pathname)) {
+                    throw new Error('Verification is unavailable. Please try again.');
+                }
+            }
             element('result').classList.add(result.valid ? 'is-valid' : 'is-invalid');
-            element('result').querySelector('h2').textContent = result.valid ? 'Valid QR Ticket' : 'Invalid QR Ticket';
-            element('result-message').textContent = result.message;
+            element('result-title').textContent = result.valid ? 'QR Verified Successfully' : 'Invalid QR Ticket';
+            element('result-message').textContent = result.valid ? 'This QR ticket is valid. Opening its reservation details…' : result.message;
             if (result.valid) {
                 ['resident', 'service', 'schedule'].forEach((name) => { element(name).textContent = result.reservation[name]; });
                 element('reservation-status').textContent = result.reservation.status;
                 element('details').hidden = false;
+                element('success-icon').hidden = false;
+                ['resident', 'service', 'schedule'].forEach((name) => { element(`modal-${name}`).textContent = result.reservation[name]; });
+                element('modal-status').textContent = result.reservation.status;
+                pendingNavigation = { url: reservationUrl.href, generation: current };
+                successModal.show();
             }
-            status('Verification complete. Select Scan Next Ticket to continue.');
+            status(result.valid ? 'QR verified. Opening reservation details…'
+                : 'Verification complete. Select Scan Next Ticket to continue.');
         } catch (error) {
             if (current !== generation) return;
             clearResult();
-            element('result').querySelector('h2').textContent = 'Verification unavailable';
+            element('result-title').textContent = 'Verification unavailable';
             element('result-message').textContent = 'No validity decision was made. Scan again after resolving the error.';
             status(error.name === 'AbortError' ? 'Verification timed out. Please try again.'
                 : error instanceof TypeError ? 'Cannot reach the server. Check your connection and try again.' : error.message);
@@ -96,7 +133,7 @@ if (root) {
                 start.disabled = true;
                 start.hidden = true;
                 stop.hidden = true;
-                next.hidden = false;
+                next.hidden = Boolean(pendingNavigation);
             }
         }
     };

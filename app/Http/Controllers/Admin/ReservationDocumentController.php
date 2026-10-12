@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Enums\ReservationStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Reservation;
 use App\Services\CertificatePrintRenderer;
@@ -14,7 +13,7 @@ class ReservationDocumentController extends Controller
 {
     public function print(Request $request, Reservation $reservation, CertificatePrintRenderer $renderer): RedirectResponse
     {
-        abort_unless($reservation->status === ReservationStatus::Approved, 403);
+        abort_unless($reservation->status->canPrepareDocument(), 403);
         try {
             $pdf = $renderer->service($reservation->service);
 

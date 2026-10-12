@@ -8,6 +8,7 @@ use App\Models\Reservation;
 use App\Models\Schedule;
 use App\Models\Service;
 use App\Models\User;
+use App\Services\QrTicketIssuer;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
@@ -116,7 +117,7 @@ class ServiceCertificateTest extends TestCase
 
     public static function nonApproved(): array
     {
-        return array_map(fn ($status) => [$status], array_filter(Status::cases(), fn ($status) => $status !== Status::Approved));
+        return array_map(fn ($status) => [$status], array_filter(Status::cases(), fn ($status) => ! $status->canPrepareDocument()));
     }
 
     #[DataProvider('nonApproved')]
@@ -142,6 +143,25 @@ class ServiceCertificateTest extends TestCase
         $this->assertSame('Certificate was prepared manually.', $reservation->statusHistories()->sole()->notes);
     }
 
+    public static function printableStatuses(): array
+    {
+        return [[Status::Approved], [Status::ReadyForPickup]];
+    }
+
+    #[DataProvider('printableStatuses')]
+    public function test_approved_and_ready_reservations_print_same_service_pdf_without_status_or_qr_changes(Status $status): void
+    {
+        $service = $this->service();
+        $reservation = $this->reservation($service, $status);
+        app(QrTicketIssuer::class)->issue($reservation);
+        $before = $this->records();
+        $this->get(route('admin.reservations.show', $reservation))->assertSee('Print Certificate')->assertSee('Certificate Preview');
+        $this->assertPrint(route('admin.reservations.document.print', $reservation));
+        $this->assertSame($before, $this->records());
+        $this->assertSame($status, $reservation->fresh()->status);
+        $this->assertFalse($reservation->qrTicket()->sole()->isUsed());
+    }
+
     public function test_expiration_ownership_replacement_and_status_changes_invalidate_print_views(): void
     {
         $service = $this->service();
@@ -151,6 +171,8 @@ class ServiceCertificateTest extends TestCase
         $this->actingAs($this->admin())->get($url)->assertNotFound();
         $this->actingAs($admin);
         $reservation->update(['status' => Status::ReadyForPickup]);
+        $this->get($url)->assertOk();
+        $reservation->update(['status' => Status::Completed]);
         $this->get($url)->assertNotFound();
         $reservation->update(['status' => Status::Approved]);
         $this->travel(11)->minutes();
