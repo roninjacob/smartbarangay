@@ -42,6 +42,7 @@
                                         <button type="submit" @class(['btn', 'btn-outline-danger' => $service->is_active, 'btn-outline-success' => ! $service->is_active]) aria-label="{{ $service->is_active ? 'Deactivate' : 'Activate' }} {{ $service->name }}">{{ $service->is_active ? 'Deactivate' : 'Activate' }}</button>
                                     </form>
                                 </div>
+                                <a href="{{ route('admin.services.document-configuration.index', $service) }}" class="btn btn-outline-secondary builder-configuration-link" aria-label="Configure document template for {{ $service->name }}">Document Template Configuration</a>
                             </div>
                         </article>
                     </li>

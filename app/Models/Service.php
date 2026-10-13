@@ -35,4 +35,9 @@ class Service extends Model
     {
         return $this->hasOne(ServiceDocumentTemplate::class);
     }
+
+    public function dynamicDocumentTemplate(): HasOne
+    {
+        return $this->hasOne(DocumentTemplate::class);
+    }
 }

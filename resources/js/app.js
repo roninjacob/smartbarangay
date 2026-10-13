@@ -7,3 +7,6 @@ import './document-preview';
 import './reservations';
 import './profile';
 import './qr-verification';
+import './document-builder';
+
+import './document-designer';

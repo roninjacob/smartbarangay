@@ -2,6 +2,9 @@
 
 use App\Enums\UserRole;
 use App\Http\Controllers\Admin\CertificatePrintController;
+use App\Http\Controllers\Admin\DocumentFieldController;
+use App\Http\Controllers\Admin\DocumentLayoutController;
+use App\Http\Controllers\Admin\DocumentTemplateController;
 use App\Http\Controllers\Admin\QrVerificationController;
 use App\Http\Controllers\Admin\ReservationController as AdminReservationController;
 use App\Http\Controllers\Admin\ReservationDocumentController;
@@ -114,6 +117,17 @@ Route::middleware('auth')->group(function () {
         Route::patch('/schedules/{schedule}/status', [ScheduleController::class, 'updateStatus'])->name('schedules.status');
         Route::resource('schedules', ScheduleController::class)->only(['index', 'create', 'store', 'edit', 'update', 'destroy']);
         Route::patch('/services/{service}/status', [ServiceController::class, 'updateStatus'])->name('services.status');
+        Route::get('/services/{service}/document-layout', [DocumentLayoutController::class, 'edit'])->whereNumber('service')->name('services.document-layout.edit');
+        Route::put('/services/{service}/document-layout', [DocumentLayoutController::class, 'update'])->whereNumber('service')->name('services.document-layout.update');
+        Route::get('/services/{service}/document-layout/pdf', [DocumentLayoutController::class, 'pdf'])->whereNumber('service')->name('services.document-layout.pdf');
+        Route::get('/services/{service}/document-configuration', [DocumentTemplateController::class, 'index'])->whereNumber('service')->name('services.document-configuration.index');
+        Route::post('/services/{service}/document-configuration', [DocumentTemplateController::class, 'store'])->whereNumber('service')->name('services.document-configuration.store');
+        Route::patch('/services/{service}/document-configuration', [DocumentTemplateController::class, 'update'])->whereNumber('service')->name('services.document-configuration.update');
+        Route::get('/services/{service}/document-fields/create', [DocumentFieldController::class, 'create'])->whereNumber('service')->name('services.document-fields.create');
+        Route::post('/services/{service}/document-fields', [DocumentFieldController::class, 'store'])->whereNumber('service')->name('services.document-fields.store');
+        Route::get('/services/{service}/document-fields/{documentField}/edit', [DocumentFieldController::class, 'edit'])->whereNumber(['service', 'documentField'])->name('services.document-fields.edit');
+        Route::put('/services/{service}/document-fields/{documentField}', [DocumentFieldController::class, 'update'])->whereNumber(['service', 'documentField'])->name('services.document-fields.update');
+        Route::delete('/services/{service}/document-fields/{documentField}', [DocumentFieldController::class, 'destroy'])->whereNumber(['service', 'documentField'])->name('services.document-fields.destroy');
         Route::get('/services/{service}/certificates', [ServiceCertificateController::class, 'index'])->whereNumber('service')->name('services.certificates.index');
         Route::get('/services/{service}/template/preview', [ServiceDocumentTemplateController::class, 'preview'])->whereNumber('service')->name('services.template.preview');
         Route::get('/services/{service}/template/print', [ServiceDocumentTemplateController::class, 'print'])->whereNumber('service')->name('services.template.print');
