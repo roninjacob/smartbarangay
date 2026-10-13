@@ -37,7 +37,7 @@ class ReservationController extends Controller
 
     public function show(Reservation $reservation, CertificatePreparationState $documents, CertificatePreview $preview): View
     {
-        $reservation->load(['user', 'service.serviceRequirements', 'service.documentTemplate', 'document.generator', 'schedule', 'qrTicket.usedBy', 'attachments.serviceRequirement']);
+        $reservation->load(['user', 'service.serviceRequirements', 'service.documentTemplate', 'document.generator', 'schedule', 'qrTicket.usedBy', 'attachments.serviceRequirement', 'documentAnswers']);
 
         return view('admin.reservations.show', [
             ...$this->shellData('Reservation Details'), 'reservation' => $reservation,

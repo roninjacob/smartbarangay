@@ -4,8 +4,9 @@
     <div><dt>Service</dt><dd>{{ $service->name }}</dd></div>
     <div><dt>Date</dt><dd>{{ $schedule->date->format('l, F j, Y') }}</dd></div>
     <div><dt>Time</dt><dd>{{ \Illuminate\Support\Carbon::parse($schedule->start_time)->format('g:i A') }} – {{ \Illuminate\Support\Carbon::parse($schedule->end_time)->format('g:i A') }}</dd></div>
-    <div><dt>Resident</dt><dd>{{ auth()->user()->name }}</dd></div>
+    <div><dt>Resident</dt><dd>{{ $residentInformation['resident_name'] }}</dd></div>
 </dl>
+@include('resident.reservations.document-review')
 <h3 class="h6 mt-4">Requirements to prepare</h3>
 @include('resident.reservations.requirements-list')
 <p class="reservation-notice">Your request will start as <strong>Pending</strong>. Submission does not mean the request has been approved.</p>

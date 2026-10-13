@@ -2,7 +2,7 @@
 <p class="text-secondary">Select a date and time for <strong>{{ $service->name }}</strong>.</p>
 @if($schedules->isEmpty())
     <div class="service-empty"><x-app-icon name="calendar"/><h3>No schedules available</h3><p>There are no active schedules at the moment. Please contact the barangay office or check again later.</p></div>
-    <a href="{{ route('resident.reservations.requirements') }}" class="btn btn-outline-secondary">Back to requirements</a>
+    <a href="{{ route('resident.reservations.requirements') }}" class="btn btn-outline-secondary">Back to information</a>
 @else
     <form method="POST" action="{{ route('resident.reservations.schedule.select') }}" data-service-submit>
         @csrf
@@ -16,6 +16,6 @@
                 @endforeach
             </div>
         </fieldset>
-        <div class="reservation-actions"><a href="{{ route('resident.reservations.requirements') }}" class="btn btn-outline-secondary">Back to requirements</a><button class="btn btn-primary" type="submit">Review reservation</button></div>
+        <div class="reservation-actions"><a href="{{ route('resident.reservations.requirements') }}" class="btn btn-outline-secondary">Back to information</a><button class="btn btn-primary" type="submit">Review reservation</button></div>
     </form>
 @endif

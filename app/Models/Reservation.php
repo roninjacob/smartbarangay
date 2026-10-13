@@ -24,6 +24,8 @@ class Reservation extends Model
     {
         return [
             'status' => ReservationStatus::class,
+            'resident_snapshot' => 'array',
+            'document_template_snapshot' => 'array',
         ];
     }
 
@@ -45,6 +47,11 @@ class Reservation extends Model
     public function attachments(): HasMany
     {
         return $this->hasMany(ReservationAttachment::class);
+    }
+
+    public function documentAnswers(): HasMany
+    {
+        return $this->hasMany(ReservationDocumentAnswer::class);
     }
 
     public function document(): HasOne

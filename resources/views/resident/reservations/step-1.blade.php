@@ -16,6 +16,6 @@
                 @endforeach
             </div>
         </fieldset>
-        <div class="reservation-actions"><a href="{{ route('resident.home') }}" class="btn btn-outline-secondary">Back to dashboard</a><button class="btn btn-primary" type="submit">Continue to requirements</button></div>
+        <div class="reservation-actions"><a href="{{ route('resident.home') }}" class="btn btn-outline-secondary">Back to dashboard</a><button class="btn btn-primary" type="submit">Continue to information</button></div>
     </form>
 @endif

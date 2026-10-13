@@ -1,9 +1,9 @@
 @extends('layouts.authenticated')
 @section('dashboard')
 <div class="reservation-wizard">
-    <p class="reservation-intro">Request a document from Barangay Calayo. Choose your service, review what to prepare, and select a schedule.</p>
+    <p class="reservation-intro">Request a document from Barangay Calayo. Choose your service, complete any required document information, review what to prepare, and select a schedule.</p>
     <ol class="reservation-steps" aria-label="Reservation progress">
-        @foreach(['Choose service', 'Review requirements', 'Choose schedule', 'Confirm request'] as $label)
+        @foreach(['Choose service', 'Document information', 'Choose schedule', 'Confirm request'] as $label)
             <li class="{{ $loop->iteration === $step ? 'is-current' : ($loop->iteration < $step ? 'is-complete' : '') }}" @if($loop->iteration === $step) aria-current="step" @endif>
                 <span class="step-number" aria-hidden="true">{{ $loop->iteration }}</span><span>{{ $label }}@if($loop->iteration < $step)<span class="visually-hidden"> — completed</span>@endif</span>
             </li>

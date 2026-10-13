@@ -81,3 +81,7 @@
     .reservation-actions .btn { width: 100%; }
     .reservation-summary > div { grid-template-columns: 1fr; gap: .25rem; }
 }
+
+.document-information-summary dd { white-space: pre-wrap; overflow-wrap: anywhere; }
+.document-information-summary > div { grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); }
+@media(max-width:575.98px) { .document-information-summary > div { grid-template-columns: minmax(0, 1fr); gap: .35rem; } }

@@ -5,8 +5,11 @@ namespace App\Http\Controllers\Resident;
 use App\Enums\ReservationStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Resident\ReservationWizardRequest;
+use App\Models\DocumentTemplate;
 use App\Models\Schedule;
 use App\Models\Service;
+use App\Models\User;
+use App\Services\ReservationDocumentInformation;
 use App\Services\ReservationFileUploads;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\RedirectResponse;
@@ -46,13 +49,32 @@ class ReservationController extends Controller
     {
         $draft = $this->draft($request);
 
-        return $this->page(2, ['service' => $this->service($request, $draft)]);
+        $service = $this->service($request, $draft);
+        $information = app(ReservationDocumentInformation::class);
+        $template = $information->configuration($service);
+
+        return $this->page(2, ['service' => $service, 'draft' => $draft, 'documentTemplate' => $template,
+            'documentSignature' => $information->signature($template),
+            'residentInformation' => $information->profile($request->user())]);
     }
 
     public function reviewRequirements(ReservationWizardRequest $request): RedirectResponse
     {
         $draft = $this->draft($request);
-        $this->service($request, $draft);
+        $service = $this->service($request, $draft);
+        $information = app(ReservationDocumentInformation::class);
+        $template = $information->configuration($service);
+        $signature = $information->signature($template);
+        if ($template && (! is_string($request->input('document_signature')) || ! hash_equals($signature, $request->input('document_signature')))) {
+            $this->resetDocumentInformation($request, $draft, 'The document fields have changed. Review the current form before continuing.');
+        }
+        unset($draft['requirements_reviewed'], $draft['schedule_id'], $draft['confirmation_token']);
+        $request->session()->put(self::SESSION_KEY, $draft);
+        $profile = $information->profile($request->user());
+        $answers = $information->validate($template, $request->input('document_answers'), $profile);
+        $draft['document_signature'] = $signature;
+        $draft['document_answers'] = $answers;
+        $draft['document_profile'] = $profile;
         $draft['requirements_reviewed'] = true;
         $request->session()->put(self::SESSION_KEY, $draft);
 
@@ -63,8 +85,11 @@ class ReservationController extends Controller
     {
         $draft = $this->draft($request, true);
 
+        $service = $this->service($request, $draft);
+        $this->documentInformation($request, $draft, $service);
+
         return $this->page(3, [
-            'service' => $this->service($request, $draft), 'draft' => $draft,
+            'service' => $service, 'draft' => $draft,
             'schedules' => Schedule::where('is_active', true)->withCount('occupiedReservations')->orderBy('date')->orderBy('start_time')->get(),
         ]);
     }
@@ -72,7 +97,8 @@ class ReservationController extends Controller
     public function selectSchedule(ReservationWizardRequest $request): RedirectResponse
     {
         $draft = $this->draft($request, true);
-        $this->service($request, $draft);
+        $service = $this->service($request, $draft);
+        $this->documentInformation($request, $draft, $service);
         $selected = Schedule::findOrFail($request->validated('schedule_id'));
         if ($selected->remainingSlots() === 0) {
             $this->restartAt('schedule', 'This schedule has just reached full capacity. Please choose another available schedule.');
@@ -88,8 +114,12 @@ class ReservationController extends Controller
     {
         $draft = $this->draft($request, true);
 
+        $service = $this->service($request, $draft);
+        $template = $this->documentInformation($request, $draft, $service);
+
         return $this->page(4, [
-            'service' => $this->service($request, $draft),
+            'service' => $service, 'documentTemplate' => $template,
+            'residentInformation' => $draft['document_profile'] ?? app(ReservationDocumentInformation::class)->profile($request->user()),
             'schedule' => $this->selectedSchedule($draft), 'draft' => $draft,
         ]);
     }
@@ -117,6 +147,7 @@ class ReservationController extends Controller
                 if (! $schedule?->is_active) {
                     $this->restartAt('schedule', 'The selected schedule is no longer available. Please choose another schedule.');
                 }
+                $template = $this->documentInformation($request, $draft, $service);
                 // Parent locks serialize separate sessions; a locking read sees the latest committed reservation.
                 $duplicate = $request->user()->reservations()->occupyingSlot()
                     ->where('service_id', $service->id)->where('schedule_id', $schedule->id)
@@ -136,6 +167,14 @@ class ReservationController extends Controller
                     'service_id' => $service->id, 'schedule_id' => $schedule->id,
                     'status' => ReservationStatus::Pending,
                 ]);
+                $information = app(ReservationDocumentInformation::class);
+                $resident = User::lockForUpdate()->findOrFail($request->user()->id);
+                $profile = $information->profile($resident);
+                if ($template && ($draft['document_profile'] ?? null) !== $profile) {
+                    $this->resetDocumentInformation($request, $draft, 'Your profile information has changed. Review the document information again.');
+                }
+                $answers = $information->validate($template, $draft['document_answers'] ?? [], $profile);
+                $information->store($reservation, $template, $answers, $profile);
                 $uploads->store($reservation, $files, $storedPaths);
             });
         } catch (Throwable $exception) {
@@ -146,6 +185,32 @@ class ReservationController extends Controller
         $request->session()->forget(self::SESSION_KEY);
 
         return to_route('resident.home')->with('status', 'Reservation submitted successfully. Your request is Pending.');
+    }
+
+    private function documentInformation(Request $request, array $draft, Service $service): ?DocumentTemplate
+    {
+        $information = app(ReservationDocumentInformation::class);
+        $template = $information->configuration($service);
+        if (($draft['document_signature'] ?? 'none') !== $information->signature($template)
+            || ($template && ($draft['document_profile'] ?? null) !== $information->profile($request->user()))) {
+            $this->resetDocumentInformation($request, $draft, 'The document or profile information has changed. Review the current form before continuing.');
+        }
+        try {
+            $information->validate($template, $draft['document_answers'] ?? [], $information->profile($request->user()));
+        } catch (ValidationException $exception) {
+            unset($draft['requirements_reviewed'], $draft['schedule_id'], $draft['confirmation_token']);
+            $request->session()->put(self::SESSION_KEY, $draft);
+            throw new HttpResponseException(to_route('resident.reservations.requirements')->withErrors($exception->errors()));
+        }
+
+        return $template;
+    }
+
+    private function resetDocumentInformation(Request $request, array $draft, string $message): never
+    {
+        unset($draft['requirements_reviewed'], $draft['document_signature'], $draft['document_answers'], $draft['document_profile'], $draft['schedule_id'], $draft['confirmation_token']);
+        $request->session()->put(self::SESSION_KEY, $draft);
+        $this->restartAt('requirements', $message);
     }
 
     private function draft(Request $request, bool $reviewed = false): array

@@ -8,9 +8,9 @@
         @if($reservation->service->description)<p class="reservation-service-description">{{ $reservation->service->description }}</p>@endif
         <h3 class="h6 mt-4">Resident and reservation information</h3>
         <dl class="reservation-summary">
-            <div><dt>Resident</dt><dd>{{ $reservation->user->name }}</dd></div>
+            <div><dt>Resident</dt><dd>{{ $reservation->resident_snapshot ? $reservation->resident_snapshot['resident_name'] : $reservation->user->name }}</dd></div>
             <div><dt>Email</dt><dd>{{ $reservation->user->email }}</dd></div>
-            @if($reservation->user->contact_number)<div><dt>Contact</dt><dd>{{ $reservation->user->contact_number }}</dd></div>@endif
+            @if($reservation->resident_snapshot ? ($reservation->resident_snapshot['resident_contact'] ?? null) : $reservation->user->contact_number)<div><dt>Contact</dt><dd>{{ $reservation->resident_snapshot ? $reservation->resident_snapshot['resident_contact'] : $reservation->user->contact_number }}</dd></div>@endif
             <div><dt>Schedule</dt><dd>{{ $reservation->schedule->date->format('l, F j, Y') }}<br>{{ \Illuminate\Support\Carbon::parse($reservation->schedule->start_time)->format('g:i A') }} – {{ \Illuminate\Support\Carbon::parse($reservation->schedule->end_time)->format('g:i A') }}</dd></div>
             <div><dt>Submitted</dt><dd>{{ $reservation->created_at->timezone('Asia/Manila')->format('F j, Y, g:i A') }}</dd></div>
             <div><dt>Last updated</dt><dd>{{ $reservation->updated_at->timezone('Asia/Manila')->format('F j, Y, g:i A') }}</dd></div>
@@ -20,6 +20,7 @@
         </dl>
         <h3 class="h6 mt-4">Current service requirements</h3>
         @include('resident.reservations.requirements-list', ['service' => $reservation->service])
+        @include('resident.reservations.document-information')
         @include('resident.reservations.attachments', ['attachmentRoute' => 'admin.reservations.attachments.download'])
     </section>
     @if($reservation->qrTicket)
