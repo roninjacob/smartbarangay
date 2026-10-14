@@ -85,3 +85,10 @@
 .document-information-summary dd { white-space: pre-wrap; overflow-wrap: anywhere; }
 .document-information-summary > div { grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); }
 @media(max-width:575.98px) { .document-information-summary > div { grid-template-columns: minmax(0, 1fr); gap: .35rem; } }
+.filled-paper-area { padding:12px; background:#e8edf4; border-radius:10px; min-width:0; }
+.filled-sheet { position:relative; margin:auto; max-width:100%; background:white; overflow:hidden; }
+.filled-sheet canvas { display:block; width:100%; height:auto; }
+.filled-overlay { position:absolute; inset:0; pointer-events:none; }
+.filled-text { position:absolute; color:#000; font-family:Arial,sans-serif; line-height:1.2; overflow:hidden; white-space:pre-wrap; overflow-wrap:anywhere; margin:0; padding:0; }
+.filled-sheet[hidden] {display:none;}
+@media(max-width:575.98px){.filled-paper-area{padding:4px;}}

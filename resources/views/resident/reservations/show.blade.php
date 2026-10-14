@@ -21,6 +21,8 @@
         <p class="text-secondary">The barangay’s current requirements for this service. Review what to prepare.</p>
         @include('resident.reservations.requirements-list', ['service' => $reservation->service])
         @include('resident.reservations.document-information')
+        @include('reservations.generated-actions', ['documentRole' => 'resident'])
+        @if($reservation->document_template_snapshot)<a class="btn btn-outline-primary mt-3" href="{{ route('resident.reservations.document-preview.show', $reservation) }}">Preview Document</a>@endif
         @include('resident.reservations.attachments', ['attachmentRoute' => 'resident.reservations.attachments.download'])
     </section>
     @include('resident.reservations.cancellation-form')

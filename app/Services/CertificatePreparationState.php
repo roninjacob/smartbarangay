@@ -19,6 +19,9 @@ class CertificatePreparationState
             || $disk->size($document->stored_path) !== $document->file_size || $document->file_size < 1) {
             return false;
         }
+        if ($document->mime_type === 'application/pdf') {
+            return is_string($document->content_hash) && hash_equals($document->content_hash, hash_file('sha256', $disk->path($document->stored_path)));
+        }
         // Compatibility only: a broken historical package must not suppress the Ready warning.
         // This never enables upload, conversion, generation, preview or download of legacy files.
         $zip = new ZipArchive;

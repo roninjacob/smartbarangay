@@ -10,6 +10,8 @@
         "bacon/bacon-qr-code": "^3.0",
         "laravel/framework": "^12.0",
         "laravel/tinker": "^2.10.1",
+        "setasign/fpdi": "^2.6",
+        "setasign/tfpdf": "^1.34",
         "smalot/pdfparser": "^2.12"
     },
     "require-dev": {

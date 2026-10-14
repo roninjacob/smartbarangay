@@ -20,6 +20,23 @@ class CertificatePrintRenderer
 
     private ?array $sourceSnapshot = null;
 
+    public function generatedTicket(Reservation $reservation, User $admin): string
+    {
+        $pdf = app(GeneratedReservationDocuments::class)->bytes($reservation);
+        $token = Str::random(40);
+        $document = $reservation->document()->firstOrFail();
+        $saved = Cache::put('certificate-print:'.$token, [
+            'owner' => $admin->id, 'pdf' => base64_encode($pdf), 'service' => $reservation->service->name,
+            'service_id' => $reservation->service_id, 'reservation_id' => $reservation->id,
+            'generated_id' => $document->id, 'source_hash' => hash('sha256', $pdf),
+        ], now()->addMinutes(10));
+        if (! $saved) {
+            $this->fail();
+        }
+
+        return $token;
+    }
+
     public function service(Service $service): string
     {
         $template = $service->documentTemplate()->first();
@@ -74,6 +91,16 @@ class CertificatePrintRenderer
     {
         $artifact = Cache::get('certificate-print:'.$token);
         abort_unless(is_array($artifact) && $artifact['owner'] === $admin->id, 404);
+        if (isset($artifact['generated_id'])) {
+            $reservation = Reservation::find($artifact['reservation_id']);
+            abort_unless($reservation && $reservation->service_id === $artifact['service_id'] && $reservation->status->canPrepareDocument()
+                && $reservation->document?->id === $artifact['generated_id'], 404);
+            $bytes = app(GeneratedReservationDocuments::class)->bytes($reservation);
+            abort_unless(hash_equals($artifact['source_hash'], hash('sha256', $bytes)), 404);
+            $artifact['pdf'] = $bytes;
+
+            return $artifact;
+        }
         $source = Service::find($artifact['service_id'])?->documentTemplate;
         if ($artifact['reservation_id']) {
             $reservation = Reservation::find($artifact['reservation_id']);

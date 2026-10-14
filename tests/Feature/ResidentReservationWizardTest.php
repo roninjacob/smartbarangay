@@ -215,7 +215,7 @@ class ResidentReservationWizardTest extends TestCase
         }
         foreach (Route::getRoutes() as $route) {
             if (str_starts_with($route->getName() ?? '', 'resident.reservations.')
-                && ! in_array($route->getName(), ['resident.reservations.index', 'resident.reservations.show', 'resident.reservations.attachments.download'], true)) {
+                && ! in_array($route->getName(), ['resident.reservations.index', 'resident.reservations.show', 'resident.reservations.attachments.download', 'resident.reservations.document-preview.show', 'resident.reservations.document-preview.pdf', 'resident.reservations.generated.show', 'resident.reservations.generated.pdf', 'resident.reservations.generated.download'], true)) {
                 $this->assertTrue($route->locksFor() > 0);
             }
         }

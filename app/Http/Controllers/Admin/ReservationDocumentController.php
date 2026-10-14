@@ -15,6 +15,9 @@ class ReservationDocumentController extends Controller
     {
         abort_unless($reservation->status->canPrepareDocument(), 403);
         try {
+            if ($reservation->document?->mime_type === 'application/pdf') {
+                return to_route('admin.certificates.print.show', $renderer->generatedTicket($reservation, $request->user()));
+            }
             $pdf = $renderer->service($reservation->service);
 
             return to_route('admin.certificates.print.show', $renderer->ticket($pdf, $request->user(), $reservation->service, $reservation->id));

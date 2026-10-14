@@ -87,7 +87,7 @@ class ReservationDocumentInformation
         foreach ($template?->fields ?? [] as $field) {
             $value = $field->source === 'system' ? ($profile[$field->field_name] ?? null) : ($answers[$field->id] ?? null);
             $reservation->documentAnswers()->create(['document_field_id' => $field->id,
-                'field_snapshot' => $this->fieldSnapshot($field), 'answer' => $value === null ? null : (string) $value]);
+                'field_snapshot' => [...$this->fieldSnapshot($field), 'positions' => $field->positions()->get()->map(fn ($position) => $position->only(['page_number', 'x_position', 'y_position', 'width', 'height', 'font_size', 'alignment', 'text_behavior']))->all()], 'answer' => $value === null ? null : (string) $value]);
         }
     }
 
