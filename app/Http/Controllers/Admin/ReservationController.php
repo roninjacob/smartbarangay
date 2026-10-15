@@ -8,8 +8,9 @@ use App\Http\Requests\Admin\FilterReservationsRequest;
 use App\Http\Requests\Admin\UpdateReservationStatusRequest;
 use App\Models\Reservation;
 use App\Services\CertificatePreparationState;
-use App\Services\CertificatePreview;
+use App\Services\GeneratedReservationDocuments;
 use App\Services\QrTicketIssuer;
+use App\Services\ReservationDocumentPreview;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
@@ -35,15 +36,25 @@ class ReservationController extends Controller
         return view('admin.reservations.index', [...$this->shellData('Reservation Management'), 'reservations' => $reservations, 'filters' => $filters, 'statuses' => ReservationStatus::cases()]);
     }
 
-    public function show(Reservation $reservation, CertificatePreparationState $documents, CertificatePreview $preview): View
+    public function show(Reservation $reservation, CertificatePreparationState $documents, GeneratedReservationDocuments $generated): View
     {
         $reservation->load(['user', 'service.serviceRequirements', 'service.documentTemplate', 'document.generator', 'schedule', 'qrTicket.usedBy', 'attachments.serviceRequirement', 'documentAnswers']);
+        $previewAvailable = ! $reservation->document && app(ReservationDocumentPreview::class)->data($reservation) !== null;
+        $snapshot = $reservation->document_template_snapshot;
+        $prepared = $documents->isPrepared($reservation);
+        $certificateState = $generated->availability($reservation);
+        if ($certificateState['available'] && ! $prepared) {
+            $certificateState = ['available' => false, 'can_print' => false, 'message' => GeneratedReservationDocuments::INVALID];
+        }
 
         return view('admin.reservations.show', [
             ...$this->shellData('Reservation Details'), 'reservation' => $reservation,
             'transitions' => $reservation->status->allowedTransitions(),
-            'hasPreparedCertificate' => $documents->isPrepared($reservation),
-            'preview' => $preview->reservation($reservation),
+            'hasPreparedCertificate' => $prepared,
+            'certificateState' => $certificateState,
+            'documentPreviewAvailable' => $previewAvailable,
+            'canGenerateCertificate' => $reservation->status->canPrepareDocument() && $previewAvailable
+                && is_int($snapshot['version'] ?? null) && $snapshot['version'] > 0,
             'histories' => $reservation->statusHistories()->with('changedBy')->orderByDesc('changed_at')->orderByDesc('id')->paginate(10),
         ]);
     }

@@ -7,10 +7,14 @@
             <div><dt>Generated Date</dt><dd>{{ $reservation->document->generated_at->timezone('Asia/Manila')->format('F j, Y, g:i A') }}</dd></div>
             <div><dt>Template Version</dt><dd>{{ $reservation->document->template_version }}</dd></div>
         </dl>
+        @if($documentRole === 'admin' && !$certificateState['available'])
+            <p class="alert alert-warning" role="alert">{{ $certificateState['message'] }}</p>
+        @else
         <div class="d-flex flex-wrap gap-2">
             <a class="btn btn-primary" href="{{ route($documentRole.'.reservations.generated.show', $reservation) }}">Preview Generated Document</a>
             <a class="btn btn-outline-primary" href="{{ route($documentRole.'.reservations.generated.download', $reservation) }}">Download</a>
-            @if($documentRole === 'admin' && $reservation->status->canPrepareDocument())<a class="btn btn-outline-primary" href="{{ route('admin.reservations.document.print', $reservation) }}">Print Certificate</a>@endif
+            @if($documentRole === 'admin' && $certificateState['can_print'])<a class="btn btn-outline-primary" href="{{ route('admin.reservations.document.print', $reservation) }}">Print Certificate</a>@endif
         </div>
+        @endif
     </div>
 @endif

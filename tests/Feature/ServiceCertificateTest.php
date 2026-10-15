@@ -59,16 +59,29 @@ class ServiceCertificateTest extends TestCase
             'service_id' => $service->id, 'schedule_id' => $schedule->id, 'status' => $status]);
     }
 
-    private function assertPrint(string $entry): string
+    private function saved(Reservation $reservation): string
+    {
+        $bytes = CertificatePdf::bytes('Personalized certificate');
+        $path = 'reservation-documents/'.$reservation->id.'/'.str_repeat('d', 40).'.pdf';
+        Storage::disk('local')->put($path, $bytes);
+        $reservation->document()->create(['service_document_template_id' => $reservation->service->documentTemplate->id,
+            'template_revision' => $reservation->service->documentTemplate->revision(), 'template_filename' => 'Clearance.pdf',
+            'template_version' => 1, 'original_filename' => 'Personalized.pdf', 'stored_path' => $path, 'mime_type' => 'application/pdf',
+            'content_hash' => hash('sha256', $bytes), 'file_size' => strlen($bytes), 'generated_by' => auth()->id(), 'generated_at' => now()]);
+
+        return $bytes;
+    }
+
+    private function assertPrint(string $entry, ?string $expected = null): string
     {
         $response = $this->get($entry)->assertRedirectContains('/admin/certificates/print/');
         $url = $response->headers->get('Location');
-        $this->get($url)->assertOk()->assertSee('Print Certificate')->assertSee('data-certificate-browser-print', false)
+        $this->get($url)->assertOk()->assertSee($expected === null ? 'Print Blank Template' : 'Print Certificate')->assertSee('data-certificate-browser-print', false)
             ->assertDontSee('DOCX')->assertDontSee('LibreOffice');
         $pdf = $this->get($url.'/pdf')->assertOk()->assertHeader('Content-Type', 'application/pdf')
             ->assertHeader('X-Content-Type-Options', 'nosniff');
         $this->assertStringContainsString('no-store', $pdf->headers->get('Cache-Control'));
-        $this->assertSame(CertificatePdf::bytes(), $pdf->getContent());
+        $this->assertSame($expected ?? CertificatePdf::bytes(), $pdf->getContent());
 
         return $url;
     }
@@ -77,7 +90,7 @@ class ServiceCertificateTest extends TestCase
     {
         $service = $this->service();
         $this->get(route('admin.services.certificates.index', $service))->assertOk()->assertSee('Official Certificate PDF')
-            ->assertSee('Preview Certificate')->assertSee('Print Certificate')->assertSee('Download PDF')->assertSee('No approved requests');
+            ->assertSee('Preview Blank Template')->assertSee('Print Blank Template')->assertSee('Download Blank PDF')->assertSee('No approved requests');
         $this->assertPrint(route('admin.services.template.print', $service));
         $this->get(route('admin.services.template.preview', $service))->assertOk()->assertStreamedContent(CertificatePdf::bytes());
         $this->get(route('admin.services.template.download', $service))->assertOk()->assertDownload('Clearance.pdf')
@@ -87,7 +100,7 @@ class ServiceCertificateTest extends TestCase
         $this->assertCount(1, Storage::disk('local')->allFiles());
     }
 
-    public function test_approval_reveals_service_pdf_and_print_action_without_changing_business_records(): void
+    public function test_approval_without_generation_cannot_print_a_blank_and_preserves_business_records(): void
     {
         $service = $this->service();
         $reservation = $this->reservation($service, Status::UnderReview);
@@ -100,9 +113,9 @@ class ServiceCertificateTest extends TestCase
         $reservation->attachments()->create(['service_requirement_id' => $requirement->id, 'original_filename' => 'ID.pdf',
             'stored_path' => $path, 'mime_type' => 'application/pdf', 'file_size' => 17]);
         $before = $this->records();
-        $this->get(route('admin.reservations.show', $reservation))->assertSee('Certificate Preview')->assertSee('Print Certificate')
-            ->assertSee(route('admin.services.template.preview', $service), false);
-        $this->assertPrint(route('admin.reservations.document.print', $reservation));
+        $this->get(route('admin.reservations.show', $reservation))->assertSee('no saved personalized PDF')
+            ->assertDontSee('href="'.route('admin.reservations.document.print', $reservation).'"', false);
+        $this->get(route('admin.reservations.document.print', $reservation))->assertRedirect(route('admin.reservations.show', $reservation))->assertSessionHasErrors('document');
         $this->assertSame($before, $this->records());
         $this->assertSame('Resident evidence', Storage::disk('local')->get($path));
         $this->assertSame(Status::Approved, $reservation->fresh()->status);
@@ -131,7 +144,7 @@ class ServiceCertificateTest extends TestCase
     public function test_ready_warning_requires_reason_and_printing_does_not_bypass_it(): void
     {
         $reservation = $this->reservation($this->service());
-        $this->assertPrint(route('admin.reservations.document.print', $reservation));
+        $this->get(route('admin.reservations.document.print', $reservation))->assertSessionHasErrors('document');
         $this->get(route('admin.reservations.show', $reservation))->assertSee('No prepared certificate/document was found for this request.')
             ->assertSee('Continue Anyway')->assertSee('data-certificate-prepared="0"', false);
         $data = ['status' => 'ready_for_pickup', 'expected_status' => 'approved', 'confirm_ready' => 1];
@@ -149,14 +162,15 @@ class ServiceCertificateTest extends TestCase
     }
 
     #[DataProvider('printableStatuses')]
-    public function test_approved_and_ready_reservations_print_same_service_pdf_without_status_or_qr_changes(Status $status): void
+    public function test_approved_and_ready_print_saved_pdf_without_status_or_qr_changes(Status $status): void
     {
         $service = $this->service();
         $reservation = $this->reservation($service, $status);
+        $bytes = $this->saved($reservation);
         app(QrTicketIssuer::class)->issue($reservation);
         $before = $this->records();
-        $this->get(route('admin.reservations.show', $reservation))->assertSee('Print Certificate')->assertSee('Certificate Preview');
-        $this->assertPrint(route('admin.reservations.document.print', $reservation));
+        $this->get(route('admin.reservations.show', $reservation))->assertSee('Print Certificate')->assertSee('Preview Generated Document');
+        $this->assertPrint(route('admin.reservations.document.print', $reservation), $bytes);
         $this->assertSame($before, $this->records());
         $this->assertSame($status, $reservation->fresh()->status);
         $this->assertFalse($reservation->qrTicket()->sole()->isUsed());
@@ -167,7 +181,8 @@ class ServiceCertificateTest extends TestCase
         $service = $this->service();
         $reservation = $this->reservation($service);
         $admin = auth()->user();
-        $url = $this->assertPrint(route('admin.reservations.document.print', $reservation));
+        $bytes = $this->saved($reservation);
+        $url = $this->assertPrint(route('admin.reservations.document.print', $reservation), $bytes);
         $this->actingAs($this->admin())->get($url)->assertNotFound();
         $this->actingAs($admin);
         $reservation->update(['status' => Status::ReadyForPickup]);
@@ -282,7 +297,7 @@ class ServiceCertificateTest extends TestCase
         $before = $this->records();
         $this->get(route('admin.reservations.show', $reservation))->assertSee('data-certificate-prepared="1"', false)
             ->assertDontSee('Historical.docx')->assertDontSee('Print prepared certificate');
-        $this->assertPrint(route('admin.reservations.document.print', $reservation));
+        $this->get(route('admin.reservations.document.print', $reservation))->assertNotFound();
         $this->assertSame($before, $this->records());
         $this->assertSame($bytes, Storage::disk('local')->get($path));
         Storage::disk('local')->put($path, str_repeat('x', strlen($bytes)));

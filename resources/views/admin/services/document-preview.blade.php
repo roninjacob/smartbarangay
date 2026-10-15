@@ -1,5 +1,5 @@
-<section class="document-preview mb-3" aria-label="Preview Certificate">
-    <h3 class="h5">Preview Certificate</h3>
+<section class="document-preview mb-3" aria-label="{{ $previewHeading ?? 'Preview Certificate' }}">
+    <h3 class="h5">{{ $previewHeading ?? 'Preview Certificate' }}</h3>
     @if($preview['kind'] === 'pdf')
         <div class="document-preview-frame" data-pdf-preview data-preview-url="{{ $preview['url'] }}" @if($printDocument ?? false) data-print-document @endif>
             <p class="app-note p-3" data-pdf-status role="status">Loading document preview…</p>

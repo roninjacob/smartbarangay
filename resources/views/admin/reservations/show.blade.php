@@ -21,7 +21,7 @@
         <h3 class="h6 mt-4">Current service requirements</h3>
         @include('resident.reservations.requirements-list', ['service' => $reservation->service])
         @include('resident.reservations.document-information')
-        @if($reservation->document_template_snapshot)<a class="btn btn-outline-primary mt-3" href="{{ route('admin.reservations.document-preview.show', $reservation) }}">Preview Document</a>@endif
+        @if($documentPreviewAvailable)<a class="btn btn-outline-primary mt-3" href="{{ route('admin.reservations.document-preview.show', $reservation) }}">Preview Document</a>@endif
         @include('resident.reservations.attachments', ['attachmentRoute' => 'admin.reservations.attachments.download'])
     </section>
     @if($reservation->qrTicket)

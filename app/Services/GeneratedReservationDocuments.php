@@ -15,6 +15,26 @@ use Throwable;
 
 class GeneratedReservationDocuments
 {
+    public const UNAVAILABLE = 'This request has no saved personalized PDF. Review Reservation Details to generate a certificate when historical information is available. Blank copies are available separately in Services & Documents.';
+
+    public const INVALID = 'The saved certificate is unavailable or invalid. Review this request with the administrator. Existing files will not be replaced automatically.';
+
+    /** Lightweight UI hint; bytes() remains authoritative on every private file request. */
+    public function availability(Reservation $reservation): array
+    {
+        $reservation->loadMissing('document');
+        $document = $reservation->document;
+        $disk = Storage::disk('local');
+        $available = $document && $document->reservation_id === $reservation->id
+            && $document->mime_type === 'application/pdf' && $document->hasSafePath()
+            && is_string($document->content_hash) && preg_match('/\A[0-9a-f]{64}\z/', $document->content_hash)
+            && $document->file_size > 0 && $disk->exists($document->stored_path)
+            && $disk->size($document->stored_path) === $document->file_size;
+
+        return ['available' => (bool) $available, 'can_print' => $available && $reservation->status->canPrepareDocument(),
+            'message' => $available ? null : ($document ? self::INVALID : self::UNAVAILABLE)];
+    }
+
     public function generate(Reservation $reservation, User $admin): ReservationDocument
     {
         $path = null;
@@ -62,10 +82,10 @@ class GeneratedReservationDocuments
 
     public function bytes(Reservation $reservation): string
     {
-        $document = $reservation->document()->first();
+        $reservation->unsetRelation('document');
+        abort_unless($this->availability($reservation)['available'], 404);
+        $document = $reservation->document;
         $disk = Storage::disk('local');
-        abort_unless($document && $document->mime_type === 'application/pdf' && $document->hasSafePath()
-            && is_string($document->content_hash) && $disk->exists($document->stored_path), 404);
         $bytes = $disk->get($document->stored_path);
         abort_unless(strlen($bytes) === $document->file_size && hash_equals($document->content_hash, hash('sha256', $bytes)), 404);
 

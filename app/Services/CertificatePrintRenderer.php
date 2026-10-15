@@ -18,18 +18,26 @@ class CertificatePrintRenderer
 {
     public const ERROR = 'The official certificate PDF is unavailable. Review or upload it in Edit Service.';
 
+    public const OBSOLETE = 'This print link uses an older document source. Reopen Reservation Details and use the current certificate action.';
+
     private ?array $sourceSnapshot = null;
 
     public function generatedTicket(Reservation $reservation, User $admin): string
     {
+        abort_unless($reservation->status->canPrepareDocument(), 403);
         $pdf = app(GeneratedReservationDocuments::class)->bytes($reservation);
         $token = Str::random(40);
         $document = $reservation->document()->firstOrFail();
-        $saved = Cache::put('certificate-print:'.$token, [
-            'owner' => $admin->id, 'pdf' => base64_encode($pdf), 'service' => $reservation->service->name,
-            'service_id' => $reservation->service_id, 'reservation_id' => $reservation->id,
-            'generated_id' => $document->id, 'source_hash' => hash('sha256', $pdf),
-        ], now()->addMinutes(10));
+        try {
+            $saved = Cache::put('certificate-print:'.$token, [
+                'owner' => $admin->id, 'pdf' => base64_encode($pdf), 'service' => $reservation->service->name,
+                'service_id' => $reservation->service_id, 'reservation_id' => $reservation->id,
+                'generated_id' => $document->id, 'source_hash' => hash('sha256', $pdf),
+            ], now()->addMinutes(10));
+        } catch (Throwable $exception) {
+            report($exception);
+            throw ValidationException::withMessages(['document' => GeneratedReservationDocuments::INVALID]);
+        }
         if (! $saved) {
             $this->fail();
         }
@@ -65,6 +73,8 @@ class CertificatePrintRenderer
 
     public function ticket(string $pdf, User $admin, Service $service, ?int $reservationId = null): string
     {
+        // Retain the old argument only to reject callers attempting reservation/master issuance.
+        abort_if($reservationId !== null, 410, self::OBSOLETE);
         $token = Str::random(40);
         $source = $service->documentTemplate()->firstOrFail();
         if ($this->sourceSnapshot === null || $source->stored_path !== $this->sourceSnapshot['path']
@@ -101,11 +111,9 @@ class CertificatePrintRenderer
 
             return $artifact;
         }
+        // Old cached master tokens must never be retargeted to a reservation's new certificate.
+        abort_if(($artifact['reservation_id'] ?? null) !== null, 410, self::OBSOLETE);
         $source = Service::find($artifact['service_id'])?->documentTemplate;
-        if ($artifact['reservation_id']) {
-            $reservation = Reservation::find($artifact['reservation_id']);
-            abort_unless($reservation && $reservation->service_id === $artifact['service_id'] && $reservation->status->canPrepareDocument(), 404);
-        }
         $disk = Storage::disk('local');
         abort_unless($source && $source->mime_type === 'application/pdf'
             && preg_match('#^service-document-templates/'.$artifact['service_id'].'/[A-Za-z0-9]{40}\.pdf$#D', $source->stored_path)

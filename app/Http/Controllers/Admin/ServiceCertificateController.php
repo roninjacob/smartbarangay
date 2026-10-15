@@ -6,13 +6,14 @@ use App\Enums\ReservationStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Service;
 use App\Services\CertificatePreview;
+use App\Services\GeneratedReservationDocuments;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class ServiceCertificateController extends Controller
 {
-    public function index(Request $request, Service $service, CertificatePreview $preview): View
+    public function index(Request $request, Service $service, CertificatePreview $preview, GeneratedReservationDocuments $generated): View
     {
         $data = $request->validate(['reservation' => ['nullable', 'integer', Rule::exists('reservations', 'id')
             ->where('service_id', $service->id)->where('status', ReservationStatus::Approved->value)]]);
@@ -27,6 +28,7 @@ class ServiceCertificateController extends Controller
             'pageTitle' => 'Official Certificate PDF', 'pageHeading' => 'Official Certificate PDF', 'pageSection' => 'Services & Documents',
             'service' => $service, 'reservations' => $reservations, 'selected' => $data['reservation'] ?? null,
             'preview' => $preview->service($service),
+            'certificateStates' => $reservations->getCollection()->mapWithKeys(fn ($reservation) => [$reservation->id => $generated->availability($reservation)]),
         ]);
     }
 }

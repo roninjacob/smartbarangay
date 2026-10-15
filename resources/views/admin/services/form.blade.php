@@ -31,7 +31,7 @@
                             <dt>Format / Size</dt><dd>{{ $template->format() }} · {{ number_format($template->file_size / 1024, 1) }} KB</dd>
                             <dt>Uploaded</dt><dd>{{ $template->uploaded_at->timezone('Asia/Manila')->format('F j, Y, g:i A') }} · Philippine time</dd>
                         </dl>
-                        @if($template->format() === 'PDF')<a href="{{ route('admin.services.template.download', $service) }}" class="btn btn-outline-primary mb-3">Download PDF</a>@else<p class="alert alert-warning">Replace this legacy file with a PDF to preview or print certificates.</p>@endif
+                        @if($template->format() === 'PDF')<a href="{{ route('admin.services.template.download', $service) }}" class="btn btn-outline-primary mb-3">Download Blank PDF</a>@else<p class="alert alert-warning">Replace this legacy file with a PDF to preview or print blank templates.</p>@endif
                     @else
                         <p class="app-note">No template uploaded. Services can be saved without a template.</p>
                     @endif

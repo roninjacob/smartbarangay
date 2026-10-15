@@ -61,7 +61,7 @@ class ServiceDocumentTemplateTest extends TestCase
         $this->assertSame([], Storage::disk('public')->allFiles());
         $this->get('/admin/services')->assertSee('Official File')->assertSee(strtoupper($format))->assertDontSee($template->stored_path, false);
         $this->get(route('admin.services.edit', $service))->assertSee($template->original_filename)
-            ->assertSee('Download PDF')->assertSee('Replace Template')->assertSee('Remove Template')
+            ->assertSee('Download Blank PDF')->assertSee('Replace Template')->assertSee('Remove Template')
             ->assertDontSee($template->stored_path, false);
         $response = $this->get(route('admin.services.template.download', $service))->assertOk()->assertHeader('X-Content-Type-Options', 'nosniff');
         $this->assertStringContainsString('no-store', $response->headers->get('Cache-Control'));

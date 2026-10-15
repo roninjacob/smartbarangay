@@ -26,11 +26,11 @@
                                 </dl>
                             </div>
                             <div class="service-card-actions" role="group" aria-label="Actions for {{ $service->name }}">
-                                <a href="{{ route('admin.services.certificates.index', $service) }}" class="btn btn-primary service-card-primary" aria-label="Preview Certificate for {{ $service->name }}">Preview Certificate</a>
+                                <a href="{{ route('admin.services.certificates.index', $service) }}" class="btn btn-primary service-card-primary" aria-label="Preview Blank Template for {{ $service->name }}">Preview Blank Template</a>
                                 @if($service->documentTemplate?->format() === 'PDF')
                                     <div class="service-card-secondary">
-                                        <a href="{{ route('admin.services.template.print', $service) }}" class="btn btn-outline-primary" aria-label="Print Certificate for {{ $service->name }}">Print Certificate</a>
-                                        <a href="{{ route('admin.services.template.download', $service) }}" class="btn btn-outline-primary" aria-label="Download PDF for {{ $service->name }}">Download PDF</a>
+                                        <a href="{{ route('admin.services.template.print', $service) }}" class="btn btn-outline-primary" aria-label="Print Blank Template for {{ $service->name }}">Print Blank Template</a>
+                                        <a href="{{ route('admin.services.template.download', $service) }}" class="btn btn-outline-primary" aria-label="Download Blank PDF for {{ $service->name }}">Download Blank PDF</a>
                                     </div>
                                 @endif
                                 <div class="service-card-management">
