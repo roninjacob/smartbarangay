@@ -51,7 +51,7 @@ class ReservationController extends Controller
 
         $service = $this->service($request, $draft);
         $information = app(ReservationDocumentInformation::class);
-        $template = $information->configuration($service);
+        $template = $this->currentDocumentConfiguration($request, $draft, $service, $information);
 
         return $this->page(2, ['service' => $service, 'draft' => $draft, 'documentTemplate' => $template,
             'documentSignature' => $information->signature($template),
@@ -63,7 +63,7 @@ class ReservationController extends Controller
         $draft = $this->draft($request);
         $service = $this->service($request, $draft);
         $information = app(ReservationDocumentInformation::class);
-        $template = $information->configuration($service);
+        $template = $this->currentDocumentConfiguration($request, $draft, $service, $information);
         $signature = $information->signature($template);
         if ($template && (! is_string($request->input('document_signature')) || ! hash_equals($signature, $request->input('document_signature')))) {
             $this->resetDocumentInformation($request, $draft, 'The document fields have changed. Review the current form before continuing.');
@@ -174,7 +174,7 @@ class ReservationController extends Controller
                     $this->resetDocumentInformation($request, $draft, 'Your profile information has changed. Review the document information again.');
                 }
                 $answers = $information->validate($template, $draft['document_answers'] ?? [], $profile);
-                $information->store($reservation, $template, $answers, $profile);
+                $information->store($reservation, $template, $answers, $profile, $storedPaths);
                 $uploads->store($reservation, $files, $storedPaths);
             });
         } catch (Throwable $exception) {
@@ -187,10 +187,20 @@ class ReservationController extends Controller
         return to_route('resident.home')->with('status', 'Reservation submitted successfully. Your request is Pending.');
     }
 
+    private function currentDocumentConfiguration(Request $request, array $draft, Service $service, ReservationDocumentInformation $information): ?DocumentTemplate
+    {
+        try {
+            return $information->configuration($service);
+        } catch (ValidationException) {
+            $request->session()->forget(self::SESSION_KEY);
+            $this->restartAt('create', 'This service document setup is temporarily unavailable. Please choose another service or try again after the office updates it.');
+        }
+    }
+
     private function documentInformation(Request $request, array $draft, Service $service): ?DocumentTemplate
     {
         $information = app(ReservationDocumentInformation::class);
-        $template = $information->configuration($service);
+        $template = $this->currentDocumentConfiguration($request, $draft, $service, $information);
         if (($draft['document_signature'] ?? 'none') !== $information->signature($template)
             || ($template && ($draft['document_profile'] ?? null) !== $information->profile($request->user()))) {
             $this->resetDocumentInformation($request, $draft, 'The document or profile information has changed. Review the current form before continuing.');

@@ -39,11 +39,11 @@ class DocumentDesignerTest extends TestCase
         $admin = User::factory()->create(['role' => UserRole::Admin, 'is_active' => true]);
         $service = Service::create(['name' => 'Generic Official Document']);
         $path = 'service-document-templates/'.$service->id.'/'.str_repeat('a', 40).'.pdf';
-        $bytes = CertificatePdf::bytes();
+        $bytes = CertificatePdf::twoPages();
         Storage::disk('local')->put($path, $bytes);
         $pdf = $service->documentTemplate()->create(['original_filename' => 'Official.pdf', 'stored_path' => $path, 'mime_type' => 'application/pdf', 'file_size' => strlen($bytes), 'uploaded_at' => now()]);
         $template = $service->dynamicDocumentTemplate()->make();
-        $template->forceFill(['service_document_template_id' => $pdf->id, 'source_revision' => $pdf->revision(), 'source_filename' => 'Official.pdf', 'version' => 1, 'is_active' => true, 'created_by' => $admin->id])->save();
+        $template->forceFill(['service_document_template_id' => $pdf->id, 'source_revision' => $pdf->revision(), 'source_content_hash' => hash('sha256', $bytes), 'source_filename' => 'Official.pdf', 'version' => 1, 'is_active' => true, 'created_by' => $admin->id])->save();
         $field = $template->fields()->create(['field_name' => 'purpose', 'label' => 'Purpose', 'source' => 'custom', 'field_type' => 'text', 'is_required' => true, 'sort_order' => 7, 'validation_rules' => ['max_length' => 100]]);
         $this->actingAs($admin);
 
@@ -127,7 +127,7 @@ class DocumentDesignerTest extends TestCase
         [$service,$template,$field] = $this->fixture();
         $before = $field->fresh()->getAttributes();
         $position = [...$this->position($field), 'field_id' => null, 'system_name' => 'resident_name'];
-        $this->saveLayout($service, [$position, $position])->assertOk();
+        $this->saveLayout($service, [$position, [...$position, 'y_position' => 160]])->assertOk();
         $this->assertDatabaseCount('document_fields', 2);
         $system = $template->fields()->where('field_name', 'resident_name')->sole();
         $this->assertSame('system', $system->source);

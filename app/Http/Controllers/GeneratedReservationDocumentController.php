@@ -12,7 +12,8 @@ class GeneratedReservationDocumentController extends Controller
 {
     public function store(Request $request, Reservation $reservation, GeneratedReservationDocuments $documents): Response
     {
-        $documents->generate($reservation, $request->user());
+        $request->validate(['preview_token' => ['nullable', 'string', 'size:40']]);
+        $documents->generate($reservation, $request->user(), $request->input('preview_token'));
 
         return to_route('admin.reservations.show', $reservation)->with('status', 'Certificate generated. Printing does not change reservation status.');
     }

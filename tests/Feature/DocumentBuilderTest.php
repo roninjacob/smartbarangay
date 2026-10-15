@@ -234,7 +234,7 @@ class DocumentBuilderTest extends TestCase
     {
         $service = Service::create(['name' => $name]);
         $path = 'service-document-templates/'.$service->id.'/'.str_repeat('a', 40).'.pdf';
-        $pdf = CertificatePdf::bytes();
+        $pdf = CertificatePdf::twoPages();
         Storage::disk('local')->put($path, $pdf);
         $service->documentTemplate()->create(['original_filename' => 'Official.pdf', 'stored_path' => $path, 'mime_type' => 'application/pdf',
             'file_size' => strlen($pdf), 'uploaded_at' => now()]);

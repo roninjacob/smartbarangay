@@ -29,6 +29,7 @@ if (frames.length) {
                         canvas.width = Math.ceil(viewport.width);
                         canvas.height = Math.ceil(viewport.height);
                         await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
+                        window.document.querySelector('[data-finalize-button]')?.removeAttribute('disabled');
                         canvas.hidden = false;
                         status.hidden = true;
                         controls.hidden = false;
@@ -47,6 +48,7 @@ if (frames.length) {
                 previous.addEventListener('click', () => { if (!busy && pageNumber > 1) { pageNumber--; render().catch(fail); } });
                 next.addEventListener('click', () => { if (!busy && pageNumber < document.numPages) { pageNumber++; render().catch(fail); } });
                 function fail() {
+                    window.document.querySelector('[data-finalize-button]')?.setAttribute('disabled','');
                     status.hidden = false;
                     status.textContent = 'The preview could not be displayed. Open the protected PDF preview below or review the official template.';
                     canvas.hidden = controls.hidden = true;

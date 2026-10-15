@@ -1,4 +1,4 @@
-import {clampPlacement, pagePoint} from './document-layout-geometry';
+import {clampPlacement, pagePoint, overlappingPlacements} from './document-layout-geometry';
 
 const root = document.querySelector('[data-document-designer]');
 if (root) initialize(root);
@@ -11,7 +11,7 @@ async function initialize(root) {
     const save=find('save'), previous=find('previous'), next=find('next'), settings=find('settings');
     let pdf, pageNumber=1, pageSize, selected=null, chosen=null, busy=false, dirty=false, rendering=false, pending=false, failed=false;
     function message(text,error=false) { status.textContent=text; status.classList.toggle('is-error',error); }
-    function changed() { dirty=true; message('Unsaved layout changes. Click Save Layout when you are ready.'); }
+    function changed() { dirty=true; const overlap=overlappingPlacements(positions).size>0; message(overlap?'Fields overlap. Move or resize them before saving. Touching edges are allowed.':'Unsaved layout changes. Click Save Layout when you are ready.',overlap); }
     function selection() { return positions.find(position=>position.uid===selected); }
     function select(position) {
         selected=position?.uid ?? null; chosen=null;
@@ -143,6 +143,7 @@ async function initialize(root) {
     next.addEventListener('click',()=>{if(rendering||busy||pageNumber>=pdf.numPages)return;pageNumber++;select(null);render();});
     save.addEventListener('click',async()=>{
         if(busy||rendering||failed)return;
+        if(overlappingPlacements(positions).size){message('Fields overlap. Move or resize them before saving. Touching edges are allowed.',true);return;}
         busy=true;save.disabled=true;settings.disabled=true;message('Saving layout…');
         const payload={version:data.version,pdf_revision:data.pdf_revision,placements:positions.map(position=>{
             const field=fields.get(position.key);const result={field_id:field.field_id,system_name:field.system_name};

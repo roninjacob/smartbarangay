@@ -2,8 +2,22 @@
 
 namespace Tests\Support;
 
+use setasign\Fpdi\Tfpdf\Fpdi;
+
 class CertificatePdf
 {
+    public static function twoPages(): string
+    {
+        $pdf = new Fpdi('P', 'pt');
+        foreach ([[595, 842], [420, 595]] as $size) {
+            $pdf->AddPage('P', $size);
+            $pdf->SetFont('Helvetica', '', 12);
+            $pdf->Text(30, 30, 'Official sample');
+        }
+
+        return $pdf->Output('S');
+    }
+
     public static function bytes(string $text = 'Barangay Calayo official certificate'): string
     {
         $content = 'BT /F1 14 Tf 40 800 Td ('.$text.') Tj ET';

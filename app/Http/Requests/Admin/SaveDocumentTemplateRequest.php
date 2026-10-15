@@ -14,9 +14,9 @@ class SaveDocumentTemplateRequest extends FormRequest
 
     public function rules(): array
     {
-        return ['is_active' => ['required', 'boolean'],
-            'pdf_id' => [$this->isMethod('post') ? 'required' : 'nullable', 'integer', 'min:1'],
-            'pdf_revision' => [$this->isMethod('post') ? 'required' : 'nullable', 'string', 'size:64'],
+        return ['reconfigure' => ['sometimes', 'boolean'], 'is_active' => ['required', 'boolean'],
+            'pdf_id' => [($this->isMethod('post') || $this->boolean('reconfigure')) ? 'required' : 'nullable', 'integer', 'min:1'],
+            'pdf_revision' => [($this->isMethod('post') || $this->boolean('reconfigure')) ? 'required' : 'nullable', 'string', 'size:64'],
             'version' => [$this->isMethod('patch') ? 'required' : 'nullable', 'integer', 'min:1', 'max:2147483647']];
     }
 }

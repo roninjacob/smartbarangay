@@ -9,6 +9,7 @@ class FinalCertificatePdf
 {
     public function render(string $path, array $placements): string
     {
+        app(DocumentLayout::class)->validate($path, $placements, 'document');
         $pdf = new Fpdi('P', 'pt');
         try {
             return $this->fill($pdf, $path, $placements);
@@ -33,7 +34,6 @@ class FinalCertificatePdf
             $size = $pdf->getTemplateSize($template);
             $pdf->AddPage($size['orientation'], [$size['width'], $size['height']]);
             $pdf->useTemplate($template);
-            $boxes = [];
             foreach ($placements as $position) {
                 if ((int) $position['page_number'] !== $page) {
                     continue;
@@ -42,17 +42,8 @@ class FinalCertificatePdf
                 $y = (float) $position['y_position'];
                 $width = (float) $position['width'];
                 $height = (float) $position['height'];
-                if ($x < 0 || $y < 0 || $width <= 0 || $height <= 0 || $x + $width > $size['width'] + .01 || $y + $height > $size['height'] + .01) {
-                    $this->fail();
-                }
-                foreach ($boxes as [$bx, $by, $bw, $bh]) {
-                    if ($x < $bx + $bw && $x + $width > $bx && $y < $by + $bh && $y + $height > $by) {
-                        $this->fail();
-                    }
-                }
-                $boxes[] = [$x, $y, $width, $height];
                 $text = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/u', '', $position['text']);
-                $font = min(72, max(6, (float) $position['font_size']));
+                $font = min(72, max(4, (float) $position['font_size']));
                 $wrap = $position['text_behavior'] === 'wrap';
                 do {
                     $pdf->SetFont('DejaVu', '', $font);
@@ -62,7 +53,7 @@ class FinalCertificatePdf
                         break;
                     }
                     $font -= .25;
-                } while ($font >= 6);
+                } while ($font >= 4);
                 if (! $fits) {
                     throw ValidationException::withMessages(['document' => 'Saved document text does not fit its field box. Review the document layout before generating a certificate.']);
                 }

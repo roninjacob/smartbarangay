@@ -35,11 +35,11 @@ class GeneratedReservationDocuments
             'message' => $available ? null : ($document ? self::INVALID : self::UNAVAILABLE)];
     }
 
-    public function generate(Reservation $reservation, User $admin): ReservationDocument
+    public function generate(Reservation $reservation, User $admin, ?string $previewToken = null): ReservationDocument
     {
         $path = null;
         try {
-            return DB::transaction(function () use ($reservation, $admin, &$path) {
+            return DB::transaction(function () use ($reservation, $admin, $previewToken, &$path) {
                 $service = Service::lockForUpdate()->findOrFail($reservation->service_id);
                 $record = Reservation::lockForUpdate()->findOrFail($reservation->id);
                 abort_unless($record->status->canPrepareDocument(), 403);
@@ -52,16 +52,18 @@ class GeneratedReservationDocuments
                 if (! $data || ! is_int($snapshot['version'] ?? null) || $snapshot['version'] < 1) {
                     throw ValidationException::withMessages(['document' => ReservationDocumentPreview::UNAVAILABLE]);
                 }
-                $master = $service->documentTemplate;
                 $disk = Storage::disk('local');
-                $bytes = app(FinalCertificatePdf::class)->render($disk->path($master->stored_path), $data['placements']);
+                $bytes = app(CanonicalDocumentPreview::class)->reviewed($record, $admin, $previewToken, true);
+                $masterId = $data['source']['template_id'];
+                $master = $service->documentTemplate;
+                $masterId = $master?->id === $masterId && hash_equals($data['source']['revision'], $master->revision()) ? $masterId : null;
                 $path = 'reservation-documents/'.$record->id.'/'.Str::random(40).'.pdf';
                 if (! $disk->put($path, $bytes)) {
                     throw new \RuntimeException('Unable to save generated certificate.');
                 }
 
                 return $record->document()->create([
-                    'service_document_template_id' => $master->id, 'template_revision' => $snapshot['source_revision'],
+                    'service_document_template_id' => $masterId, 'template_revision' => $snapshot['source_revision'],
                     'template_version' => $snapshot['version'], 'template_filename' => $snapshot['source_filename'],
                     'original_filename' => 'Certificate-'.$record->id.'.pdf', 'stored_path' => $path,
                     'mime_type' => 'application/pdf', 'file_size' => strlen($bytes), 'content_hash' => hash('sha256', $bytes),

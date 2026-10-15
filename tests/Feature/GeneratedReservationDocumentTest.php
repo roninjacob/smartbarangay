@@ -6,6 +6,7 @@ use App\Enums\UserRole;
 use App\Models\Schedule;
 use App\Models\Service;
 use App\Models\User;
+use App\Services\CanonicalDocumentPreview;
 use App\Services\CertificatePreparationState;
 use App\Services\FinalCertificatePdf;
 use App\Services\GeneratedReservationDocuments;
@@ -55,7 +56,7 @@ class GeneratedReservationDocumentTest extends TestCase
         Storage::disk('local')->put($path, $bytes);
         $pdf = $service->documentTemplate()->create(['original_filename' => 'Official.pdf', 'stored_path' => $path, 'mime_type' => 'application/pdf', 'file_size' => strlen($bytes), 'uploaded_at' => now()]);
         $template = $service->dynamicDocumentTemplate()->make();
-        $template->forceFill(['service_document_template_id' => $pdf->id, 'source_revision' => $pdf->revision(), 'source_filename' => 'Official.pdf', 'version' => 1, 'is_active' => true])->save();
+        $template->forceFill(['service_document_template_id' => $pdf->id, 'source_revision' => $pdf->revision(), 'source_content_hash' => hash('sha256', $bytes), 'source_filename' => 'Official.pdf', 'version' => 1, 'is_active' => true])->save();
         $name = $template->fields()->create(['field_name' => 'resident_name', 'label' => 'Historical name label', 'source' => 'system', 'field_type' => 'text']);
         $purpose = $template->fields()->create(['field_name' => 'purpose', 'label' => 'Historical purpose label', 'source' => 'custom', 'field_type' => 'text']);
         foreach ([[$name, 1, 50], [$purpose, 1, 100], [$purpose, 2, 150]] as [$field,$page,$y]) {
@@ -77,7 +78,18 @@ class GeneratedReservationDocumentTest extends TestCase
 
     private function generate($reservation): TestResponse
     {
-        return $this->post(route('admin.reservations.generated.store', $reservation));
+        $token = null;
+        if (auth()->user()?->role === UserRole::Admin && auth()->user()->hasVerifiedEmail() && auth()->user()->is_active) {
+            try {
+                $artifact = app(CanonicalDocumentPreview::class)->create($reservation->fresh(), auth()->user());
+                $token = $artifact['token'];
+                app(CanonicalDocumentPreview::class)->reviewed($reservation->fresh(), auth()->user(), $token);
+            } catch (ValidationException) {
+                // Invalid sources/layouts cannot produce a reviewable preview.
+            }
+        }
+
+        return $this->post(route('admin.reservations.generated.store', $reservation), ['preview_token' => $token]);
     }
 
     public function test_generation_access_and_csrf_protection(): void
@@ -203,6 +215,9 @@ class GeneratedReservationDocumentTest extends TestCase
         [, $service, , $reservation] = $this->fixture();
         $reservation->update(['status' => 'approved']);
         $this->actingAs($this->admin());
+        $saved = $reservation->document_template_snapshot;
+        unset($saved['source']);
+        $reservation->forceFill(['document_template_snapshot' => $saved])->save();
         $original = $service->documentTemplate->stored_path;
         $service->documentTemplate->update(['stored_path' => 'service-document-templates/'.$service->id.'/'.str_repeat('b', 40).'.pdf']);
         $this->generate($reservation)->assertSessionHasErrors('document');
@@ -218,6 +233,16 @@ class GeneratedReservationDocumentTest extends TestCase
         $this->generate($reservation)->assertSessionHasErrors('document');
         $this->assertDatabaseCount('reservation_documents', 0);
         $this->assertSame([], Storage::disk('local')->allFiles('reservation-documents'));
+    }
+
+    public function test_four_point_designer_font_is_preserved_by_the_canonical_renderer(): void
+    {
+        [, $service] = $this->fixture();
+        $position = ['page_number' => 1, 'x_position' => 50, 'y_position' => 100, 'width' => 150, 'height' => 6,
+            'font_size' => 4, 'alignment' => 'left', 'text_behavior' => 'auto_resize', 'text' => 'Small historical text'];
+        $bytes = app(FinalCertificatePdf::class)->render(Storage::disk('local')->path($service->documentTemplate->stored_path), [$position]);
+        $reader = new PdfReader(new PdfParser(StreamReader::createByString($bytes)));
+        $this->assertStringContainsString('4.00 Tf', $reader->getPage(1)->getContentStream());
     }
 
     public function test_text_fitting_wrapping_alignment_and_layout_guards(): void

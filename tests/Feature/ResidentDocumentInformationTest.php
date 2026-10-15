@@ -47,7 +47,7 @@ class ResidentDocumentInformationTest extends TestCase
         Storage::disk('local')->put($path, $bytes);
         $pdf = $service->documentTemplate()->create(['original_filename' => 'Official.pdf', 'stored_path' => $path, 'mime_type' => 'application/pdf', 'file_size' => strlen($bytes), 'uploaded_at' => now()]);
         $template = $service->dynamicDocumentTemplate()->make();
-        $template->forceFill(['service_document_template_id' => $pdf->id, 'source_revision' => $pdf->revision(), 'source_filename' => 'Official.pdf', 'version' => 1, 'is_active' => true])->save();
+        $template->forceFill(['service_document_template_id' => $pdf->id, 'source_revision' => $pdf->revision(), 'source_content_hash' => hash('sha256', $bytes), 'source_filename' => 'Official.pdf', 'version' => 1, 'is_active' => true])->save();
         foreach (['resident_name', 'resident_address', 'resident_contact', 'barangay_name', 'date_issued'] as $name) {
             $template->fields()->create(['source' => 'system', 'field_name' => $name, 'label' => ucwords(str_replace('_', ' ', $name)), 'field_type' => $name === 'date_issued' ? 'date' : 'text', 'is_required' => true]);
         }
@@ -85,6 +85,16 @@ class ResidentDocumentInformationTest extends TestCase
         $this->get('/resident/reservations/confirm')->assertOk()->assertSee('Employment');
 
         return session('reservation_wizard.confirmation_token');
+    }
+
+    public function test_configured_display_order_is_preserved_in_the_resident_form(): void
+    {
+        [, $service, $template] = $this->fixture();
+        $template->fields()->where('field_name', 'civil_status')->update(['sort_order' => 100]);
+        $template->fields()->where('field_name', 'purpose')->update(['sort_order' => 200]);
+        $this->start($service);
+        $html = $this->get('/resident/reservations/requirements')->assertOk()->getContent();
+        $this->assertLessThan(strpos($html, 'Purpose'), strpos($html, 'Civil Status'));
     }
 
     public function test_active_configuration_renders_all_types_and_read_only_system_fields(): void

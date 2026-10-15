@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {clampPlacement,pagePoint} from '../../resources/js/document-layout-geometry.js';
+import {clampPlacement,pagePoint,overlappingPlacements} from '../../resources/js/document-layout-geometry.js';
 
 test('display coordinates map to identical PDF placement across desktop and mobile scales',()=>{
     const page={width:595,height:842};
@@ -20,4 +20,12 @@ test('drag and resize never persist a box beyond any page edge',()=>{
 test('normalized placement retains page number and typography settings',()=>{
     const saved=clampPlacement({page_number:2,x_position:72.5,y_position:40,width:100,height:30,font_size:14,alignment:'right',text_behavior:'wrap'},{width:595,height:842});
     assert.deepEqual(saved,{page_number:2,x_position:72.5,y_position:40,width:100,height:30,font_size:14,alignment:'right',text_behavior:'wrap'});
+});
+
+test('same-page positive intersections conflict while exact edges, corners and different pages are allowed',()=>{
+    const box={page_number:1,x_position:0.1,y_position:0.2,width:0.2,height:0.3};
+    assert.equal(overlappingPlacements([box,{...box,x_position:0.3}]).size,0);
+    assert.equal(overlappingPlacements([box,{...box,x_position:0.3,y_position:0.5}]).size,0);
+    assert.equal(overlappingPlacements([box,{...box,page_number:2}]).size,0);
+    assert.equal(overlappingPlacements([box,{...box,x_position:0.299}]).size,2);
 });

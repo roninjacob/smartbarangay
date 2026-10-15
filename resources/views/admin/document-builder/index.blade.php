@@ -6,6 +6,7 @@
     <div class="builder-body">
         <p class="alert alert-info">Configure fields and design their placement on the official document. Layout changes do not alter the original PDF or current printing workflow.</p>
         @if($errors->any())<div class="alert alert-danger" role="alert"><ul class="mb-0">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
+        @if($template)<p class="alert alert-info" role="status">{{ $readiness }}</p>@endif
         <dl class="builder-metadata">
             <div><dt>Current official PDF</dt><dd>{{ $service->documentTemplate?->original_filename ?? 'Not uploaded' }}</dd></div>
             @if($template)
@@ -14,7 +15,18 @@
                 <div><dt>Created by</dt><dd>{{ $template->creator?->name ?? 'Former account' }}</dd></div>
             @endif
         </dl>
-        @if($template && ! $template->matchesCurrentPdf())<p class="alert alert-warning" role="status">The official PDF has changed or was removed. This configuration retains its earlier PDF reference. Placement settings must be reviewed before any future document automation.</p>@endif
+        @if($template && ! $template->matchesCurrentPdf())<p class="alert alert-warning" role="status">The official PDF has changed, was removed, or its original integrity evidence is unavailable. Needs reconfiguration. New document requests are blocked until this configuration is reviewed against the current master.</p>@endif
+        @if($template && !$template->matchesCurrentPdf() && $pdfAvailable)
+            <form method="POST" action="{{ route('admin.services.document-configuration.update', $service) }}" class="mb-3">
+                @csrf @method('PATCH')
+                <input type="hidden" name="version" value="{{ $template->version }}">
+                <input type="hidden" name="is_active" value="0"><input type="hidden" name="reconfigure" value="1">
+                <input type="hidden" name="pdf_id" value="{{ $service->documentTemplate->id }}">
+                <input type="hidden" name="pdf_revision" value="{{ $service->documentTemplate->revision() }}">
+                <p>Keep field definitions, clear old placements, and review the current master before activating. Historical requests are unchanged.</p>
+                <button type="submit" class="btn btn-warning">Reconfigure for Current Master</button>
+            </form>
+        @endif
         @if(!$template && !$pdfAvailable)
             <div class="service-empty p-3"><h3>Upload an official PDF first</h3><p>Use Edit Service to upload the document that this configuration will reference.</p><a class="btn btn-outline-primary" href="{{ route('admin.services.edit', $service) }}">Edit Service</a></div>
         @else

@@ -7,10 +7,7 @@
     @else
     <p class="alert alert-info" role="status">{{ $certificateState['message'] }}</p>
     @if($canGenerateCertificate)
-        <form method="POST" action="{{ route('admin.reservations.generated.store', $reservation) }}" class="mb-3">
-            @csrf
-            <button class="btn btn-primary" type="submit">Generate Certificate</button>
-        </form>
+        <a class="btn btn-primary mb-3" href="{{ route('admin.reservations.document-preview.show', $reservation) }}">Preview &amp; Finalize Certificate</a>
         <p class="app-note">Uses the information and layout saved with this request. A generated certificate is retained without overwriting.</p>
     @elseif(!$reservation->document)
         <p class="app-note">Generation is unavailable because the original PDF or complete historical information is missing. Do not substitute the current profile or layout.</p>

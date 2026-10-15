@@ -6,6 +6,7 @@ use App\Models\DocumentTemplate;
 use App\Models\Service;
 use Closure;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 
 class DocumentTemplateConfiguration
@@ -24,8 +25,24 @@ class DocumentTemplateConfiguration
             }
             $template = new DocumentTemplate;
             $template->forceFill(['service_id' => $locked->id, 'service_document_template_id' => $pdf->id,
-                'source_revision' => $pdf->revision(), 'source_filename' => $pdf->original_filename,
+                'source_revision' => $pdf->revision(), 'source_content_hash' => app(ReservationDocumentSource::class)->current($locked)['hash'], 'source_filename' => $pdf->original_filename,
                 'version' => 1, 'is_active' => $data['is_active'], 'created_by' => $admin])->save();
+        });
+    }
+
+    public function reconfigure(Service $service, array $data): void
+    {
+        $this->mutate($service, (int) $data['version'], function ($template) use ($data) {
+            $source = app(ReservationDocumentSource::class)->current($template->service);
+            if ($source['template_id'] !== (int) $data['pdf_id'] || ! hash_equals($source['revision'], $data['pdf_revision'])) {
+                throw ValidationException::withMessages(['template' => 'The master changed. Reload before reconfiguring.']);
+            }
+            foreach ($template->fields()->get() as $field) {
+                $field->positions()->delete();
+            }
+            $template->forceFill(['service_document_template_id' => $source['template_id'], 'source_revision' => $source['revision'],
+                'source_content_hash' => $source['hash'], 'source_filename' => $template->service->documentTemplate->original_filename,
+                'is_active' => false]);
         });
     }
 
@@ -38,6 +55,11 @@ class DocumentTemplateConfiguration
                 throw ValidationException::withMessages(['template' => 'This configuration has changed. Reload it before saving.']);
             }
             $change($template);
+            if ($template->matchesCurrentPdf()) {
+                $source = app(ReservationDocumentSource::class)->current($template->service);
+                $positions = $template->fields()->with('positions')->get()->flatMap(fn ($field) => $field->positions->toArray())->all();
+                app(DocumentLayout::class)->validate(Storage::disk('local')->path($source['path']), $positions);
+            }
             $template->version++;
             $template->save();
         });

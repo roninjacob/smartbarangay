@@ -8,10 +8,12 @@ use App\Models\DocumentField;
 use App\Models\DocumentTemplate;
 use App\Models\Service;
 use App\Services\CertificatePreview;
+use App\Services\DocumentLayout;
 use App\Services\DocumentTemplateConfiguration;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -70,6 +72,7 @@ class DocumentLayoutController extends Controller
                 throw ValidationException::withMessages(['layout' => 'The official PDF has changed or is unavailable. Reload the configuration before designing its layout.']);
             }
             // Resolve every field through this template. A failed lookup rolls back the entire layout.
+            app(DocumentLayout::class)->validate(Storage::disk('local')->path($template->service->documentTemplate->stored_path), $data['placements']);
             $placements = [];
             foreach ($data['placements'] as $position) {
                 $id = $position['field_id'] ?? null;

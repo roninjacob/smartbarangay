@@ -6,6 +6,7 @@ use App\Enums\UserRole;
 use App\Models\Schedule;
 use App\Models\Service;
 use App\Models\User;
+use App\Services\CanonicalDocumentPreview;
 use App\Services\ReservationDocumentInformation;
 use App\Services\ReservationDocumentPreview;
 use Illuminate\Support\Facades\Artisan;
@@ -38,11 +39,11 @@ class ReservationDocumentPreviewTest extends TestCase
         $resident = User::factory()->create(['role' => UserRole::Resident, 'is_active' => true, 'name' => 'Historical Resident', 'address' => 'Historical address']);
         $service = Service::create(['name' => 'Generic document']);
         $path = 'service-document-templates/'.$service->id.'/'.str_repeat('a', 40).'.pdf';
-        $bytes = CertificatePdf::bytes();
+        $bytes = CertificatePdf::twoPages();
         Storage::disk('local')->put($path, $bytes);
         $pdf = $service->documentTemplate()->create(['original_filename' => 'Official.pdf', 'stored_path' => $path, 'mime_type' => 'application/pdf', 'file_size' => strlen($bytes), 'uploaded_at' => now()]);
         $template = $service->dynamicDocumentTemplate()->make();
-        $template->forceFill(['service_document_template_id' => $pdf->id, 'source_revision' => $pdf->revision(), 'source_filename' => 'Official.pdf', 'version' => 1, 'is_active' => true])->save();
+        $template->forceFill(['service_document_template_id' => $pdf->id, 'source_revision' => $pdf->revision(), 'source_content_hash' => hash('sha256', $bytes), 'source_filename' => 'Official.pdf', 'version' => 1, 'is_active' => true])->save();
         $name = $template->fields()->create(['field_name' => 'resident_name', 'label' => 'Historical name label', 'source' => 'system', 'field_type' => 'text']);
         $purpose = $template->fields()->create(['field_name' => 'purpose', 'label' => 'Historical purpose label', 'source' => 'custom', 'field_type' => 'text']);
         foreach ([[$name, 1, 50], [$purpose, 1, 100], [$purpose, 2, 150]] as [$field,$page,$y]) {
@@ -66,10 +67,15 @@ class ReservationDocumentPreviewTest extends TestCase
     public function test_protected_preview_endpoints(string $role, string $suffix): void
     {
         [$resident,$service,$template,$reservation] = $this->fixture();
-        $url = '/'.$role.'/reservations/'.$reservation->id.'/document-preview'.$suffix.'?revision='.$template->source_revision;
+        $artifact = app(CanonicalDocumentPreview::class)->create($reservation, $resident);
+        $url = '/'.$role.'/reservations/'.$reservation->id.'/document-preview'.$suffix.'?preview='.$artifact['token'];
         auth()->logout();
         $this->get($url)->assertRedirect(route('login'));
         $user = $role === 'resident' ? $resident : User::factory()->create(['role' => UserRole::Admin, 'is_active' => true]);
+        if ($role === 'admin' && $suffix) {
+            $artifact = app(CanonicalDocumentPreview::class)->create($reservation, $user);
+            $url = '/admin/reservations/'.$reservation->id.'/document-preview/pdf?preview='.$artifact['token'];
+        }
         $this->actingAs($user)->get($url)->assertOk();
         $user->forceFill(['email_verified_at' => null])->save();
         $this->actingAs($user)->get($url)->assertRedirect(route('verification.notice'));
@@ -110,10 +116,13 @@ class ReservationDocumentPreviewTest extends TestCase
     public function test_missing_legacy_layout_or_replaced_pdf_is_unavailable_without_fallback(): void
     {
         [$resident,$service,$template,$reservation] = $this->fixture();
+        $saved = $reservation->document_template_snapshot;
+        unset($saved['source']);
+        $reservation->forceFill(['document_template_snapshot' => $saved])->save();
         $path = $service->documentTemplate->stored_path;
         $service->documentTemplate->update(['stored_path' => 'service-document-templates/'.$service->id.'/'.str_repeat('b', 40).'.pdf']);
         $this->get('/resident/reservations/'.$reservation->id.'/document-preview')->assertSee(ReservationDocumentPreview::UNAVAILABLE);
-        $this->get('/resident/reservations/'.$reservation->id.'/document-preview/pdf?revision='.$template->source_revision)->assertNotFound();
+        $this->get('/resident/reservations/'.$reservation->id.'/document-preview/pdf?revision='.$template->source_revision)->assertStatus(410);
         $service->documentTemplate->update(['stored_path' => $path]);
         $answer = $reservation->documentAnswers()->first();
         $snapshot = $answer->field_snapshot;
@@ -128,12 +137,13 @@ class ReservationDocumentPreviewTest extends TestCase
         $before = $reservation->fresh()->getAttributes();
         $answers = $reservation->documentAnswers()->get()->toJson();
         $disk = Storage::disk('local');
+        $artifact = app(CanonicalDocumentPreview::class)->create($reservation, $resident);
         $files = $disk->allFiles();
-        $bytes = $disk->get($service->documentTemplate->stored_path);
+        $bytes = $disk->get($artifact['path']);
         $url = '/resident/reservations/'.$reservation->id.'/document-preview/pdf';
-        $response = $this->get($url.'?revision='.$template->source_revision)->assertOk()->assertHeader('Content-Type', 'application/pdf')->assertHeader('Cache-Control', 'no-store, private');
+        $response = $this->get($url.'?preview='.$artifact['token'])->assertOk()->assertHeader('Content-Type', 'application/pdf')->assertHeader('Cache-Control', 'no-store, private');
         $this->assertSame($bytes, $response->getContent());
-        $this->get($url.'?revision=wrong')->assertNotFound();
+        $this->get($url.'?preview=wrong')->assertStatus(410);
         $this->assertSame($before, $reservation->fresh()->getAttributes());
         $this->assertSame($answers, $reservation->documentAnswers()->get()->toJson());
         $this->assertSame($files, $disk->allFiles());

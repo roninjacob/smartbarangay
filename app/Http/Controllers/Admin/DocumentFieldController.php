@@ -10,6 +10,7 @@ use App\Models\Service;
 use App\Services\DocumentTemplateConfiguration;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class DocumentFieldController extends Controller
@@ -47,6 +48,9 @@ class DocumentFieldController extends Controller
     private function save(SaveDocumentFieldRequest $request, Service $service, DocumentTemplateConfiguration $builder, ?string $id = null): RedirectResponse
     {
         $builder->mutate($service, $request->integer('version'), function ($template) use ($request, $id) {
+            if ($request->boolean('has_position') && ! $template->matchesCurrentPdf()) {
+                throw ValidationException::withMessages(['layout' => 'Reconfigure the current master before saving placements.']);
+            }
             $field = $id ? $template->fields()->findOrFail($id) : $template->fields()->make();
             $field->fill($request->fieldData())->save();
             $position = $field->positions()->first();

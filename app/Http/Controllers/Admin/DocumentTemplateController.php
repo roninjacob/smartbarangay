@@ -7,7 +7,9 @@ use App\Http\Requests\Admin\SaveDocumentTemplateRequest;
 use App\Models\Service;
 use App\Services\CertificatePreview;
 use App\Services\DocumentTemplateConfiguration;
+use App\Services\ReservationDocumentInformation;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class DocumentTemplateController extends Controller
@@ -16,8 +18,18 @@ class DocumentTemplateController extends Controller
     {
         $template = $service->dynamicDocumentTemplate()->with(['creator', 'fields.positions'])->first();
 
+        $readiness = 'Configuration inactive. Review fields and layout before activating.';
+        if ($template?->is_active) {
+            try {
+                app(ReservationDocumentInformation::class)->configuration($service);
+                $readiness = 'Ready for new document requests.';
+            } catch (ValidationException) {
+                $readiness = 'Document setup unavailable. Review the current master, fields and layout before accepting new requests.';
+            }
+        }
+
         return view('admin.document-builder.index', [...self::shellData('Document Template Configuration'),
-            'service' => $service, 'template' => $template, 'pdfAvailable' => $pdf->service($service)['kind'] === 'pdf']);
+            'service' => $service, 'template' => $template, 'readiness' => $readiness, 'pdfAvailable' => $pdf->service($service)['kind'] === 'pdf']);
     }
 
     public function store(SaveDocumentTemplateRequest $request, Service $service, DocumentTemplateConfiguration $builder): RedirectResponse
@@ -29,7 +41,17 @@ class DocumentTemplateController extends Controller
 
     public function update(SaveDocumentTemplateRequest $request, Service $service, DocumentTemplateConfiguration $builder): RedirectResponse
     {
-        $builder->mutate($service, $request->integer('version'), fn ($template) => $template->fill($request->safe()->only('is_active')));
+        if ($request->boolean('reconfigure')) {
+            $builder->reconfigure($service, $request->validated());
+
+            return to_route('admin.services.document-configuration.index', $service)->with('status', 'Current master selected. Fields were retained and old placements cleared. Review the layout before activating.');
+        }
+        $builder->mutate($service, $request->integer('version'), function ($template) use ($request) {
+            if ($request->boolean('is_active') && ! $template->matchesCurrentPdf()) {
+                throw ValidationException::withMessages(['template' => 'Reconfigure against the current master before activating.']);
+            }
+            $template->fill($request->safe()->only('is_active'));
+        });
 
         return to_route('admin.services.document-configuration.index', $service)->with('status', 'Configuration status updated.');
     }

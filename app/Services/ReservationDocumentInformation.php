@@ -8,6 +8,7 @@ use App\Models\DocumentTemplate;
 use App\Models\Reservation;
 use App\Models\Service;
 use App\Models\User;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -16,8 +17,25 @@ class ReservationDocumentInformation
 {
     public function configuration(Service $service): ?DocumentTemplate
     {
-        return $service->dynamicDocumentTemplate()->where('is_active', true)
-            ->with(['fields' => fn ($fields) => $fields->orderBy('sort_order')->orderBy('id')])->first();
+        $template = $service->dynamicDocumentTemplate()->with(['fields' => fn ($fields) => $fields->orderBy('sort_order')->orderBy('id')->with('positions')])->first();
+        if ($template && ! $template->matchesCurrentPdf()) {
+            throw ValidationException::withMessages(['document' => 'This service document setup is temporarily unavailable. Please choose another service or try again after the office updates it.']);
+        }
+        if (! $template?->is_active) {
+            return null;
+        }
+        if ($template->fields->isEmpty()) {
+            throw ValidationException::withMessages(['document' => 'This service document setup is temporarily unavailable. Please try again after the office configures it.']);
+        }
+        try {
+            $source = app(ReservationDocumentSource::class)->current($service);
+            $positions = $template->fields->flatMap(fn ($field) => $field->positions->toArray())->all();
+            app(DocumentLayout::class)->validate(Storage::disk('local')->path($source['path']), $positions);
+        } catch (ValidationException) {
+            throw ValidationException::withMessages(['document' => 'This service document setup is temporarily unavailable. Please choose another service or try again after the office updates it.']);
+        }
+
+        return $template;
     }
 
     public function signature(?DocumentTemplate $template): string
@@ -27,7 +45,7 @@ class ReservationDocumentInformation
         }
 
         return hash('sha256', json_encode([$template->id, $template->version, $template->source_revision,
-            $template->fields->sortBy([['sort_order', 'asc'], ['id', 'asc']])->values()->map(fn ($field) => $this->fieldSnapshot($field))->all()]));
+            $template->fields->sortBy([['sort_order', 'asc'], ['id', 'asc']])->values()->map(fn ($field) => [...$this->fieldSnapshot($field), 'positions' => $field->positions()->get()->map(fn ($position) => $position->only(['page_number', 'x_position', 'y_position', 'width', 'height', 'font_size', 'alignment', 'text_behavior']))->all()])->all()]));
     }
 
     public function profile(User $resident): array
@@ -78,11 +96,15 @@ class ReservationDocumentInformation
         return $custom->mapWithKeys(fn ($field) => [$field->id => $validated['document_answers'][$field->id] ?? null])->all();
     }
 
-    public function store(Reservation $reservation, ?DocumentTemplate $template, array $answers, array $profile): void
+    public function store(Reservation $reservation, ?DocumentTemplate $template, array $answers, array $profile, array &$storedPaths = []): void
     {
+        if ($template && ! $template->matchesCurrentPdf()) {
+            throw ValidationException::withMessages(['document' => 'The document configuration has changed. Restart your request.']);
+        }
         $reservation->forceFill(['resident_snapshot' => $profile, 'document_template_snapshot' => $template ? [
             'id' => $template->id, 'version' => $template->version, 'source_revision' => $template->source_revision,
             'source_filename' => $template->source_filename,
+            'source' => app(ReservationDocumentSource::class)->preserve($reservation, $storedPaths),
         ] : null])->save();
         foreach ($template?->fields ?? [] as $field) {
             $value = $field->source === 'system' ? ($profile[$field->field_name] ?? null) : ($answers[$field->id] ?? null);
