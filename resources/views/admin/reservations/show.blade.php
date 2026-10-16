@@ -19,6 +19,7 @@
                 <div><dt>QR ticket issued</dt><dd>{{ $reservation->qrTicket->generated_at->timezone('Asia/Manila')->format('F j, Y, g:i A') }}</dd></div>
             @endif
         </dl>
+        @include('reservations.payment-status', ['admin' => true])
         <h3 class="h6 mt-4">Current service requirements</h3>
         @include('resident.reservations.requirements-list', ['service' => $reservation->service])
         @include('resident.reservations.document-information')

@@ -160,7 +160,8 @@ class DashboardTest extends TestCase
         $this->actingAs($viewer)->get($path)->assertOk();
         $queries = DB::getQueryLog();
         DB::disableQueryLog();
-        $this->assertLessThanOrEqual($role === UserRole::Resident ? 4 : 7, count($queries));
+        // Admin adds three fixed aggregate/absence queries for payment metrics and integrity alerts.
+        $this->assertLessThanOrEqual($role === UserRole::Resident ? 4 : 10, count($queries));
     }
 
     #[DataProvider('roles')]

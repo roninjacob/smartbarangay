@@ -6,6 +6,7 @@ use App\Enums\ReservationStatus;
 use App\Enums\UserRole;
 use App\Models\Reservation;
 use App\Models\User;
+use App\Services\PaymentCollections;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -41,6 +42,7 @@ class DashboardController extends Controller
             'needsAttention' => $counts[ReservationStatus::Pending->value]
                 + $counts[ReservationStatus::UnderReview->value],
             'totalResidents' => User::where('role', UserRole::Resident->value)->count(),
+            'collections' => app(PaymentCollections::class)->summary(),
             'todayReservations' => Reservation::whereHas('schedule', fn (Builder $query) => $query->whereDate('date', $today))->count(),
             'recentReservations' => Reservation::with(['user', 'service', 'schedule'])
                 ->latest()->orderByDesc('id')->limit(6)->get(),

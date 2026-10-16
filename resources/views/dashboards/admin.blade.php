@@ -12,6 +12,14 @@
     <div class="col-6 col-xl-3"><x-dashboard-stat label="Registered residents" :value="$totalResidents" icon="users" note="All Resident accounts"/></div>
 </section>
 
+<section class="row g-3 dashboard-stats" aria-label="On-site collections summary">
+    <div class="col-12 col-md-6 col-xl-3"><x-dashboard-stat label="Collections Today" :value="$collections['today']" :formatted="\App\Support\ServiceFee::format($collections['today'])" icon="document" note="Payments recorded today · Philippine time" tone="green"/></div>
+    <div class="col-12 col-md-6 col-xl-3"><x-dashboard-stat label="Collections This Month" :value="$collections['month']" :formatted="\App\Support\ServiceFee::format($collections['month'])" icon="document" note="Payments recorded this month · Philippine time" tone="green"/></div>
+    <div class="col-12 col-md-6 col-xl-3"><x-dashboard-stat label="Paid Transactions Today" :value="$collections['paid_today']" icon="status" note="Based on payment time · Philippine time"/></div>
+    <div class="col-12 col-md-6 col-xl-3"><x-dashboard-stat label="Ready for Pickup — Unpaid" :value="$collections['ready_unpaid']" icon="services" note="Known positive fees without a payment" tone="gold"/></div>
+</section>
+@if($collections['integrity_issues'] > 0)<p class="alert alert-danger" role="alert">Payment integrity issues detected ({{ $collections['integrity_issues'] }}). Collections exclude inconsistent payment records. Review Reservation Details.</p>@endif
+
 <div class="row g-4 dashboard-content-grid">
     <div class="col-xl-8"><x-recent-reservations :reservations="$recentReservations" :admin="true"/>
         <section class="dashboard-guidance" aria-labelledby="operations-heading"><span class="guidance-icon"><x-app-icon name="services"/></span><div><h2 id="operations-heading">Your operations workspace</h2><p>Open Reservation Management to review requests and record their next status. Service and schedule configuration are available in the sidebar.</p></div></section>

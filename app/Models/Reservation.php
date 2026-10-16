@@ -65,6 +65,11 @@ class Reservation extends Model
         return $this->hasOne(QrTicket::class);
     }
 
+    public function payment(): HasOne
+    {
+        return $this->hasOne(ReservationPayment::class);
+    }
+
     public function checkinLogs(): HasMany
     {
         return $this->hasMany(CheckinLog::class);
