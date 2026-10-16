@@ -15,8 +15,10 @@ use App\Services\ReservationDocumentPreview;
 use App\Services\ServiceDocumentTemplates;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\Support\CertificatePdf;
 use Tests\TestCase;
 
@@ -68,6 +70,109 @@ class DocumentAutomationHardeningTest extends TestCase
         $bytes = $preview->reviewed($reservation->fresh(), $admin, $artifact['token']);
 
         return [$artifact, $bytes];
+    }
+
+    public function test_head_cannot_review_a_preview_but_get_allows_exact_byte_finalization(): void
+    {
+        [, , , , $reservation] = $this->fixture();
+        $before = $reservation->fresh()->getAttributes();
+        $artifact = $this->get(route('admin.reservations.document-preview.show', $reservation))->assertOk()->viewData('artifact');
+        $key = 'document-preview:'.$artifact['token'];
+        $pdf = route('admin.reservations.document-preview.pdf', [$reservation, 'preview' => $artifact['token']]);
+        $finalize = route('admin.reservations.generated.store', $reservation);
+        $input = ['preview_token' => $artifact['token']];
+        $bytes = Storage::disk('local')->get($artifact['path']);
+
+        $this->assertFalse(Cache::get($key)['viewed']);
+        $this->post($finalize, $input)->assertSessionHasErrors('document');
+        $this->assertDatabaseCount('reservation_documents', 0);
+        $this->head($pdf)->assertOk()->assertHeader('Content-Type', 'application/pdf')->assertContent('');
+        $this->assertSame($artifact, Cache::get($key));
+        $this->post($finalize, $input)->assertSessionHasErrors('document');
+        $this->assertDatabaseCount('reservation_documents', 0);
+
+        $this->get($pdf)->assertOk()->assertContent($bytes);
+        $reviewed = Cache::get($key);
+        $this->assertTrue($reviewed['viewed']);
+        $this->head($pdf)->assertOk()->assertContent('');
+        $this->assertSame($reviewed, Cache::get($key));
+        $this->post($finalize, $input)->assertRedirect(route('admin.reservations.show', $reservation))->assertSessionHasNoErrors();
+        $this->assertSame($bytes, app(GeneratedReservationDocuments::class)->bytes($reservation->fresh()));
+        $this->assertSame(hash('sha256', $bytes), $reservation->fresh()->document->content_hash);
+        $this->assertSame($before, $reservation->fresh()->getAttributes());
+        $this->assertDatabaseCount('reservation_status_histories', 0);
+        $this->assertDatabaseCount('checkin_logs', 0);
+        $this->assertDatabaseCount('qr_tickets', 0);
+        $this->post($finalize, $input)->assertSessionHasErrors('document');
+        $this->assertDatabaseCount('reservation_documents', 1);
+    }
+
+    public function test_resident_preview_head_also_leaves_review_state_unchanged(): void
+    {
+        [, $resident, , , $reservation] = $this->fixture();
+        $this->actingAs($resident);
+        $artifact = $this->get(route('resident.reservations.document-preview.show', $reservation))->assertOk()->viewData('artifact');
+        $key = 'document-preview:'.$artifact['token'];
+        $pdf = route('resident.reservations.document-preview.pdf', [$reservation, 'preview' => $artifact['token']]);
+        $this->head($pdf)->assertOk()->assertContent('');
+        $this->assertSame($artifact, Cache::get($key));
+        $this->get($pdf)->assertOk()->assertContent(Storage::disk('local')->get($artifact['path']));
+        $this->assertTrue(Cache::get($key)['viewed']);
+        $this->post(route('admin.reservations.generated.store', $reservation), ['preview_token' => $artifact['token']])->assertForbidden();
+        $this->assertDatabaseCount('reservation_documents', 0);
+    }
+
+    public static function invalidPreviewReads(): array
+    {
+        $cases = [];
+        foreach (['HEAD', 'GET'] as $method) {
+            foreach (['account', 'reservation', 'expired', 'invalid_token', 'fingerprint', 'missing', 'size', 'hash', 'source'] as $failure) {
+                $cases[$method.' '.$failure] = [$method, $failure];
+            }
+        }
+
+        return $cases;
+    }
+
+    #[DataProvider('invalidPreviewReads')]
+    public function test_invalid_protected_pdf_requests_never_establish_review(string $method, string $failure): void
+    {
+        [$admin, $resident, $service, $template, $reservation] = $this->fixture();
+        $artifact = $this->get(route('admin.reservations.document-preview.show', $reservation))->assertOk()->viewData('artifact');
+        $key = 'document-preview:'.$artifact['token'];
+        $target = $reservation;
+        $token = $artifact['token'];
+        $disk = Storage::disk('local');
+        if ($failure === 'account') {
+            $this->actingAs(User::factory()->create(['role' => UserRole::Admin, 'is_active' => true]));
+        } elseif ($failure === 'reservation') {
+            $target = $resident->reservations()->create(['service_id' => $service->id, 'schedule_id' => $reservation->schedule_id, 'status' => 'approved']);
+            app(ReservationDocumentInformation::class)->store($target, $template->load('fields'), [], app(ReservationDocumentInformation::class)->profile($resident));
+        } elseif ($failure === 'expired') {
+            $artifact['expires'] = now()->subSecond()->timestamp;
+            Cache::put($key, $artifact, now()->addMinutes(30));
+        } elseif ($failure === 'invalid_token') {
+            $token = str_repeat('z', 40);
+        } elseif ($failure === 'fingerprint') {
+            $snapshot = $reservation->resident_snapshot;
+            $snapshot['resident_name'] = 'Changed historical value';
+            $reservation->forceFill(['resident_snapshot' => $snapshot])->save();
+        } elseif ($failure === 'missing') {
+            $disk->delete($artifact['path']);
+        } elseif ($failure === 'size') {
+            $disk->append($artifact['path'], 'changed');
+        } elseif ($failure === 'hash') {
+            $disk->put($artifact['path'], str_repeat('x', $artifact['size']));
+        } elseif ($failure === 'source') {
+            $source = $reservation->document_template_snapshot['source'];
+            $disk->put($source['path'], str_repeat('x', $source['size']));
+        }
+
+        $this->call($method, route('admin.reservations.document-preview.pdf', [$target, 'preview' => $token]))->assertStatus(410);
+        $this->assertSame($artifact, Cache::get($key));
+        $this->assertFalse(Cache::get($key)['viewed']);
+        $this->actingAs($admin)->post(route('admin.reservations.generated.store', $target), ['preview_token' => $token])->assertSessionHasErrors('document');
+        $this->assertDatabaseCount('reservation_documents', 0);
     }
 
     public function test_historical_master_survives_real_replacement_and_exact_reviewed_bytes_are_finalized(): void

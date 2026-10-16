@@ -46,7 +46,10 @@ class ReservationDocumentPreviewController extends Controller
 
         abort_unless(is_string($request->query('preview')), 410, CanonicalDocumentPreview::STALE);
         try {
-            $bytes = app(CanonicalDocumentPreview::class)->reviewed($record, $request->user(), $request->query('preview'));
+            // GET delivers the PDF for review; HEAD validates metadata without recording a review.
+            $bytes = app(CanonicalDocumentPreview::class)->reviewed(
+                $record, $request->user(), $request->query('preview'), markReviewed: $request->isMethod('GET')
+            );
         } catch (ValidationException) {
             abort(410, CanonicalDocumentPreview::STALE);
         }

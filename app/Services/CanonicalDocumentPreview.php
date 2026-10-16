@@ -64,7 +64,7 @@ class CanonicalDocumentPreview
         }
     }
 
-    public function reviewed(Reservation $reservation, User $user, ?string $token, bool $finalizing = false): string
+    public function reviewed(Reservation $reservation, User $user, ?string $token, bool $finalizing = false, bool $markReviewed = true): string
     {
         $artifact = is_string($token) && preg_match('/\A[A-Za-z0-9]{40}\z/', $token)
             ? Cache::get('document-preview:'.$token) : null;
@@ -83,7 +83,7 @@ class CanonicalDocumentPreview
             $this->stale();
         }
 
-        if (! $finalizing) {
+        if (! $finalizing && $markReviewed) {
             $artifact['viewed'] = true;
             Cache::put('document-preview:'.$token, $artifact, now()->addSeconds(max(1, $artifact['expires'] - now()->timestamp)));
         }
