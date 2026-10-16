@@ -19,6 +19,7 @@
                                 <h3 id="service-heading-{{ $service->id }}" class="service-card-name">{{ $service->name }}</h3>
                                 <p class="service-description mb-3">{{ $service->description ?? 'No description provided.' }}</p>
                                 <dl class="service-card-metadata mb-0">
+                                    <div><dt>Service Fee</dt><dd>{{ \App\Support\ServiceFee::format($service->fee_amount, 'Fee setup required') }}@if($service->fee_amount === null)<span class="service-card-filename">Edit this service to configure its fee before accepting new requests.</span>@endif</dd></div>
                                     <div><dt>Official File</dt><dd>{{ $service->documentTemplate?->format() ?? 'Not uploaded' }}
                                         @if($service->documentTemplate)<span class="service-card-filename">{{ $service->documentTemplate->original_filename }}</span>@endif
                                     </dd></div>

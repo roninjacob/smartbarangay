@@ -2,6 +2,7 @@
 <p class="text-secondary">Check the details below before submitting your request.</p>
 <dl class="reservation-summary">
     <div><dt>Service</dt><dd>{{ $service->name }}</dd></div>
+    <div><dt>Service Fee</dt><dd>{{ \App\Support\ServiceFee::format($draft['reviewed_fee'] ?? null) }}</dd></div>
     <div><dt>Date</dt><dd>{{ $schedule->date->format('l, F j, Y') }}</dd></div>
     <div><dt>Time</dt><dd>{{ \Illuminate\Support\Carbon::parse($schedule->start_time)->format('g:i A') }} – {{ \Illuminate\Support\Carbon::parse($schedule->end_time)->format('g:i A') }}</dd></div>
     <div><dt>Resident</dt><dd>{{ $residentInformation['resident_name'] }}</dd></div>

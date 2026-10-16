@@ -32,7 +32,7 @@ class ServiceController extends Controller
         $newPaths = [];
         try {
             DB::transaction(function () use ($request, $templates, &$newPaths) {
-                $service = Service::create([...$request->safe()->only(['name', 'description']), 'is_active' => true]);
+                $service = Service::create([...$request->safe()->only(['name', 'description', 'fee_amount']), 'is_active' => true]);
                 if ($request->hasFile('official_template')) {
                     $templates->replace($service, $request->file('official_template'), $request->user()->id, $newPaths);
                 }
@@ -57,7 +57,7 @@ class ServiceController extends Controller
         try {
             DB::transaction(function () use ($request, $service, $templates, &$newPaths, &$previous) {
                 $locked = Service::lockForUpdate()->findOrFail($service->id);
-                $locked->update($request->safe()->only(['name', 'description']));
+                $locked->update($request->safe()->only(['name', 'description', 'fee_amount']));
                 if ($request->hasFile('official_template')) {
                     $previous = $templates->replace($locked, $request->file('official_template'), $request->user()->id, $newPaths);
                 }

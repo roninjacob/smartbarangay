@@ -41,7 +41,7 @@ class ResidentDocumentInformationTest extends TestCase
     private function fixture(): array
     {
         $resident = User::factory()->create(['role' => UserRole::Resident, 'name' => 'Original Resident', 'address' => 'Calayo original address', 'contact_number' => '09123456789', 'is_active' => true]);
-        $service = Service::create(['name' => 'Generic Configurable Document']);
+        $service = Service::create(['fee_amount' => '0.00', 'name' => 'Generic Configurable Document']);
         $path = 'service-document-templates/'.$service->id.'/'.str_repeat('a', 40).'.pdf';
         $bytes = CertificatePdf::bytes();
         Storage::disk('local')->put($path, $bytes);

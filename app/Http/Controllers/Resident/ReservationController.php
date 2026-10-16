@@ -37,9 +37,11 @@ class ReservationController extends Controller
 
     public function selectService(ReservationWizardRequest $request): RedirectResponse
     {
+        $service = $this->service($request, ['service_id' => (int) $request->validated('service_id')]);
         $request->session()->put(self::SESSION_KEY, [
             'resident_id' => $request->user()->id,
             'service_id' => (int) $request->validated('service_id'),
+            'offered_fee' => $service->fee_amount,
         ]);
 
         return to_route('resident.reservations.requirements');
@@ -50,6 +52,8 @@ class ReservationController extends Controller
         $draft = $this->draft($request);
 
         $service = $this->service($request, $draft);
+        $draft['offered_fee'] = $service->fee_amount;
+        $request->session()->put(self::SESSION_KEY, $draft);
         $information = app(ReservationDocumentInformation::class);
         $template = $this->currentDocumentConfiguration($request, $draft, $service, $information);
 
@@ -62,6 +66,9 @@ class ReservationController extends Controller
     {
         $draft = $this->draft($request);
         $service = $this->service($request, $draft);
+        if (($draft['offered_fee'] ?? null) !== $service->fee_amount) {
+            $this->resetDocumentInformation($request, $draft, 'The service fee changed. Review the updated fee and confirm your request again.');
+        }
         $information = app(ReservationDocumentInformation::class);
         $template = $this->currentDocumentConfiguration($request, $draft, $service, $information);
         $signature = $information->signature($template);
@@ -76,6 +83,7 @@ class ReservationController extends Controller
         $draft['document_answers'] = $answers;
         $draft['document_profile'] = $profile;
         $draft['requirements_reviewed'] = true;
+        $draft['reviewed_fee'] = $service->fee_amount;
         $request->session()->put(self::SESSION_KEY, $draft);
 
         return to_route('resident.reservations.schedule');
@@ -163,10 +171,11 @@ class ReservationController extends Controller
                 }
                 $requirements = $service->serviceRequirements()->lockForUpdate()->get();
                 $files = $uploads->validate($request, $requirements);
-                $reservation = $request->user()->reservations()->create([
+                $reservation = $request->user()->reservations()->make([
                     'service_id' => $service->id, 'schedule_id' => $schedule->id,
                     'status' => ReservationStatus::Pending,
                 ]);
+                $reservation->forceFill(['fee_snapshot' => $service->fee_amount])->save();
                 $information = app(ReservationDocumentInformation::class);
                 $resident = User::lockForUpdate()->findOrFail($request->user()->id);
                 $profile = $information->profile($resident);
@@ -199,6 +208,10 @@ class ReservationController extends Controller
 
     private function documentInformation(Request $request, array $draft, Service $service): ?DocumentTemplate
     {
+        $this->requireConfiguredFee($request, $service);
+        if (($draft['reviewed_fee'] ?? null) !== $service->fee_amount) {
+            $this->resetDocumentInformation($request, $draft, 'The service fee changed. Review the updated fee and confirm your request again.');
+        }
         $information = app(ReservationDocumentInformation::class);
         $template = $this->currentDocumentConfiguration($request, $draft, $service, $information);
         if (($draft['document_signature'] ?? 'none') !== $information->signature($template)
@@ -218,7 +231,7 @@ class ReservationController extends Controller
 
     private function resetDocumentInformation(Request $request, array $draft, string $message): never
     {
-        unset($draft['requirements_reviewed'], $draft['document_signature'], $draft['document_answers'], $draft['document_profile'], $draft['schedule_id'], $draft['confirmation_token']);
+        unset($draft['requirements_reviewed'], $draft['reviewed_fee'], $draft['document_signature'], $draft['document_answers'], $draft['document_profile'], $draft['schedule_id'], $draft['confirmation_token']);
         $request->session()->put(self::SESSION_KEY, $draft);
         $this->restartAt('requirements', $message);
     }
@@ -245,7 +258,17 @@ class ReservationController extends Controller
             $this->restartAt('create', 'The selected service is no longer available. Please choose another service.');
         }
 
+        $this->requireConfiguredFee($request, $service);
+
         return $service;
+    }
+
+    private function requireConfiguredFee(Request $request, Service $service): void
+    {
+        if ($service->fee_amount === null) {
+            $request->session()->forget(self::SESSION_KEY);
+            $this->restartAt('create', 'This service fee is not configured yet. Please contact the barangay office so an Admin can configure the fee first.');
+        }
     }
 
     private function selectedSchedule(array $draft): Schedule

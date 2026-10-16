@@ -40,7 +40,7 @@ class DocumentAutomationHardeningTest extends TestCase
     {
         $admin = User::factory()->create(['role' => UserRole::Admin, 'is_active' => true]);
         $resident = User::factory()->create(['role' => UserRole::Resident, 'is_active' => true, 'name' => 'Historical Resident']);
-        $service = Service::create(['name' => 'Historical Certificate']);
+        $service = Service::create(['fee_amount' => '0.00', 'name' => 'Historical Certificate']);
         $bytes = CertificatePdf::twoPages();
         $path = 'service-document-templates/'.$service->id.'/'.str_repeat('a', 40).'.pdf';
         Storage::disk('local')->put($path, $bytes);

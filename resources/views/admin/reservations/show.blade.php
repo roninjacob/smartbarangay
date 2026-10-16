@@ -8,6 +8,7 @@
         @if($reservation->service->description)<p class="reservation-service-description">{{ $reservation->service->description }}</p>@endif
         <h3 class="h6 mt-4">Resident and reservation information</h3>
         <dl class="reservation-summary">
+            <div><dt>Service Fee</dt><dd>{{ \App\Support\ServiceFee::format($reservation->fee_snapshot) }}</dd></div>
             <div><dt>Resident</dt><dd>{{ $reservation->resident_snapshot ? $reservation->resident_snapshot['resident_name'] : $reservation->user->name }}</dd></div>
             <div><dt>Email</dt><dd>{{ $reservation->user->email }}</dd></div>
             @if($reservation->resident_snapshot ? ($reservation->resident_snapshot['resident_contact'] ?? null) : $reservation->user->contact_number)<div><dt>Contact</dt><dd>{{ $reservation->resident_snapshot ? $reservation->resident_snapshot['resident_contact'] : $reservation->user->contact_number }}</dd></div>@endif

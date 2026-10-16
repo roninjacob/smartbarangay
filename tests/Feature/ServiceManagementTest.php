@@ -71,7 +71,7 @@ class ServiceManagementTest extends TestCase
         Service::create(['name' => 'Original']);
         $admin = $this->user();
         $admin->forceFill(['is_active' => false])->save();
-        $this->actingAs($admin)->call($method, $path, ['name' => 'Changed', 'is_active' => false])
+        $this->actingAs($admin)->call($method, $path, ['fee_amount' => '0.00', 'name' => 'Changed', 'is_active' => false])
             ->assertRedirect(route('login'));
         $this->assertGuest();
         $this->assertDatabaseHas('services', ['name' => 'Original', 'is_active' => true]);
@@ -83,7 +83,7 @@ class ServiceManagementTest extends TestCase
         $this->actingAs($this->user())->get('/admin/services')->assertOk()->assertSee('No services yet')
             ->assertSee('Barangay Calayo')->assertSee('aria-current="page"', false);
         $this->get('/admin/services/create')->assertOk()->assertSee('name="_token"', false)->assertSee('Service / Document Name');
-        $this->post('/admin/services', ['name' => '  Barangay Clearance  ', 'description' => '  Proof of clearance.  ', 'is_active' => false, 'id' => 900])
+        $this->post('/admin/services', ['fee_amount' => '0.00', 'name' => '  Barangay Clearance  ', 'description' => '  Proof of clearance.  ', 'is_active' => false, 'id' => 900])
             ->assertRedirect(route('admin.services.index'))->assertSessionHas('status');
         $this->assertDatabaseHas('services', ['name' => 'Barangay Clearance', 'description' => 'Proof of clearance.', 'is_active' => true]);
         $this->assertDatabaseMissing('services', ['id' => 900]);
@@ -94,12 +94,12 @@ class ServiceManagementTest extends TestCase
         Service::create(['name' => 'Existing']);
         $this->actingAs($this->user());
         foreach (['', '   ', str_repeat('x', 256), ['invalid'], 'Existing', ' Existing '] as $name) {
-            $this->from('/admin/services/create')->post('/admin/services', ['name' => $name])
+            $this->from('/admin/services/create')->post('/admin/services', ['fee_amount' => '0.00', 'name' => $name])
                 ->assertRedirect('/admin/services/create')->assertSessionHasErrors('name');
             $this->get('/admin/services/create')->assertOk()->assertSee('Please correct the highlighted fields');
         }
-        $this->post('/admin/services', ['name' => 'New', 'description' => str_repeat('x', 5001)])->assertSessionHasErrors('description');
-        $this->post('/admin/services', ['name' => 'New', 'description' => ['bad']])->assertSessionHasErrors('description');
+        $this->post('/admin/services', ['fee_amount' => '0.00', 'name' => 'New', 'description' => str_repeat('x', 5001)])->assertSessionHasErrors('description');
+        $this->post('/admin/services', ['fee_amount' => '0.00', 'name' => 'New', 'description' => ['bad']])->assertSessionHasErrors('description');
         $this->assertDatabaseCount('services', 1);
         $this->get('/admin/services/create')->assertOk()->assertSee('Please correct the highlighted fields');
     }
@@ -110,11 +110,11 @@ class ServiceManagementTest extends TestCase
         Service::create(['name' => 'Certificate']);
         $this->actingAs($this->user())->get('/admin/services/'.$service->id.'/edit')->assertOk()
             ->assertSee('Clearance')->assertSee('Inactive')->assertSee('value="PUT"', false);
-        $this->put('/admin/services/'.$service->id, ['name' => 'Clearance', 'description' => null, 'is_active' => true])
+        $this->put('/admin/services/'.$service->id, ['fee_amount' => '0.00', 'name' => 'Clearance', 'description' => null, 'is_active' => true])
             ->assertRedirect(route('admin.services.index'))->assertSessionHasNoErrors();
         $this->assertFalse($service->fresh()->is_active);
-        $this->put('/admin/services/'.$service->id, ['name' => 'Certificate'])->assertSessionHasErrors('name');
-        $this->put('/admin/services/'.$service->id, ['name' => 'Updated Clearance', 'description' => 'Updated details'])
+        $this->put('/admin/services/'.$service->id, ['fee_amount' => '0.00', 'name' => 'Certificate'])->assertSessionHasErrors('name');
+        $this->put('/admin/services/'.$service->id, ['fee_amount' => '0.00', 'name' => 'Updated Clearance', 'description' => 'Updated details'])
             ->assertRedirect(route('admin.services.index'));
         $this->assertDatabaseHas('services', ['id' => $service->id, 'name' => 'Updated Clearance', 'description' => 'Updated details', 'is_active' => false]);
     }
@@ -145,7 +145,7 @@ class ServiceManagementTest extends TestCase
         }
         $this->assertTrue($service->fresh()->is_active);
         $this->get('/admin/services/999/edit')->assertNotFound();
-        $this->put('/admin/services/999', ['name' => 'Name'])->assertNotFound();
+        $this->put('/admin/services/999', ['fee_amount' => '0.00', 'name' => 'Name'])->assertNotFound();
         $this->patch('/admin/services/999/status', ['is_active' => false])->assertNotFound();
     }
 
@@ -169,8 +169,8 @@ class ServiceManagementTest extends TestCase
         $service = Service::create(['name' => 'Original']);
         $this->actingAs($this->user());
         $this->app['env'] = 'local';
-        $this->post('/admin/services', ['name' => 'New'])->assertStatus(419);
-        $this->put('/admin/services/'.$service->id, ['name' => 'Changed'])->assertStatus(419);
+        $this->post('/admin/services', ['fee_amount' => '0.00', 'name' => 'New'])->assertStatus(419);
+        $this->put('/admin/services/'.$service->id, ['fee_amount' => '0.00', 'name' => 'Changed'])->assertStatus(419);
         $this->patch('/admin/services/'.$service->id.'/status', ['is_active' => false])->assertStatus(419);
         $this->assertDatabaseHas('services', ['name' => 'Original', 'is_active' => true]);
         $this->assertDatabaseCount('services', 1);

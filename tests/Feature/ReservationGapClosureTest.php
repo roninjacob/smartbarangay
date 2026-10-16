@@ -95,7 +95,7 @@ class ReservationGapClosureTest extends TestCase
     public function test_foreign_requirements_are_rejected_and_forged_owner_fields_are_ignored(): void
     {
         [$user, $service, $schedule, $token] = $this->draft();
-        $foreign = Service::create(['name' => 'Other service'])->serviceRequirements()->create(['name' => 'Foreign ID']);
+        $foreign = Service::create(['fee_amount' => '0.00', 'name' => 'Other service'])->serviceRequirements()->create(['name' => 'Foreign ID']);
         $this->post('/resident/reservations', ['confirmation_token' => $token, 'attachments' => [$foreign->id => $this->png()]])->assertSessionHasErrors('attachments');
         $this->post('/resident/reservations', ['confirmation_token' => $token, 'user_id' => 999,
             'reservation_id' => 999, 'service_requirement_id' => $foreign->id])->assertSessionHas('status');
@@ -253,7 +253,7 @@ class ReservationGapClosureTest extends TestCase
     private function draft(int $capacity = 5): array
     {
         $user = $this->user();
-        $service = Service::create(['name' => 'Clearance']);
+        $service = Service::create(['fee_amount' => '0.00', 'name' => 'Clearance']);
         $schedule = Schedule::create(['date' => '2026-11-01', 'start_time' => '09:00:00', 'end_time' => '10:00:00', 'capacity' => $capacity]);
         $this->actingAs($user);
 

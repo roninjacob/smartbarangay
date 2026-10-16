@@ -4,6 +4,7 @@ namespace App\Http\Requests\Admin;
 
 use App\Enums\UserRole;
 use App\Rules\OfficialDocumentTemplate;
+use App\Support\ServiceFee;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -30,7 +31,14 @@ class SaveServiceRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:255', Rule::unique('services', 'name')->ignore($this->route('service'))],
             'description' => ['nullable', 'string', 'max:5000'],
+            'fee_amount' => ['bail', 'required', 'regex:'.ServiceFee::PATTERN],
             'official_template' => ['bail', 'nullable', 'file', 'extensions:pdf', 'max:10240', new OfficialDocumentTemplate],
         ];
+    }
+
+    public function messages(): array
+    {
+        return ['fee_amount.required' => 'Enter the service fee, including 0.00 for a free service.',
+            'fee_amount.regex' => 'Enter a fee from 0.00 to 99,999,999.99 using at most two decimal places, without commas or currency symbols.'];
     }
 }

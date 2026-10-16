@@ -66,8 +66,8 @@ class ResidentReservationWizardTest extends TestCase
     public function test_active_choices_and_readonly_requirements_and_empty_states(): void
     {
         $this->actingAs($this->user())->get('/resident/reservations/create')->assertOk()->assertSee('No services available');
-        $service = Service::create(['name' => 'Clearance', 'description' => '<script>alert(1)</script>']);
-        Service::create(['name' => 'Hidden service', 'is_active' => false]);
+        $service = Service::create(['fee_amount' => '0.00', 'name' => 'Clearance', 'description' => '<script>alert(1)</script>']);
+        Service::create(['fee_amount' => '0.00', 'name' => 'Hidden service', 'is_active' => false]);
         $service->serviceRequirements()->create(['name' => 'Valid ID', 'description' => 'Bring original.']);
         $service->serviceRequirements()->create(['name' => 'Supporting document', 'is_required' => false]);
         $this->get('/resident/reservations/create')->assertSee('Clearance')->assertDontSee('Hidden service')
@@ -92,7 +92,7 @@ class ResidentReservationWizardTest extends TestCase
     {
         $resident = $this->user();
         $other = $this->user();
-        $service = Service::create(['name' => 'Clearance']);
+        $service = Service::create(['fee_amount' => '0.00', 'name' => 'Clearance']);
         $schedule = $this->schedule();
         $serviceBefore = $service->fresh()->getRawOriginal();
         $scheduleBefore = $schedule->fresh()->getRawOriginal();
@@ -122,8 +122,8 @@ class ResidentReservationWizardTest extends TestCase
 
     public function test_missing_inactive_and_manipulated_selections_are_rejected(): void
     {
-        $service = Service::create(['name' => 'Clearance']);
-        $inactive = Service::create(['name' => 'Inactive', 'is_active' => false]);
+        $service = Service::create(['fee_amount' => '0.00', 'name' => 'Clearance']);
+        $inactive = Service::create(['fee_amount' => '0.00', 'name' => 'Inactive', 'is_active' => false]);
         $this->actingAs($this->user());
         foreach ([null, '', 999, $inactive->id, ['id' => $service->id], '1 OR 1=1'] as $value) {
             $this->post('/resident/reservations/service', ['service_id' => $value])->assertSessionHasErrors('service_id')->assertSessionMissing('reservation_wizard');
@@ -143,7 +143,7 @@ class ResidentReservationWizardTest extends TestCase
         foreach (['requirements', 'schedule', 'confirm'] as $step) {
             $this->get('/resident/reservations/'.$step)->assertRedirect(route('resident.reservations.create'));
         }
-        $service = Service::create(['name' => 'Clearance']);
+        $service = Service::create(['fee_amount' => '0.00', 'name' => 'Clearance']);
         $schedule = $this->schedule();
         $this->post('/resident/reservations/service', ['service_id' => $service->id]);
         $this->get('/resident/reservations/schedule')->assertRedirect(route('resident.reservations.requirements'));
@@ -163,7 +163,7 @@ class ResidentReservationWizardTest extends TestCase
         $first = $this->user();
         $second = $this->user();
         $this->actingAs($first);
-        $token = $this->completeDraft(Service::create(['name' => 'Clearance']), $this->schedule());
+        $token = $this->completeDraft(Service::create(['fee_amount' => '0.00', 'name' => 'Clearance']), $this->schedule());
         $this->actingAs($second)->post('/resident/reservations', ['confirmation_token' => $token])
             ->assertRedirect(route('resident.reservations.create'))->assertSessionMissing('reservation_wizard');
         $this->assertDatabaseCount('reservations', 0);
@@ -172,7 +172,7 @@ class ResidentReservationWizardTest extends TestCase
     public function test_confirmation_tokens_reject_missing_wrong_and_stale_tabs(): void
     {
         $this->actingAs($this->user());
-        $service = Service::create(['name' => 'Clearance']);
+        $service = Service::create(['fee_amount' => '0.00', 'name' => 'Clearance']);
         $schedule = $this->schedule();
         $old = $this->completeDraft($service, $schedule);
         $this->post('/resident/reservations', [])->assertSessionHasErrors('confirmation_token');
@@ -185,7 +185,7 @@ class ResidentReservationWizardTest extends TestCase
     public function test_final_submission_rechecks_active_and_existing_records(): void
     {
         $this->actingAs($this->user());
-        $service = Service::create(['name' => 'Clearance']);
+        $service = Service::create(['fee_amount' => '0.00', 'name' => 'Clearance']);
         $schedule = $this->schedule();
         $token = $this->completeDraft($service, $schedule);
         $service->update(['is_active' => false]);

@@ -24,6 +24,7 @@ class Reservation extends Model
     {
         return [
             'status' => ReservationStatus::class,
+            'fee_snapshot' => 'decimal:2',
             'resident_snapshot' => 'array',
             'document_template_snapshot' => 'array',
         ];

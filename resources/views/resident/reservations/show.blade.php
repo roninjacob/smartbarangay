@@ -10,6 +10,7 @@
         @if($reservation->service->description)<p class="reservation-service-description">{{ $reservation->service->description }}</p>@endif
         <h3 class="h6 mt-4">Reservation information</h3>
         <dl class="reservation-summary">
+            <div><dt>Service Fee</dt><dd>{{ \App\Support\ServiceFee::format($reservation->fee_snapshot) }}</dd></div>
             <div><dt>Schedule date</dt><dd><time datetime="{{ $reservation->schedule->date->toDateString() }}">{{ $reservation->schedule->date->format('l, F j, Y') }}</time></dd></div>
             <div><dt>Time</dt><dd>{{ \Illuminate\Support\Carbon::parse($reservation->schedule->start_time)->format('g:i A') }} – {{ \Illuminate\Support\Carbon::parse($reservation->schedule->end_time)->format('g:i A') }}</dd></div>
             <div><dt>Submitted</dt><dd><time datetime="{{ $reservation->created_at->toIso8601String() }}">{{ $reservation->created_at->timezone('Asia/Manila')->format('F j, Y, g:i A') }}</time></dd></div>

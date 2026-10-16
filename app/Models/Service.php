@@ -11,6 +11,7 @@ class Service extends Model
     protected $fillable = [
         'name',
         'description',
+        'fee_amount',
         'is_active',
     ];
 
@@ -18,6 +19,7 @@ class Service extends Model
     {
         return [
             'is_active' => 'boolean',
+            'fee_amount' => 'decimal:2',
         ];
     }
 

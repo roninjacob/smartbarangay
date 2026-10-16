@@ -48,7 +48,7 @@ class ServiceDocumentTemplateTest extends TestCase
     {
         $admin = $this->admin();
         $file = $this->pdf();
-        $this->actingAs($admin)->post('/admin/services', ['name' => 'Clearance', 'official_template' => $file,
+        $this->actingAs($admin)->post('/admin/services', ['fee_amount' => '0.00', 'name' => 'Clearance', 'official_template' => $file,
             'uploaded_by' => 999, 'stored_path' => '../../secret', 'service_id' => 999])->assertSessionHas('status');
         $service = Service::sole();
         $template = $service->documentTemplate()->sole();
@@ -72,11 +72,11 @@ class ServiceDocumentTemplateTest extends TestCase
 
     public function test_template_is_optional_for_new_and_existing_services(): void
     {
-        $this->actingAs($this->admin())->post('/admin/services', ['name' => 'No template'])->assertSessionHas('status');
+        $this->actingAs($this->admin())->post('/admin/services', ['fee_amount' => '0.00', 'name' => 'No template'])->assertSessionHas('status');
         $service = Service::sole();
         $this->assertDatabaseCount('service_document_templates', 0);
         $this->get(route('admin.services.edit', $service))->assertSee('No template uploaded')->assertSee('Resident submits');
-        $this->put(route('admin.services.update', $service), ['name' => 'Still valid'])->assertSessionHas('status');
+        $this->put(route('admin.services.update', $service), ['fee_amount' => '0.00', 'name' => 'Still valid'])->assertSessionHas('status');
         $this->get(route('admin.services.template.download', $service))->assertNotFound();
         $this->get('/admin/services/999/template')->assertNotFound();
     }
@@ -97,7 +97,7 @@ class ServiceDocumentTemplateTest extends TestCase
             'format-mismatch' => $this->pdf('renamed.docx'),
             default => $this->docx($kind),
         };
-        $this->actingAs($this->admin())->from('/admin/services/create')->post('/admin/services', ['name' => 'Invalid', 'official_template' => $file])
+        $this->actingAs($this->admin())->from('/admin/services/create')->post('/admin/services', ['fee_amount' => '0.00', 'name' => 'Invalid', 'official_template' => $file])
             ->assertRedirect('/admin/services/create')->assertSessionHasErrors('official_template');
         $this->assertDatabaseCount('services', 0);
         $this->assertDatabaseCount('service_document_templates', 0);
@@ -145,7 +145,7 @@ class ServiceDocumentTemplateTest extends TestCase
         $original = $service->documentTemplate;
         $oldPath = $original->stored_path;
         $records = $this->businessRecords($service);
-        $this->put('/admin/services/'.$service->id, ['name' => $service->name, 'official_template' => $this->pdf('Replacement.pdf')])->assertSessionHas('status');
+        $this->put('/admin/services/'.$service->id, ['fee_amount' => '0.00', 'name' => $service->name, 'official_template' => $this->pdf('Replacement.pdf')])->assertSessionHas('status');
         $current = $service->fresh()->documentTemplate;
         $this->assertDatabaseCount('service_document_templates', 1);
         $this->assertNotSame($oldPath, $current->stored_path);
@@ -196,7 +196,7 @@ class ServiceDocumentTemplateTest extends TestCase
             $this->delete($url, ['confirm_removal' => 1, 'template_id' => $original->id,
                 'template_revision' => $original->revision()])->assertSessionHas('status');
         }
-        $this->put(route('admin.services.update', $service), ['name' => $service->name,
+        $this->put(route('admin.services.update', $service), ['fee_amount' => '0.00', 'name' => $service->name,
             'official_template' => $this->pdf('Current-replacement.pdf')])->assertSessionHas('status');
         $current = $service->fresh()->documentTemplate;
         $this->assertNotSame($original->revision(), $current->revision());
@@ -255,7 +255,7 @@ class ServiceDocumentTemplateTest extends TestCase
         DB::statement("CREATE TRIGGER fail_template BEFORE $operation ON service_document_templates BEGIN SELECT RAISE(ABORT, 'Simulated failure'); END");
         $this->withoutExceptionHandling();
         try {
-            $this->call($action === 'replace' ? 'PUT' : 'POST', $service ? '/admin/services/'.$service->id : '/admin/services', ['name' => 'Changed'], [], ['official_template' => $this->pdf()]);
+            $this->call($action === 'replace' ? 'PUT' : 'POST', $service ? '/admin/services/'.$service->id : '/admin/services', ['fee_amount' => '0.00', 'name' => 'Changed'], [], ['official_template' => $this->pdf()]);
             $this->fail('Expected database failure');
         } catch (QueryException $exception) {
             $this->assertStringContainsString('Simulated failure', $exception->getMessage());
@@ -278,7 +278,7 @@ class ServiceDocumentTemplateTest extends TestCase
         $proxy = \Mockery::mock($disk)->makePartial();
         $proxy->shouldReceive('putFileAs')->once()->andReturn(false);
         Storage::shouldReceive('disk')->with('local')->andReturn($proxy);
-        $this->actingAs($this->admin())->call($action === 'replace' ? 'PUT' : 'POST', $service ? '/admin/services/'.$service->id : '/admin/services', ['name' => 'Changed'], [], ['official_template' => $this->pdf()])
+        $this->actingAs($this->admin())->call($action === 'replace' ? 'PUT' : 'POST', $service ? '/admin/services/'.$service->id : '/admin/services', ['fee_amount' => '0.00', 'name' => 'Changed'], [], ['official_template' => $this->pdf()])
             ->assertSessionHasErrors('official_template');
         $this->assertDatabaseCount('services', $old ? 1 : 0);
         $this->assertDatabaseCount('service_document_templates', $old ? 1 : 0);
@@ -311,7 +311,7 @@ class ServiceDocumentTemplateTest extends TestCase
 
     private function createTemplate(): Service
     {
-        $this->actingAs($this->admin())->post('/admin/services', ['name' => 'Clearance', 'official_template' => $this->pdf()])->assertSessionHas('status');
+        $this->actingAs($this->admin())->post('/admin/services', ['fee_amount' => '0.00', 'name' => 'Clearance', 'official_template' => $this->pdf()])->assertSessionHas('status');
 
         return Service::sole();
     }

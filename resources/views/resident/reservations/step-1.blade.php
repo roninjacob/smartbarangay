@@ -10,8 +10,8 @@
             <div class="reservation-options">
                 @foreach($services as $option)
                     <label class="reservation-option" for="service-{{ $option->id }}">
-                        <input id="service-{{ $option->id }}" type="radio" name="service_id" value="{{ $option->id }}" required @checked((string) old('service_id', $draft['service_id'] ?? '') === (string) $option->id)>
-                        <span><strong>{{ $option->name }}</strong>@if($option->description)<span class="option-description">{{ $option->description }}</span>@endif</span>
+                        <input id="service-{{ $option->id }}" type="radio" name="service_id" value="{{ $option->id }}" required @disabled($option->fee_amount === null) @checked($option->fee_amount !== null && (string) old('service_id', $draft['service_id'] ?? '') === (string) $option->id)>
+                        <span><strong>{{ $option->name }}</strong>@if($option->description)<span class="option-description">{{ $option->description }}</span>@endif<span class="option-description">Service Fee: {{ \App\Support\ServiceFee::format($option->fee_amount, 'Not yet configured — contact the barangay office') }}</span></span>
                     </label>
                 @endforeach
             </div>

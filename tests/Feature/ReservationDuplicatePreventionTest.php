@@ -50,7 +50,7 @@ class ReservationDuplicatePreventionTest extends TestCase
     public function test_active_duplicate_is_rejected_without_changing_existing_records(ReservationStatus $status): void
     {
         $resident = $this->resident();
-        $service = Service::create(['name' => 'Clearance']);
+        $service = Service::create(['fee_amount' => '0.00', 'name' => 'Clearance']);
         $schedule = $this->schedule();
         $existing = $resident->reservations()->create([
             'service_id' => $service->id, 'schedule_id' => $schedule->id, 'status' => $status,
@@ -80,7 +80,7 @@ class ReservationDuplicatePreventionTest extends TestCase
     public function test_terminal_previous_reservation_allows_new_request(ReservationStatus $status): void
     {
         $resident = $this->resident();
-        $service = Service::create(['name' => 'Clearance']);
+        $service = Service::create(['fee_amount' => '0.00', 'name' => 'Clearance']);
         $schedule = $this->schedule();
         $previous = $resident->reservations()->create([
             'service_id' => $service->id, 'schedule_id' => $schedule->id, 'status' => $status,
@@ -101,7 +101,7 @@ class ReservationDuplicatePreventionTest extends TestCase
 
     public function test_another_resident_does_not_block_the_authenticated_resident(): void
     {
-        $service = Service::create(['name' => 'Clearance']);
+        $service = Service::create(['fee_amount' => '0.00', 'name' => 'Clearance']);
         $schedule = $this->schedule();
         $other = $this->resident()->reservations()->create([
             'service_id' => $service->id, 'schedule_id' => $schedule->id, 'status' => ReservationStatus::Pending,
@@ -118,8 +118,8 @@ class ReservationDuplicatePreventionTest extends TestCase
     public function test_different_service_or_schedule_is_allowed(): void
     {
         $this->actingAs($this->resident());
-        $service = Service::create(['name' => 'Clearance']);
-        $otherService = Service::create(['name' => 'Residency']);
+        $service = Service::create(['fee_amount' => '0.00', 'name' => 'Clearance']);
+        $otherService = Service::create(['fee_amount' => '0.00', 'name' => 'Residency']);
         $schedule = $this->schedule();
         $otherSchedule = $this->schedule('2026-11-02');
         $this->submit($service, $schedule);
@@ -131,7 +131,7 @@ class ReservationDuplicatePreventionTest extends TestCase
     public function test_consumed_token_and_fresh_wizard_cannot_create_another_active_reservation(): void
     {
         $this->actingAs($this->resident());
-        $service = Service::create(['name' => 'Clearance']);
+        $service = Service::create(['fee_amount' => '0.00', 'name' => 'Clearance']);
         $schedule = $this->schedule();
         $token = $this->completeDraft($service, $schedule);
         $this->post('/resident/reservations', ['confirmation_token' => $token])->assertRedirect(route('resident.home'));
@@ -147,7 +147,7 @@ class ReservationDuplicatePreventionTest extends TestCase
     public function test_confirmation_still_requires_csrf(): void
     {
         $this->actingAs($this->resident());
-        $service = Service::create(['name' => 'Clearance']);
+        $service = Service::create(['fee_amount' => '0.00', 'name' => 'Clearance']);
         $token = $this->completeDraft($service, $this->schedule());
         $this->app['env'] = 'local';
         $this->post('/resident/reservations', ['confirmation_token' => $token])->assertStatus(419);

@@ -21,6 +21,13 @@
                     <div id="service-description-help" class="form-text">Describe the service in plain text. Maximum 5,000 characters.</div>
                     @error('description')<div id="service-description-error" class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
+                <div class="mb-4">
+                    <label for="service-fee" class="form-label">Service Fee (₱) <span class="service-required">(required)</span></label>
+                    @if($service->exists && $service->fee_amount === null)<p class="text-warning-emphasis">Fee setup required. Enter an amount explicitly, including 0.00 for a free service.</p>@endif
+                    <input id="service-fee" name="fee_amount" type="number" min="0" max="99999999.99" step="0.01" required inputmode="decimal" @class(['form-control', 'is-invalid' => $errors->has('fee_amount')]) value="{{ is_scalar(old('fee_amount', $service->fee_amount)) ? old('fee_amount', $service->fee_amount) : '' }}" aria-describedby="service-fee-help{{ $errors->has('fee_amount') ? ' service-fee-error' : '' }}" @if($errors->has('fee_amount')) aria-invalid="true" @endif>
+                    <div id="service-fee-help" class="form-text">Enter 0.00 for a free service. Changes to the service fee apply only to new reservations. Existing reservations retain their original fee.</div>
+                    @error('fee_amount')<div id="service-fee-error" class="invalid-feedback">{{ $message }}</div>@enderror
+                </div>
                 <fieldset class="mb-4 border-top pt-4">
                     <legend class="h5 float-none w-auto">Official Certificate PDF</legend>
                     <p class="app-note">This is the official Barangay Calayo PDF used for certificate printing. Service Requirements are the files a Resident submits with a reservation.</p>
