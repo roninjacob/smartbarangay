@@ -1,0 +1,21 @@
+.reservation-log-panel, .reservation-activity, .reservation-log-feed { min-width: 0; }
+.activity-section-heading, .activity-item-heading { display: flex; justify-content: space-between; align-items: baseline; gap: .5rem 1rem; flex-wrap: wrap; }
+.activity-section-heading > *, .activity-item-heading > * { min-width: 0; overflow-wrap: anywhere; }
+.activity-item-heading time { color: var(--muted-text); font-size: .82rem; }
+.activity-actor { margin: .4rem 0; color: var(--muted-text); font-size: .85rem; overflow-wrap: anywhere; }
+.reservation-activity { list-style: none; padding: 0 0 0 .5rem; margin: 1.25rem 0 0; }
+.reservation-activity > li { position: relative; padding: 0 0 1.5rem 1.25rem; border-left: 2px solid var(--border-color); overflow-wrap: anywhere; }
+.reservation-activity > li::before { content: ''; position: absolute; top: .25rem; left: -6px; width: 10px; height: 10px; background: var(--civic-blue); border-radius: 50%; }
+.reservation-activity > li:last-child { padding-bottom: 0; border-left-color: transparent; }
+.activity-note summary { color: var(--civic-dark); cursor: pointer; }
+.activity-warning { padding: .65rem .8rem; border-left: 3px solid var(--warm-gold); background: #fff8e8; color: #715000; font-size: .85rem; }
+.reservation-log-feed { list-style: none; margin: 0; padding: 0; }
+.reservation-log-feed > li { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: 1.5rem; padding: 1.25rem 1.5rem; border-top: 1px solid var(--border-color); overflow-wrap: anywhere; }
+.activity-context { display: flex; flex-direction: column; gap: .35rem; font-size: .9rem; min-width: 0; }
+.activity-context a { font-weight: 600; }
+.activity-content { min-width: 0; }
+@media (max-width: 767.98px) {
+    .reservation-log-feed > li { grid-template-columns: minmax(0, 1fr); gap: .8rem; padding: 1.1rem; }
+    .activity-item-heading { flex-direction: column; gap: .35rem; }
+    .reservation-log-panel .service-pagination { align-items: flex-start; }
+}

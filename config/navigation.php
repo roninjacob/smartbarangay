@@ -28,7 +28,7 @@ return [
             ['label' => 'Request Status Management', 'icon' => 'status'],
             ['label' => 'Services & Document Management', 'icon' => 'services', 'route' => 'admin.services.index', 'active' => 'admin.services.*'],
             ['label' => 'User Management', 'icon' => 'users', 'route' => 'admin.users.index', 'active' => 'admin.users.*'],
-            ['label' => 'Check-in / Reservation Logs', 'icon' => 'history'],
+            ['label' => 'Reservation Logs', 'icon' => 'history', 'route' => 'admin.reservation-logs.index', 'active' => 'admin.reservation-logs.*'],
         ],
     ],
 ];

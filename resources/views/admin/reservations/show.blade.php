@@ -89,19 +89,6 @@
             @endif
         @endif
     </section>
-    <section class="card dashboard-panel reservation-panel mt-4" aria-labelledby="history-heading">
-        <h2 id="history-heading">Status history</h2><p class="app-note">Times are shown in Philippine time.</p>
-        @if($histories->isEmpty())<p class="text-secondary mb-0">No status changes recorded yet.</p>@else
-            <ol class="reservation-history">
-                @foreach($histories as $history)
-                    <li><div>@if($history->from_status)<x-reservation-status :status="$history->from_status"/><span aria-hidden="true">→</span><span class="visually-hidden">changed to</span>@else<span>Initial status:</span>@endif<x-reservation-status :status="$history->to_status"/></div>
-                        <p class="app-note">{{ $history->changedBy?->name ?? 'Former account' }} · <time datetime="{{ $history->changed_at->toIso8601String() }}">{{ $history->changed_at->timezone('Asia/Manila')->format('M j, Y, g:i A') }}</time></p>
-                        @if($history->notes)<p class="history-note">{{ $history->notes }}</p>@endif
-                    </li>
-                @endforeach
-            </ol>
-            {{ $histories->links('pagination::bootstrap-5') }}
-        @endif
-    </section>
+    @include('admin.reservations.activity-timeline')
 </div>
 @endsection

@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\QrVerificationController;
 use App\Http\Controllers\Admin\ReservationCheckInController;
 use App\Http\Controllers\Admin\ReservationController as AdminReservationController;
 use App\Http\Controllers\Admin\ReservationDocumentController;
+use App\Http\Controllers\Admin\ReservationLogController;
 use App\Http\Controllers\Admin\ReservationPaymentController;
 use App\Http\Controllers\Admin\ScheduleController;
 use App\Http\Controllers\Admin\ServiceCertificateController;
@@ -118,6 +119,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/users/{user}', [AdminUserController::class, 'show'])->whereNumber('user')->name('users.show');
         Route::patch('/users/{user}/status', [AdminUserController::class, 'updateStatus'])->whereNumber('user')->name('users.status');
         Route::get('/reservations', [AdminReservationController::class, 'index'])->name('reservations.index');
+        Route::get('/reservation-logs', [ReservationLogController::class, 'index'])->name('reservation-logs.index');
         Route::post('/reservations/{reservation}/payment', [ReservationPaymentController::class, 'store'])->whereNumber('reservation')->name('reservations.payment.store');
         Route::post('/reservations/{reservation}/check-in', [ReservationCheckInController::class, 'store'])->whereNumber('reservation')->name('reservations.check-in.store');
         Route::get('/reservations/{reservation}/certificate/print', [ReservationDocumentController::class, 'print'])->whereNumber('reservation')->name('reservations.document.print');

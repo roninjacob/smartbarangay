@@ -12,6 +12,7 @@ use App\Services\CertificatePreparationState;
 use App\Services\CheckInReservations;
 use App\Services\GeneratedReservationDocuments;
 use App\Services\QrTicketIssuer;
+use App\Services\ReservationActivityTimeline;
 use App\Services\ReservationDocumentPreview;
 use App\Services\ReservationPayments;
 use Illuminate\Database\Eloquent\Builder;
@@ -63,7 +64,7 @@ class ReservationController extends Controller
             'documentPreviewAvailable' => $previewAvailable,
             'canGenerateCertificate' => $reservation->status->canPrepareDocument() && $previewAvailable
                 && is_int($snapshot['version'] ?? null) && $snapshot['version'] > 0,
-            'histories' => $reservation->statusHistories()->with('changedBy')->orderByDesc('changed_at')->orderByDesc('id')->paginate(10),
+            'activities' => app(ReservationActivityTimeline::class)->forReservation($reservation->id),
         ]);
     }
 

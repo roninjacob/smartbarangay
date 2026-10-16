@@ -96,7 +96,7 @@ class AdminReservationProcessingTest extends TestCase
         $reservation->service->serviceRequirements()->create(['name' => 'Valid ID', 'description' => '<script>bad()</script>']);
         $this->actingAs($this->user())->get('/admin/reservations/1')->assertOk()->assertSee('Valid ID')->assertSee('Resident Example')
             ->assertSee($reservation->user->email)->assertSee('Sunday, November 1, 2026')->assertSee('Under Review')
-            ->assertSee('No status changes recorded yet')->assertDontSee($reservation->user->password, false)->assertDontSee('type="file"', false)
+            ->assertSee('Request Submitted')->assertDontSee($reservation->user->password, false)->assertDontSee('type="file"', false)
             ->assertDontSee('<script>bad()</script>', false)->assertDontSee('value="approved"', false)->assertDontSee('value="cancelled"', false);
         $this->get('/admin/reservations/999')->assertNotFound();
         $this->patch('/admin/reservations/999/status', $this->data())->assertNotFound();
