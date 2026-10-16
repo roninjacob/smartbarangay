@@ -20,6 +20,16 @@ Reservation Details offers Confirm Check-In only for Ready for Pickup with recen
 
 All payment states may check in: Unpaid, Paid, Free, Fee Not Recorded and Payment Integrity Issue. Arrival changes no reservation attributes, status history, payment, collection totals, QR usage, document bytes/metadata, historical source or date_issued. Payment remains Ready for Pickup only; completion later consumes QR through the existing atomic lifecycle.
 
+## QR issuance timestamp integrity (Phase 12A.1)
+
+`qr_tickets.generated_at` records original QR issuance, separately from row `created_at`/`updated_at` and usage `used_at`/`used_by`. The issuer explicitly sets it when creating a ticket and returns the existing ticket on repeated issuance. Normal verification, check-in, payment, document preparation/printing and completion must preserve it exactly. Completion sets usage metadata; it does not reissue the QR.
+
+MariaDB 10.4 with `explicit_defaults_for_timestamp=OFF` implicitly gave the original migration's first TIMESTAMP column `ON UPDATE CURRENT_TIMESTAMP`. Migration `2026_10_16_000022_fix_qr_ticket_generated_at_update_behavior.php` removes that behavior using a targeted column ALTER, retaining TIMESTAMP, NOT NULL and the CURRENT_TIMESTAMP insert default. It contains no row updates/backfill and changes no indexes, foreign keys or other columns. It supports the mysql/mariadb drivers; SQLite has no such ON UPDATE behavior and needs no schema alteration. SQLite lifecycle tests do not prove the MariaDB schema fix: controlled rollout must verify real column EXTRA, compare pre/post existing-row fingerprints, and exercise completion on a new synthetic ticket.
+
+The migration's `down()` restores the previous schema for strict reversibility, including the known defective ON UPDATE behavior. **Rolling back this repair reintroduces issuance timestamp drift and is not an approved operational correction workflow.** No real rollback is part of acceptance.
+
+Historical QR records created before this repair may have issuance timestamp uncertainty if previously affected by the old schema behavior. The repair preserves every current value; it does not reconstruct original issuance dates from created_at, approval history, used_at or any other field. Do not claim reconstructed historical accuracy.
+
 Admin details show persisted arrival time in Asia/Manila and recording Admin. Resident arrival display is deferred; existing Resident payment/document views remain unchanged. No broad activity timeline or Phase 12B screen is implemented.
 
 The domain service accepts trusted server-side verification context without browser/session dependencies, so a future authenticated hardware adapter can reuse the operation. No IoT API, device secret, ESP32/GM65 firmware, OLED/LED/buzzer or hardware-specific files exist in this phase. Real MariaDB concurrency and physical camera scanning are not proven by isolated SQLite/HTTP tests.
