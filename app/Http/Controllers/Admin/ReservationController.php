@@ -51,6 +51,8 @@ class ReservationController extends Controller
         return view('admin.reservations.show', [
             ...$this->shellData('Reservation Details'), 'reservation' => $reservation,
             'paymentStatus' => app(ReservationPayments::class)->status($reservation),
+            'completionBlockReason' => $reservation->status === ReservationStatus::ReadyForPickup
+                ? app(ReservationPayments::class)->completionBlockReason($reservation) : null,
             'transitions' => $reservation->status->allowedTransitions(),
             'hasPreparedCertificate' => $prepared,
             'certificateState' => $certificateState,
@@ -72,6 +74,9 @@ class ReservationController extends Controller
             }
             if (! in_array($next, $locked->status->allowedTransitions(), true)) {
                 throw ValidationException::withMessages(['status' => 'This status transition is not allowed.']);
+            }
+            if ($next === ReservationStatus::Completed && ($reason = app(ReservationPayments::class)->completionBlockReason($locked))) {
+                throw ValidationException::withMessages(['status' => $reason]);
             }
             $previous = $locked->status;
             if ($next === ReservationStatus::ReadyForPickup && ! $documents->isPrepared($locked) && blank($data['notes'] ?? null)) {

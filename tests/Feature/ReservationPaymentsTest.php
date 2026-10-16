@@ -216,16 +216,18 @@ class ReservationPaymentsTest extends TestCase
     }
 
     #[DataProvider('completionPayments')]
-    public function test_completion_is_not_gated_by_payment_and_retains_existing_qr_rules(bool $paid): void
+    public function test_completion_requires_payment_and_retains_existing_qr_rules(bool $paid): void
     {
         [$admin, , $reservation] = $this->fixture();
         app(QrTicketIssuer::class)->issue($reservation);
         if ($paid) {
             $this->post(route('admin.reservations.payment.store', $reservation), ['confirm_payment' => 1])->assertSessionHasNoErrors();
         }
-        $this->patch(route('admin.reservations.status', $reservation), ['expected_status' => 'ready_for_pickup', 'status' => 'completed'])->assertSessionHasNoErrors();
-        $this->assertSame('completed', $reservation->fresh()->status->value);
-        $this->assertTrue($reservation->qrTicket()->first()->isUsed());
+        $response = $this->patch(route('admin.reservations.status', $reservation), ['expected_status' => 'ready_for_pickup', 'status' => 'completed']);
+        $paid ? $response->assertSessionHasNoErrors() : $response->assertSessionHasErrors('status');
+        $this->assertSame($paid ? 'completed' : 'ready_for_pickup', $reservation->fresh()->status->value);
+        $this->assertSame($paid, $reservation->qrTicket()->first()->isUsed());
+        $this->assertDatabaseCount('reservation_status_histories', $paid ? 1 : 0);
         $this->assertDatabaseCount('reservation_payments', $paid ? 1 : 0);
     }
 

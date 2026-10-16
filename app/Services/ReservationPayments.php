@@ -15,6 +15,16 @@ use Illuminate\Validation\ValidationException;
 
 class ReservationPayments
 {
+    /** Payment eligibility only; transitions must check this on a fresh, locked reservation. */
+    public function completionBlockReason(Reservation $reservation): ?string
+    {
+        return match ($this->status($reservation)) {
+            PaymentStatus::Unpaid => 'Payment must be recorded before this paid reservation can be completed.',
+            PaymentStatus::IntegrityIssue => 'This reservation cannot be completed because of a payment integrity issue. Review the recorded payment with the administrator.',
+            PaymentStatus::Paid, PaymentStatus::NoPaymentRequired, PaymentStatus::FeeNotRecorded => null,
+        };
+    }
+
     public function status(Reservation $reservation): PaymentStatus
     {
         $reservation->loadMissing('payment');

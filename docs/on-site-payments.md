@@ -10,6 +10,24 @@ Payment model updates/deletions are rejected and no edit/delete endpoints exist.
 
 Dashboard collections use SQL SUM/COUNT on amount and paid_at, never schedule/reservation dates or current Service prices. Asia/Manila day/month boundaries are converted to UTC before querying. Inconsistent payments are excluded and an explicit integrity warning is displayed. Ready for Pickup Unpaid counts positive snapshots without a payment, excluding free and unknown fees. Queries are bounded independently of reservation volume.
 
-Recording payment does not modify reservation status/history, QR, documents or certificate contents. Completion remains available without payment. Documents have no payment gate. No receipts, methods, references, partial payments, corrections, voids, refunds, exports or Reports module are implemented; these require separate approval.
+Recording payment does not modify reservation status/history, QR, documents or certificate contents. Documents have no payment gate. No receipts, methods, references, partial payments, corrections, voids, refunds, exports or Reports module are implemented; these require separate approval.
 
-Migration: `2026_10_16_000020_create_reservation_payments_table.php`. New table only; no existing data update. Implementation tests and browser QA use isolated SQLite. The real MariaDB migration remains pending explicit user rollout. Back up database/private storage before rollout, migrate normally, verify table/constraints, then smoke-test with authorized data. Never use migrate:fresh or db:wipe on real data. A rollback drops payment history and is not an approved correction workflow.
+## Phase 11C: payment before completion
+
+For Ready for Pickup reservations, subject to the existing transition requirements:
+
+| Historical fee / payment state | Completion eligibility |
+|---|---|
+| Positive fee + Unpaid | Cannot Complete. |
+| Positive fee + valid matching Paid payment | Can Complete. |
+| Explicit 0.00 / No Payment Required | Can Complete without a payment. |
+| Legacy NULL / Fee Not Recorded | Retains legacy completion eligibility without a fabricated fee or payment. |
+| Payment Integrity Issue | Cannot Complete. |
+
+Blocked completion leaves reservation status, status history and QR usage unchanged. Recording payment does **not** automatically Complete the reservation; Admin must perform the separate completion action.
+
+`ReservationPayments::completionBlockReason()` supplies the shared server/UI rule. The Admin status-update route is the only production completion writer. QR verification only resolves the reservation and redirects to its details; subsequent completion uses that same route. The controller checks the rule on a freshly locked reservation inside its existing transaction, before any completion writes. Payment recording also locks the reservation first; completion then locks the QR, so no inverse lock order is introduced. A competing payment either commits first and is visible to completion, or the unpaid completion rejects first. SQLite tests do not prove real MariaDB concurrency.
+
+Admin processing hides the completion form when blocked, with a clear explanation; direct requests are still rejected by the server. Payment recording remains Ready for Pickup only and does not auto-complete. Completion retains atomic status/history/QR usage and does not rewrite PDFs or alter collection totals. No Phase 11C migration is needed.
+
+Migration: `2026_10_16_000020_create_reservation_payments_table.php`. New table only; no existing data update. The controlled Phase 11B rollout applied it to MariaDB in batch 13 after backup and acceptance tests. Synthetic payment 1/reservations 9–11 remain in that development database; their accounts/service/schedule are inactive. Phase 11C QA uses isolated SQLite and does not modify those retained records. Never use migrate:fresh or db:wipe on real data. A rollback drops payment history and is not an approved correction workflow.

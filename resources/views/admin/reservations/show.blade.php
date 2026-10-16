@@ -43,9 +43,14 @@
     @include('admin.reservations.document-preparation')
     <section class="card dashboard-panel reservation-panel mt-4" aria-labelledby="processing-heading">
         <h2 id="processing-heading">Process this request</h2>
-        @if(count($transitions) === 0)
+        @if($completionBlockReason)
+            <p class="alert alert-warning mb-0" role="alert">{{ $completionBlockReason }}</p>
+        @elseif(count($transitions) === 0)
             <p class="mb-0 text-secondary">This request is {{ strtolower($reservation->status->label()) }}. No further status changes are available.</p>
         @else
+            @if($reservation->status === \App\Enums\ReservationStatus::ReadyForPickup && $paymentStatus === \App\Enums\PaymentStatus::FeeNotRecorded)
+                <p class="app-note">This historical reservation has no recorded fee and retains the legacy completion workflow.</p>
+            @endif
             <p class="text-secondary">Choose the next allowed status. Each change is recorded with your name and timestamp.</p>
             <form method="POST" action="{{ route('admin.reservations.status', $reservation) }}" data-service-submit @if($reservation->status === \App\Enums\ReservationStatus::Approved) data-ready-modal @endif>
                 @csrf @method('PATCH')
