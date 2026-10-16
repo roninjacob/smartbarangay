@@ -41,6 +41,7 @@
         </section>
     @endif
     @include('admin.reservations.document-preparation')
+    @include('admin.reservations.check-in')
     <section class="card dashboard-panel reservation-panel mt-4" aria-labelledby="processing-heading">
         <h2 id="processing-heading">Process this request</h2>
         @if($completionBlockReason)

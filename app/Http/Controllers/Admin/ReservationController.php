@@ -6,8 +6,10 @@ use App\Enums\ReservationStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\FilterReservationsRequest;
 use App\Http\Requests\Admin\UpdateReservationStatusRequest;
+use App\Models\CheckinLog;
 use App\Models\Reservation;
 use App\Services\CertificatePreparationState;
+use App\Services\CheckInReservations;
 use App\Services\GeneratedReservationDocuments;
 use App\Services\QrTicketIssuer;
 use App\Services\ReservationDocumentPreview;
@@ -49,6 +51,8 @@ class ReservationController extends Controller
         }
 
         return view('admin.reservations.show', [
+            'checkin' => $reservation->checkinLogs()->where('verification_result', CheckinLog::ARRIVAL)->with('verifier')->first(),
+            'checkinVerified' => app(CheckInReservations::class)->hasEvidence(request()->session()->get(CheckInReservations::SESSION_KEY), request()->user(), $reservation),
             ...$this->shellData('Reservation Details'), 'reservation' => $reservation,
             'paymentStatus' => app(ReservationPayments::class)->status($reservation),
             'completionBlockReason' => $reservation->status === ReservationStatus::ReadyForPickup

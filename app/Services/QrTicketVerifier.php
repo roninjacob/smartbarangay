@@ -8,7 +8,7 @@ use App\Models\QrTicket;
 
 class QrTicketVerifier
 {
-    public function verify(mixed $payload): array
+    public function verify(mixed $payload, ?\Closure $onVerified = null): array
     {
         $invalid = ['valid' => false, 'message' => 'Unknown or invalid QR ticket.'];
         if (! is_string($payload) || strlen($payload) !== 41 || ! preg_match('/\ASBQ1:[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\z/', $payload)) {
@@ -34,6 +34,8 @@ class QrTicketVerifier
         if (! $reservation->user->is_active || ! $reservation->user->hasVerifiedEmail()) {
             return $invalid;
         }
+
+        $onVerified?->__invoke($ticket);
 
         return ['valid' => true, 'message' => 'Valid QR Ticket',
             'reservation_url' => route('admin.reservations.show', $reservation), 'reservation' => [

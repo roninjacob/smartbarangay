@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\QrTicket;
+use App\Services\CheckInReservations;
 use App\Services\QrTicketVerifier;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
@@ -24,7 +26,10 @@ class QrVerificationController extends Controller
     {
         // Invalid input returns a safe result without echoing or flashing the credential.
         try {
-            $result = $verifier->verify($request->input('payload'));
+            $request->session()->forget(CheckInReservations::SESSION_KEY);
+            $result = $verifier->verify($request->input('payload'), function (QrTicket $ticket) use ($request) {
+                $request->session()->put(CheckInReservations::SESSION_KEY, app(CheckInReservations::class)->evidence($ticket, $request->user()));
+            });
         } catch (QueryException $exception) {
             // Do not serialize database errors or log query bindings containing the credential.
             return response()->json(['message' => 'Verification is unavailable. Please try again.'], 503)

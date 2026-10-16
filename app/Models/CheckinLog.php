@@ -7,6 +7,21 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class CheckinLog extends Model
 {
+    public const ARRIVAL = 'checked_in';
+
+    protected $hidden = ['scanned_ticket_code'];
+
+    protected static function booted(): void
+    {
+        $immutable = function (self $log) {
+            if ($log->getRawOriginal('verification_result') === self::ARRIVAL) {
+                throw new \LogicException('Recorded check-ins cannot be edited or deleted.');
+            }
+        };
+        static::updating($immutable);
+        static::deleting($immutable);
+    }
+
     protected $table = 'checkin_logs';
 
     protected $fillable = [

@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\DocumentFieldController;
 use App\Http\Controllers\Admin\DocumentLayoutController;
 use App\Http\Controllers\Admin\DocumentTemplateController;
 use App\Http\Controllers\Admin\QrVerificationController;
+use App\Http\Controllers\Admin\ReservationCheckInController;
 use App\Http\Controllers\Admin\ReservationController as AdminReservationController;
 use App\Http\Controllers\Admin\ReservationDocumentController;
 use App\Http\Controllers\Admin\ReservationPaymentController;
@@ -118,6 +119,7 @@ Route::middleware('auth')->group(function () {
         Route::patch('/users/{user}/status', [AdminUserController::class, 'updateStatus'])->whereNumber('user')->name('users.status');
         Route::get('/reservations', [AdminReservationController::class, 'index'])->name('reservations.index');
         Route::post('/reservations/{reservation}/payment', [ReservationPaymentController::class, 'store'])->whereNumber('reservation')->name('reservations.payment.store');
+        Route::post('/reservations/{reservation}/check-in', [ReservationCheckInController::class, 'store'])->whereNumber('reservation')->name('reservations.check-in.store');
         Route::get('/reservations/{reservation}/certificate/print', [ReservationDocumentController::class, 'print'])->whereNumber('reservation')->name('reservations.document.print');
         Route::get('/certificates/print/{token}', [CertificatePrintController::class, 'show'])->where('token', '[A-Za-z0-9]{40}')->name('certificates.print.show');
         Route::get('/certificates/print/{token}/pdf', [CertificatePrintController::class, 'pdf'])->where('token', '[A-Za-z0-9]{40}')->name('certificates.print.pdf');
