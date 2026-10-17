@@ -21,11 +21,14 @@
                 <button type="button" class="app-menu-button btn d-lg-none" data-bs-toggle="offcanvas" data-bs-target="#app-sidebar" aria-controls="app-sidebar" aria-label="Open navigation"><x-app-icon name="menu"/></button>
                 <div class="app-topbar-location"><strong>Barangay Calayo</strong><span>Nasugbu, Batangas</span></div>
             </div>
+            <div class="app-header-actions">
+            @include('partials.notification-bell')
             <button type="button" class="app-user-button" data-bs-toggle="modal" data-bs-target="#account-summary" aria-label="View your profile overview">
                 <span class="app-avatar" aria-hidden="true">@if(auth()->user()->ownedProfilePicturePath())<img src="{{ route(auth()->user()->role->value.'.profile.picture') }}" alt="">@else{{ mb_substr(auth()->user()->name, 0, 1) }}@endif</span>
                 <span class="app-user-text"><strong>{{ auth()->user()->name }}</strong><small>{{ $roleLabel }}</small></span>
                 <x-app-icon name="account" class="app-user-icon"/>
             </button>
+            </div>
         </header>
 
         <main id="main-content" class="app-main" tabindex="-1">

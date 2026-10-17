@@ -24,6 +24,7 @@ use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\GeneratedReservationDocumentController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReservationAttachmentController;
 use App\Http\Controllers\ReservationDocumentPreviewController;
@@ -51,6 +52,15 @@ Route::middleware('guest')->group(function () {
 });
 
 Route::middleware('auth')->group(function () {
+    foreach (UserRole::cases() as $role) {
+        Route::prefix($role->value.'/notifications')->name($role->value.'.notifications.')
+            ->middleware(['role:'.$role->value, 'verified'])->group(function () {
+                Route::get('/', [NotificationController::class, 'index'])->name('index');
+                Route::post('/read-all', [NotificationController::class, 'readAll'])->name('read-all');
+                Route::post('/{notification}/open', [NotificationController::class, 'open'])->whereUuid('notification')->name('open');
+                Route::post('/{notification}/read', [NotificationController::class, 'read'])->whereUuid('notification')->name('read');
+            });
+    }
     Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
     Route::get('/email/verify', [EmailVerificationController::class, 'notice'])->name('verification.notice');
     Route::get('/email/change', [EmailVerificationController::class, 'editEmail'])->name('verification.email.edit');

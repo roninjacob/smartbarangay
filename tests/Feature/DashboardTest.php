@@ -161,7 +161,8 @@ class DashboardTest extends TestCase
         $queries = DB::getQueryLog();
         DB::disableQueryLog();
         // Admin adds three fixed aggregate/absence queries for payment metrics and integrity alerts.
-        $this->assertLessThanOrEqual($role === UserRole::Resident ? 4 : 10, count($queries));
+        $this->assertCount(2, array_filter($queries, fn ($query) => str_contains($query['query'], '"notifications"')));
+        $this->assertLessThanOrEqual($role === UserRole::Resident ? 4 : 10, count($queries) - 2);
     }
 
     #[DataProvider('roles')]

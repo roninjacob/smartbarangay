@@ -69,7 +69,9 @@ class ResidentRequestStatusTest extends TestCase
             ->assertSee('My Service 11')->assertDontSee('My Service 01')->assertDontSee('FOREIGN PRIVATE SERVICE')
             ->assertSee('Latest update')->assertSee('Submitted')->assertSee('Nov 1, 2026')->assertSee('9:00 AM')->assertSee('10:00 AM')
             ->assertHeader('Cache-Control', 'no-store, private');
-        $this->assertLessThanOrEqual(4, count(array_filter(DB::getQueryLog(), fn ($query) => str_starts_with(strtolower($query['query']), 'select'))));
+        $selects = array_filter(DB::getQueryLog(), fn ($query) => str_starts_with(strtolower($query['query']), 'select'));
+        $this->assertCount(2, array_filter($selects, fn ($query) => str_contains($query['query'], '"notifications"')));
+        $this->assertLessThanOrEqual(4, count($selects) - 2);
         DB::disableQueryLog();
         $this->get('/resident/request-status?page=2')->assertSee('My Service 01')->assertDontSee('My Service 11');
         $this->get('/resident/request-status?page=99')->assertSee('No requests on this page');

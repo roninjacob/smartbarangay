@@ -86,7 +86,8 @@ class AdminUserManagementTest extends TestCase
             ->assertSee('Showing 1–10 of 11 residents')->assertSee('Resident 11')->assertDontSee('Resident 01')
             ->assertSee('search=Resident', false)->assertSee('status=active', false)->assertSee('verification=verified', false);
         $selects = array_filter(DB::getQueryLog(), fn ($query) => str_starts_with(strtolower($query['query']), 'select'));
-        $this->assertLessThanOrEqual(2, count($selects));
+        $this->assertCount(2, array_filter($selects, fn ($query) => str_contains($query['query'], '"notifications"')));
+        $this->assertLessThanOrEqual(2, count($selects) - 2);
         $this->assertStringNotContainsString('password', implode(' ', array_column($selects, 'query')));
         DB::disableQueryLog();
         $this->get('/admin/users?search=Resident&status=active&verification=verified&page=2')->assertSee('Resident 01')->assertDontSee('Resident 11');

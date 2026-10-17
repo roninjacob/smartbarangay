@@ -97,7 +97,8 @@ class ResidentReservationViewingTest extends TestCase
             ->assertSeeInOrder(['Own document 11', 'Own document 10', 'Own document 02'])->assertDontSee('Own document 01')
             ->assertDontSee('Foreign newest record');
         $queries = array_filter(DB::getQueryLog(), fn ($query) => str_starts_with(strtolower($query['query']), 'select'));
-        $this->assertLessThanOrEqual(4, count($queries));
+        $this->assertCount(2, array_filter($queries, fn ($query) => str_contains($query['query'], '"notifications"')));
+        $this->assertLessThanOrEqual(4, count($queries) - 2);
         DB::disableQueryLog();
         $this->get('/resident/reservations?page=2')->assertOk()->assertSee('Showing 11–11 of 11 reservations')
             ->assertSee('Own document 01')->assertDontSee('Own document 11')->assertDontSee('Foreign newest record');

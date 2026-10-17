@@ -14,6 +14,7 @@ use App\Services\GeneratedReservationDocuments;
 use App\Services\QrTicketIssuer;
 use App\Services\ReservationActivityTimeline;
 use App\Services\ReservationDocumentPreview;
+use App\Services\ReservationNotifications;
 use App\Services\ReservationPayments;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
@@ -99,10 +100,11 @@ class ReservationController extends Controller
                     $ticket->forceFill(['used_at' => $changedAt, 'used_by' => $request->user()->id])->save();
                 }
             }
-            $locked->statusHistories()->create([
+            $history = $locked->statusHistories()->create([
                 'from_status' => $previous, 'to_status' => $next, 'changed_by' => $request->user()->id,
                 'notes' => $data['notes'] ?? null, 'changed_at' => $changedAt,
             ]);
+            app(ReservationNotifications::class)->record($next->value, $locked, $history);
         });
 
         return to_route('admin.reservations.show', $reservation)->with('status', 'Reservation status updated. The change has been recorded in history.');

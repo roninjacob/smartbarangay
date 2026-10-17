@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Resident;
 use App\Enums\ReservationStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Resident\CancelReservationRequest;
+use App\Services\ReservationNotifications;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -20,9 +21,10 @@ class ReservationCancellationController extends Controller
                 throw ValidationException::withMessages(['reason' => 'Only a Pending reservation can be cancelled. Review the current request status.']);
             }
             $owned->update(['status' => ReservationStatus::Cancelled]);
-            $owned->statusHistories()->create(['from_status' => ReservationStatus::Pending,
+            $history = $owned->statusHistories()->create(['from_status' => ReservationStatus::Pending,
                 'to_status' => ReservationStatus::Cancelled, 'changed_by' => $request->user()->id,
                 'notes' => $request->validated('reason'), 'changed_at' => now()]);
+            app(ReservationNotifications::class)->record('cancelled', $owned, $history);
         });
 
         return to_route('resident.request-status.show', $reservation)->with('status', 'Reservation cancelled. Your request and cancellation history have been preserved.');

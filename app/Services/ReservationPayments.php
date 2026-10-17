@@ -58,6 +58,7 @@ class ReservationPayments
                 $payment = new ReservationPayment;
                 $payment->forceFill(['reservation_id' => $locked->id, 'amount' => $locked->fee_snapshot,
                     'paid_at' => now('UTC'), 'recorded_by' => $admin->id])->save();
+                app(ReservationNotifications::class)->record('payment', $locked, $payment);
 
                 return $payment;
             });

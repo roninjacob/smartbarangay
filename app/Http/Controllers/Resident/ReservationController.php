@@ -11,6 +11,7 @@ use App\Models\Service;
 use App\Models\User;
 use App\Services\ReservationDocumentInformation;
 use App\Services\ReservationFileUploads;
+use App\Services\ReservationNotifications;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -185,6 +186,7 @@ class ReservationController extends Controller
                 $answers = $information->validate($template, $draft['document_answers'] ?? [], $profile);
                 $information->store($reservation, $template, $answers, $profile, $storedPaths);
                 $uploads->store($reservation, $files, $storedPaths);
+                app(ReservationNotifications::class)->record('submitted', $reservation);
             });
         } catch (Throwable $exception) {
             $uploads->cleanup($storedPaths);

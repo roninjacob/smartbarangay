@@ -2,13 +2,14 @@
 
 namespace App\Providers;
 
-use Illuminate\Support\ServiceProvider;
-use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Auth\Notifications\ResetPassword;
+use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\View;
+use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -25,8 +26,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        RateLimiter::for('verification-email', fn (Request $request) =>
-            Limit::perMinute(1)->by('verification:'.$request->user()->id));
+        View::composer('partials.notification-bell', function ($view) {
+            $user = auth()->user();
+            $view->with('notificationUnreadCount', $user->unreadNotifications()->count())
+                ->with('notificationLatest', $user->notifications()->reorder()->orderByDesc('created_at')->orderByDesc('id')->limit(5)->get());
+        });
+        RateLimiter::for('verification-email', fn (Request $request) => Limit::perMinute(1)->by('verification:'.$request->user()->id));
         RateLimiter::for('password-email', fn (Request $request) => [
             Limit::perMinute(5)->by('password-ip:'.$request->ip()),
             Limit::perMinute(1)->by('password-address:'.hash('sha256',

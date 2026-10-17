@@ -4,6 +4,7 @@ return [
     'resident' => [
         'Overview' => [
             ['label' => 'Dashboard', 'icon' => 'dashboard', 'route' => 'resident.home'],
+            ['label' => 'Notifications', 'icon' => 'bell', 'route' => 'resident.notifications.index', 'active' => 'resident.notifications.*'],
         ],
         'My services' => [
             ['label' => 'New Reservation', 'icon' => 'plus', 'route' => 'resident.reservations.create', 'active' => [
@@ -20,6 +21,7 @@ return [
     'admin' => [
         'Overview' => [
             ['label' => 'Dashboard', 'icon' => 'dashboard', 'route' => 'admin.home'],
+            ['label' => 'Notifications', 'icon' => 'bell', 'route' => 'admin.notifications.index', 'active' => 'admin.notifications.*'],
         ],
         'Barangay operations' => [
             ['label' => 'Reservation Management', 'icon' => 'document', 'route' => 'admin.reservations.index', 'active' => 'admin.reservations.*'],

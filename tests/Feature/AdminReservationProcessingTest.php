@@ -85,7 +85,11 @@ class AdminReservationProcessingTest extends TestCase
         DB::flushQueryLog();
         $this->get('/admin/reservations?search=Document&status=pending')->assertOk()->assertSee('Showing 1–10 of 11 reservations')
             ->assertSee('Document 11')->assertDontSee('Document 01')->assertSee('search=Document', false)->assertSee('status=pending', false);
-        $this->assertLessThanOrEqual(5, count(array_filter(DB::getQueryLog(), fn ($query) => str_starts_with(strtolower($query['query']), 'select'))));
+        $selects = collect(DB::getQueryLog())->filter(fn ($query) => str_starts_with(strtolower($query['query']), 'select'));
+        // The shared Phase 13 header adds two bounded queries, independent of row count.
+        $notificationQueries = $selects->filter(fn ($query) => str_contains($query['query'], '"notifications"'));
+        $this->assertCount(2, $notificationQueries);
+        $this->assertLessThanOrEqual(5, $selects->count() - $notificationQueries->count());
         DB::disableQueryLog();
         $this->get('/admin/reservations?search=Document&status=pending&page=2')->assertOk()->assertSee('Document 01')->assertDontSee('Document 11');
     }

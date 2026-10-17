@@ -171,7 +171,8 @@ class ScheduleManagementTest extends TestCase
         $this->actingAs($this->user())->get('/admin/schedules')->assertOk()->assertSee('Showing 1–15 of 16 schedules')->assertSee('Nov 1, 2026')->assertDontSee('Nov 16, 2026');
         $queries = DB::getQueryLog();
         DB::disableQueryLog();
-        $this->assertLessThanOrEqual(4, count(array_filter($queries, fn ($query) => str_starts_with(strtolower($query['query']), 'select'))));
+        $this->assertCount(2, array_filter($queries, fn ($query) => str_contains($query['query'], '"notifications"')));
+        $this->assertLessThanOrEqual(4, count(array_filter($queries, fn ($query) => str_starts_with(strtolower($query['query']), 'select'))) - 2);
         $this->assertCount(1, array_filter($queries, fn ($query) => str_contains($query['query'], 'occupied_reservations_count')));
         $this->assertCount(0, array_filter($queries, fn ($query) => preg_match('/^select count\(\*\).*from ["`]?reservations/i', $query['query'])));
         $this->get('/admin/schedules?page=2')->assertOk()->assertSee('Nov 16, 2026');
