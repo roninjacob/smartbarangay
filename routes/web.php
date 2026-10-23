@@ -11,6 +11,7 @@ use App\Http\Controllers\Admin\ReservationController as AdminReservationControll
 use App\Http\Controllers\Admin\ReservationDocumentController;
 use App\Http\Controllers\Admin\ReservationLogController;
 use App\Http\Controllers\Admin\ReservationPaymentController;
+use App\Http\Controllers\Admin\ReservationReportController;
 use App\Http\Controllers\Admin\ScheduleController;
 use App\Http\Controllers\Admin\ServiceCertificateController;
 use App\Http\Controllers\Admin\ServiceController;
@@ -115,6 +116,7 @@ Route::middleware('auth')->group(function () {
             Route::get('/{reservation}', [RequestStatusController::class, 'show'])->whereNumber('reservation')->name('show');
         });
     Route::prefix('admin')->name('admin.')->middleware(['role:'.UserRole::Admin->value, 'verified'])->group(function () {
+        Route::get('/reports/reservations', ReservationReportController::class)->name('reports.reservations');
         Route::get('/qr-verification', [QrVerificationController::class, 'index'])->name('qr-verification.index');
         Route::post('/qr-verification', [QrVerificationController::class, 'verify'])->middleware('throttle:30,1')->name('qr-verification.verify');
         Route::get('/reservations/{reservation}/attachments/{attachment}', [ReservationAttachmentController::class, 'admin'])

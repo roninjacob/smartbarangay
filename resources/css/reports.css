@@ -1,0 +1,27 @@
+.reservation-reports { min-width: 0; }
+.reservation-reports .dashboard-panel { min-width: 0; overflow-wrap: anywhere; }
+.report-filter-actions, .report-pagination { display: flex; flex-wrap: wrap; gap: .75rem; align-items: center; }
+.report-filter-actions .btn { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; }
+.report-filter-actions span { flex: 1 1 240px; }
+.report-line { display: block; width: 100%; height: auto; min-height: 180px; }
+.report-line text { font: 14px "Segoe UI", Arial, sans-serif; fill: #374151; }
+.report-chart-data { max-height: 320px; overflow: auto; margin-top: .75rem; }
+.report-services { padding-left: 1.4rem; margin: 1.5rem 0; }
+.report-services li { margin-bottom: 1.25rem; padding-left: .25rem; }
+.report-bar-label { display: flex; flex-wrap: wrap; gap: .5rem; justify-content: space-between; margin-bottom: .4rem; }
+.report-bar-label span { flex: 1 1 160px; overflow-wrap: anywhere; }
+.report-bar-label strong { white-space: nowrap; }
+.report-bar-track { background: #E5E7EB; height: 12px; border-radius: 6px; overflow: hidden; }
+.report-bar-track > div { background: #1F5EA8; height: 100%; }
+.report-empty { padding: 1.5rem 0; color: #6B7280; }
+.report-table table { min-width: 720px; table-layout: fixed; }
+.report-table td, .report-table th { overflow-wrap: anywhere; }
+.report-table .btn { white-space: normal; }
+.report-pagination { justify-content: space-between; margin-top: 1rem; }
+.report-pagination nav { max-width: 100%; }
+.report-pagination .pagination { flex-wrap: wrap; margin-bottom: 0; }
+.reservation-reports input[type="date"] { min-width: 0; max-width: 100%; }
+@media (max-width: 400px) {
+    .report-filter-actions .btn { width: 100%; }
+    .report-line text { font-size: 26px; }
+}
