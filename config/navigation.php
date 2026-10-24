@@ -33,6 +33,8 @@ return [
             ['label' => 'Reservation Logs', 'icon' => 'history', 'route' => 'admin.reservation-logs.index', 'active' => 'admin.reservation-logs.*'],
             ['label' => 'Reservation Reports', 'icon' => 'document', 'route' => 'admin.reports.reservations', 'active' => 'admin.reports.reservations'],
             ['label' => 'Collections Reports', 'icon' => 'document', 'route' => 'admin.reports.collections', 'active' => 'admin.reports.collections'],
+            ['label' => 'Recorded Check-ins', 'icon' => 'history', 'route' => 'admin.reports.checkins', 'active' => 'admin.reports.checkins'],
+            ['label' => 'Finalized PDFs', 'icon' => 'document', 'route' => 'admin.reports.documents', 'active' => 'admin.reports.documents'],
         ],
     ],
 ];

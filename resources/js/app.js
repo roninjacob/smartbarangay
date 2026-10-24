@@ -3,6 +3,7 @@ import 'bootstrap';
 import './auth';
 import './dashboard';
 import './collection-reports';
+import './event-reports';
 import './services';
 import './document-preview';
 import './reservations';
