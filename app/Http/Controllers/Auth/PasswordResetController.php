@@ -6,13 +6,12 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\PasswordResetLinkRequest;
 use App\Http\Requests\Auth\ResetPasswordRequest;
 use App\Models\User;
+use App\Services\PasswordSessionRevocation;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
-use Illuminate\Support\Str;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
@@ -53,10 +52,7 @@ class PasswordResetController extends Controller
     public function update(ResetPasswordRequest $request): RedirectResponse
     {
         $status = Password::reset($this->verifiedCredentials($request->validated()), function (User $user, string $password) {
-            $user->forceFill([
-                'password' => Hash::make($password),
-                'remember_token' => Str::random(60),
-            ])->save();
+            app(PasswordSessionRevocation::class)->reset($user, $password);
             event(new PasswordReset($user));
         });
 
@@ -64,6 +60,9 @@ class PasswordResetController extends Controller
             return redirect()->route('password.request')->with('reset_error',
                 'This password reset link is invalid or has expired.');
         }
+
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
 
         return redirect()->route('login')->with('status',
             'Your password has been reset successfully. You may now sign in.');

@@ -6,8 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\SaveScheduleRequest;
 use App\Http\Requests\Admin\UpdateScheduleStatusRequest;
 use App\Models\Schedule;
+use App\Services\ConfigurationAudit;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
@@ -30,7 +32,11 @@ class ScheduleController extends Controller
     public function store(SaveScheduleRequest $request): RedirectResponse
     {
         try {
-            Schedule::create([...$request->scheduleData(), 'is_active' => true]);
+            DB::transaction(function () use ($request) {
+                $schedule = Schedule::create([...$request->scheduleData(), 'is_active' => true]);
+                $audit = app(ConfigurationAudit::class);
+                $audit->record($request->user(), $schedule, 'created', [], $audit->values($schedule));
+            });
         } catch (UniqueConstraintViolationException $exception) {
             throw ValidationException::withMessages(['date' => 'A schedule with this date and time range already exists.']);
         }
@@ -50,6 +56,8 @@ class ScheduleController extends Controller
         try {
             DB::transaction(function () use ($request, $schedule) {
                 $locked = Schedule::lockForUpdate()->findOrFail($schedule->id);
+                $audit = app(ConfigurationAudit::class);
+                $old = $audit->values($locked);
                 $data = $request->scheduleData();
                 if ($locked->reservations()->lockForUpdate()->first(['id'])
                     && ($data['date'] !== $locked->date->toDateString() || $data['start_time'] !== $locked->start_time || $data['end_time'] !== $locked->end_time)) {
@@ -59,6 +67,7 @@ class ScheduleController extends Controller
                     throw ValidationException::withMessages(['capacity' => 'Capacity cannot be lower than the number of occupying reservations.']);
                 }
                 $locked->update($request->scheduleData());
+                $audit->record($request->user(), $locked, 'updated', $old, $audit->values($locked));
             });
         } catch (UniqueConstraintViolationException $exception) {
             throw ValidationException::withMessages(['date' => 'A schedule with this date and time range already exists.']);
@@ -69,19 +78,28 @@ class ScheduleController extends Controller
 
     public function updateStatus(UpdateScheduleStatusRequest $request, Schedule $schedule): RedirectResponse
     {
-        $schedule->update(['is_active' => $request->boolean('is_active')]);
+        DB::transaction(function () use ($request, $schedule) {
+            $locked = Schedule::lockForUpdate()->findOrFail($schedule->id);
+            $audit = app(ConfigurationAudit::class);
+            $old = $audit->values($locked);
+            $locked->update(['is_active' => $request->boolean('is_active')]);
+            $audit->record($request->user(), $locked, 'updated', $old, $audit->values($locked));
+        });
 
-        return to_route('admin.schedules.index')->with('status', $schedule->is_active ? 'Schedule activated.' : 'Schedule deactivated. Existing records are preserved.');
+        return to_route('admin.schedules.index')->with('status', $request->boolean('is_active') ? 'Schedule activated.' : 'Schedule deactivated. Existing records are preserved.');
     }
 
-    public function destroy(Schedule $schedule): RedirectResponse
+    public function destroy(Request $request, Schedule $schedule): RedirectResponse
     {
-        $deleted = DB::transaction(function () use ($schedule): bool {
+        $deleted = DB::transaction(function () use ($request, $schedule): bool {
             $locked = Schedule::whereKey($schedule->id)->lockForUpdate()->firstOrFail();
             if ($locked->reservations()->exists()) {
                 return false;
             }
+            $audit = app(ConfigurationAudit::class);
+            $old = $audit->values($locked);
             $locked->delete();
+            $audit->record($request->user(), $locked, 'deleted', $old, []);
 
             return true;
         });

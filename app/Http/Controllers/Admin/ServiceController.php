@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\SaveServiceRequest;
 use App\Http\Requests\Admin\UpdateServiceStatusRequest;
 use App\Models\Service;
+use App\Services\ConfigurationAudit;
 use App\Services\ServiceDocumentTemplates;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
@@ -36,6 +37,8 @@ class ServiceController extends Controller
                 if ($request->hasFile('official_template')) {
                     $templates->replace($service, $request->file('official_template'), $request->user()->id, $newPaths);
                 }
+                $audit = app(ConfigurationAudit::class);
+                $audit->record($request->user(), $service, 'created', [], $audit->values($service));
             });
         } catch (Throwable $exception) {
             $templates->cleanup($newPaths);
@@ -57,10 +60,13 @@ class ServiceController extends Controller
         try {
             DB::transaction(function () use ($request, $service, $templates, &$newPaths, &$previous) {
                 $locked = Service::lockForUpdate()->findOrFail($service->id);
+                $audit = app(ConfigurationAudit::class);
+                $old = $audit->values($locked);
                 $locked->update($request->safe()->only(['name', 'description', 'fee_amount']));
                 if ($request->hasFile('official_template')) {
                     $previous = $templates->replace($locked, $request->file('official_template'), $request->user()->id, $newPaths);
                 }
+                $audit->record($request->user(), $locked, 'updated', $old, $audit->values($locked));
             });
         } catch (Throwable $exception) {
             $templates->cleanup($newPaths);
@@ -75,9 +81,15 @@ class ServiceController extends Controller
 
     public function updateStatus(UpdateServiceStatusRequest $request, Service $service): RedirectResponse
     {
-        $service->update(['is_active' => $request->boolean('is_active')]);
+        DB::transaction(function () use ($request, $service) {
+            $locked = Service::lockForUpdate()->findOrFail($service->id);
+            $audit = app(ConfigurationAudit::class);
+            $old = $audit->values($locked);
+            $locked->update(['is_active' => $request->boolean('is_active')]);
+            $audit->record($request->user(), $locked, 'updated', $old, $audit->values($locked));
+        });
 
-        return to_route('admin.services.index')->with('status', $service->is_active ? 'Service activated.' : 'Service deactivated. Existing records are preserved.');
+        return to_route('admin.services.index')->with('status', $request->boolean('is_active') ? 'Service activated.' : 'Service deactivated. Existing records are preserved.');
     }
 
     private function shellData(string $heading): array

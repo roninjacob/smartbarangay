@@ -6,7 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\SaveServiceRequirementRequest;
 use App\Models\Service;
 use App\Models\ServiceRequirement;
+use App\Services\ConfigurationAudit;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
@@ -33,7 +35,12 @@ class ServiceRequirementController extends Controller
 
     public function store(SaveServiceRequirementRequest $request, Service $service): RedirectResponse
     {
-        $service->serviceRequirements()->create($request->safe()->only(['name', 'description', 'is_required']));
+        DB::transaction(function () use ($request, $service) {
+            Service::lockForUpdate()->findOrFail($service->id);
+            $requirement = $service->serviceRequirements()->create($request->safe()->only(['name', 'description', 'is_required']));
+            $audit = app(ConfigurationAudit::class);
+            $audit->record($request->user(), $requirement, 'created', [], $audit->values($requirement));
+        });
 
         return to_route('admin.services.requirements.index', $service)->with('status', 'Requirement added successfully.');
     }
@@ -47,19 +54,30 @@ class ServiceRequirementController extends Controller
 
     public function update(SaveServiceRequirementRequest $request, Service $service, ServiceRequirement $serviceRequirement): RedirectResponse
     {
-        $serviceRequirement->update($request->safe()->only(['name', 'description', 'is_required']));
+        DB::transaction(function () use ($request, $service, $serviceRequirement) {
+            Service::lockForUpdate()->findOrFail($service->id);
+            $locked = $service->serviceRequirements()->lockForUpdate()->findOrFail($serviceRequirement->id);
+            $audit = app(ConfigurationAudit::class);
+            $old = $audit->values($locked);
+            $locked->update($request->safe()->only(['name', 'description', 'is_required']));
+            $audit->record($request->user(), $locked, 'updated', $old, $audit->values($locked));
+        });
 
         return to_route('admin.services.requirements.index', $service)->with('status', 'Requirement updated successfully.');
     }
 
-    public function destroy(Service $service, ServiceRequirement $serviceRequirement): RedirectResponse
+    public function destroy(Request $request, Service $service, ServiceRequirement $serviceRequirement): RedirectResponse
     {
-        $deleted = DB::transaction(function () use ($service, $serviceRequirement): bool {
+        $deleted = DB::transaction(function () use ($request, $service, $serviceRequirement): bool {
+            Service::lockForUpdate()->findOrFail($service->id);
             $requirement = $service->serviceRequirements()->whereKey($serviceRequirement->id)->lockForUpdate()->firstOrFail();
             if ($requirement->attachments()->exists()) {
                 return false;
             }
+            $audit = app(ConfigurationAudit::class);
+            $old = $audit->values($requirement);
             $requirement->delete();
+            $audit->record($request->user(), $requirement, 'deleted', $old, []);
 
             return true;
         });
