@@ -1,0 +1,52 @@
+@extends('layouts.authenticated')
+@section('dashboard')
+<div class="reservation-reports collection-reports">
+    <section class="dashboard-panel p-3 p-md-4" aria-labelledby="collection-scope">
+        <h2 class="h5" id="collection-scope">Recorded collections excluding reviewed acceptance fixtures.</h2>
+        <p class="text-secondary">Based on recorded payment time, not request or appointment date. Only valid payments contribute to collection totals. Philippine time (Asia/Manila).</p>
+        @if($errors->any())<div class="alert alert-danger" role="alert">Please correct the filters. No collection totals are shown.<ul class="mb-0">@foreach($errors->all() as $message)<li>{{ $message }}</li>@endforeach</ul></div>@endif
+        <form method="GET" action="{{ route('admin.reports.collections') }}" class="row g-3" data-collection-filters>
+            <div class="col-12 col-md-6 col-xl-3"><label for="collection-period" class="form-label">Reporting period</label><select class="form-select" id="collection-period" name="period">@foreach($modes as $value => $label)<option value="{{ $value }}" @selected(old('period', $filters['period']) === $value)>{{ $label }}</option>@endforeach</select></div>
+            <div class="col-12 col-md-6 col-xl-3"><label for="collection-date" class="form-label">Specific date</label><input class="form-control" id="collection-date" name="date" type="date" value="{{ old('date', $filters['date'] ?? '') }}"><small class="text-secondary">Used with Specific Date.</small></div>
+            <div class="col-12 col-sm-6 col-xl-3"><label for="collection-start" class="form-label">Range start</label><input class="form-control" id="collection-start" name="start" type="date" value="{{ old('start', $filters['start'] ?? '') }}"></div>
+            <div class="col-12 col-sm-6 col-xl-3"><label for="collection-end" class="form-label">Range end (inclusive)</label><input class="form-control" id="collection-end" name="end" type="date" value="{{ old('end', $filters['end'] ?? '') }}"></div>
+            <input name="view" type="hidden" value="{{ $filters['view'] }}">
+            <div class="col-12 report-filter-actions"><button class="btn btn-primary" type="submit">Apply filters</button><a class="btn btn-outline-secondary" href="{{ route('admin.reports.collections') }}">Reset to This Month</a><span class="text-secondary">Weeks run Monday–Sunday. Custom range includes the end date.</span></div>
+        </form>
+    </section>
+    @if($reportError)<div class="alert alert-warning mt-3" role="alert">{{ $reportError }}</div>@endif
+    @if($report)
+        <p class="report-period mt-4"><strong>{{ $period['start']->format('M j, Y') }} – {{ $period['end']->format('M j, Y') }}</strong> · Philippine payment dates<br><span class="text-secondary">{{ $report['excluded'] }} reviewed fixture payments excluded within this period.</span></p>
+        <section class="row g-3" aria-label="Valid collection summary">
+            <div class="col-12 col-md-6"><x-dashboard-stat label="Valid Recorded Collections" :value="$report['amount']" :formatted="\App\Support\ServiceFee::format($report['amount'])" icon="document" note="Actual recorded payment amounts" tone="green"/></div>
+            <div class="col-12 col-md-6"><x-dashboard-stat label="Valid Paid Transactions" :value="$report['count']" icon="status" note="Valid payments within the selected period"/></div>
+        </section>
+        @if($report['integrity_count'] > 0)<div class="alert alert-danger mt-3" role="alert">{{ $report['integrity_count'] }} payment integrity {{ $report['integrity_count'] === 1 ? 'issue' : 'issues' }} within this payment period. These records are excluded from all collection totals and charts. Select Integrity Issues below to review the original reservations.</div>@endif
+        <div class="row g-3 mt-1">
+            <section class="col-12 col-xl-7"><div class="dashboard-panel p-3 p-md-4 h-100"><h2 class="h5">Collections Over Time</h2><p class="text-secondary">{{ ucfirst($report['bucket']) }} buckets · Philippine time · {{ \App\Support\ServiceFee::format($report['amount']) }} across {{ $report['count'] }} valid payments.</p>
+                @if($report['count'] === 0)<p class="report-empty">No valid recorded collections in this period.</p>@else
+                    <svg class="report-line" viewBox="0 0 680 290" role="img" aria-labelledby="collection-chart-title collection-chart-description"><title id="collection-chart-title">Valid collections over time</title><desc id="collection-chart-description">Amounts in Philippine pesos. Exact dates, amounts and transaction counts are provided below.</desc><path d="M55 35 V215 H650" fill="none" stroke="#6B7280"/><text x="55" y="25">Peak: {{ \App\Support\ServiceFee::format($report['peak']) }}</text><text x="45" y="219" text-anchor="end">0</text><polyline points="{{ $report['points'] }}" fill="none" stroke="#1F5EA8" stroke-width="3"/><text x="55" y="243">{{ $report['series'][0]['label'] }}</text><text x="645" y="264" text-anchor="end">{{ $report['series'][count($report['series'])-1]['label'] }}</text><text x="350" y="286" text-anchor="middle">Payment date / time</text></svg>
+                    <details><summary>View exact chart dates and amounts</summary><div class="report-chart-data"><table class="table table-sm"><caption>Valid payments per {{ $report['bucket'] }} · Philippine time</caption><thead><tr><th scope="col">Date / time</th><th scope="col">Amount (PHP)</th><th scope="col">Payments</th></tr></thead><tbody>@foreach($report['series'] as $row)<tr><th scope="row">{{ $row['label'] }}</th><td>{{ \App\Support\ServiceFee::format($row['amount']) }}</td><td>{{ $row['count'] }}</td></tr>@endforeach</tbody></table></div></details>
+                @endif
+            </div></section>
+            <section class="col-12 col-xl-5"><div class="dashboard-panel p-3 p-md-4 h-100"><h2 class="h5">Collections by Service</h2><p class="text-secondary">Top 5 by collected amount, plus Other services. Current linked service names.</p>
+                @if($report['ranking'] === [])<p class="report-empty">No services with valid collections.</p>@else
+                    <ol class="report-services">@foreach($report['ranking'] as $row)<li><div class="report-bar-label"><span>{{ $row['name'] }}</span><strong>{{ \App\Support\ServiceFee::format($row['amount']) }}</strong></div><div class="report-bar-track" aria-hidden="true"><div style="width: {{ $row['width'] }}%"></div></div><small>{{ $row['count'] }} valid payments</small></li>@endforeach</ol>
+                @endif
+            </div></section>
+        </div>
+        <section class="dashboard-panel p-3 p-md-4 mt-3"><h2 class="h5">Complete Service Breakdown</h2><p class="text-secondary">All services represented in the valid collections above, including inactive services. Names are not historical snapshots.</p>
+            <div class="table-responsive" tabindex="0" role="region" aria-label="Complete collection service breakdown"><table class="table"><caption>Full service totals reconcile to valid collections.</caption><thead><tr><th scope="col">Service</th><th scope="col">Payments</th><th scope="col">Collected amount</th></tr></thead><tbody>@forelse($report['services'] as $row)<tr><th scope="row">{{ $row['name'] }}</th><td>{{ $row['count'] }}</td><td>{{ \App\Support\ServiceFee::format($row['amount']) }}</td></tr>@empty<tr><td colspan="3">No matching service collections.</td></tr>@endforelse</tbody><tfoot><tr><th scope="row">Total</th><td>{{ $report['count'] }}</td><td>{{ \App\Support\ServiceFee::format($report['amount']) }}</td></tr></tfoot></table></div>
+        </section>
+        <section class="dashboard-panel p-3 p-md-4 mt-3" aria-labelledby="collection-table-heading"><h2 class="h5" id="collection-table-heading">{{ $filters['view'] === 'integrity' ? 'Integrity Issues' : 'Valid Payments' }}</h2>
+            <nav class="report-filter-actions mb-3" aria-label="Payment table view">@foreach(['valid' => 'Valid Payments', 'integrity' => 'Integrity Issues'] as $value => $label)<a class="btn {{ $filters['view'] === $value ? 'btn-primary' : 'btn-outline-secondary' }}" href="{{ route('admin.reports.collections', [...$filters, 'view' => $value]) }}" @if($filters['view'] === $value) aria-current="page" @endif>{{ $label }} ({{ $value === 'valid' ? $report['count'] : $report['integrity_count'] }})</a>@endforeach</nav>
+            <p class="text-secondary">{{ $filters['view'] === 'integrity' ? 'These recorded amounts are not included in collections. This report cannot correct or overwrite payments.' : 'Valid payments only. Cards and charts retain this same population when you switch table views.' }}</p>
+            @if($report['payments']->isEmpty())<p class="report-empty">No matching payment records on this page. Apply filters to return to page one.</p>@endif
+            <div class="table-responsive collection-table" tabindex="0" role="region" aria-label="Recorded payments; scroll horizontally on small screens"><table class="table align-middle"><caption>Newest payment time first · Philippine time</caption><thead><tr><th scope="col">Request</th><th scope="col">Resident</th><th scope="col">Service</th><th scope="col">Recorded amount</th><th scope="col">Paid at</th><th scope="col">Recorded by</th><th scope="col">Status</th><th scope="col">Action</th></tr></thead><tbody>
+            @foreach($report['payments'] as $payment)<tr><th scope="row">Request #{{ $payment->reservation_id }}</th><td>{{ $payment->reservation?->user?->name ?? 'Former account' }}</td><td>{{ $payment->reservation?->service?->name ?? 'Unavailable service' }}</td><td>{{ \App\Support\ServiceFee::format($payment->amount) }}</td><td>{{ $payment->paid_at->timezone('Asia/Manila')->format('M j, Y g:i A') }}</td><td>{{ $payment->recorder?->name ?? 'Former account' }}</td><td>{{ $filters['view'] === 'integrity' ? 'Payment integrity issue' : 'Paid' }}</td><td>@if($payment->reservation)<a class="btn btn-outline-primary btn-sm" href="{{ route('admin.reservations.show', $payment->reservation_id) }}" aria-label="View Request #{{ $payment->reservation_id }}">View details</a>@else Unavailable reservation @endif</td></tr>@endforeach
+            </tbody></table></div>
+            <div class="report-pagination"><span>{{ $report['payments']->total() }} matching {{ $filters['view'] === 'integrity' ? 'integrity issues' : 'valid payments' }}</span>{{ $report['payments']->links('pagination::bootstrap-5') }}</div>
+        </section>
+    @endif
+</div>
+@endsection

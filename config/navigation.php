@@ -31,7 +31,8 @@ return [
             ['label' => 'Services & Document Management', 'icon' => 'services', 'route' => 'admin.services.index', 'active' => 'admin.services.*'],
             ['label' => 'User Management', 'icon' => 'users', 'route' => 'admin.users.index', 'active' => 'admin.users.*'],
             ['label' => 'Reservation Logs', 'icon' => 'history', 'route' => 'admin.reservation-logs.index', 'active' => 'admin.reservation-logs.*'],
-            ['label' => 'Reservation Reports', 'icon' => 'document', 'route' => 'admin.reports.reservations', 'active' => 'admin.reports.*'],
+            ['label' => 'Reservation Reports', 'icon' => 'document', 'route' => 'admin.reports.reservations', 'active' => 'admin.reports.reservations'],
+            ['label' => 'Collections Reports', 'icon' => 'document', 'route' => 'admin.reports.collections', 'active' => 'admin.reports.collections'],
         ],
     ],
 ];

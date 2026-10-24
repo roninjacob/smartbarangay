@@ -21,6 +21,9 @@
 .report-pagination nav { max-width: 100%; }
 .report-pagination .pagination { flex-wrap: wrap; margin-bottom: 0; }
 .reservation-reports input[type="date"] { min-width: 0; max-width: 100%; }
+.collection-table table { min-width: 1000px; table-layout: fixed; }
+.collection-table td, .collection-table th { overflow-wrap: anywhere; }
+.collection-table .btn { white-space: normal; }
 @media (max-width: 400px) {
     .report-filter-actions .btn { width: 100%; }
     .report-line text { font-size: 26px; }
