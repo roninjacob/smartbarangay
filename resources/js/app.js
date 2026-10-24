@@ -8,6 +8,7 @@ import './services';
 import './document-preview';
 import './reservations';
 import './profile';
+import './user-preferences';
 import './qr-verification';
 import './document-builder';
 

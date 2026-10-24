@@ -5,12 +5,12 @@ namespace Tests\Feature;
 use App\Enums\UserRole;
 use App\Http\Middleware\EnsureAccountIsActive;
 use App\Models\User;
+use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
-use Illuminate\Auth\Notifications\VerifyEmail;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
@@ -41,9 +41,9 @@ class AuthenticationTest extends TestCase
         parent::tearDown();
     }
 
-    public function test_guest_root_redirects_to_login_and_auth_pages_show_calayo_branding(): void
+    public function test_guest_root_shows_public_website_and_auth_pages_show_calayo_branding(): void
     {
-        $this->get('/')->assertRedirect(route('login'));
+        $this->get('/')->assertOk()->assertSee('Barangay services, made simpler.');
         foreach (['/login', '/register'] as $path) {
             $this->get($path)->assertOk()->assertSee('SmartBarangay')
                 ->assertSee('Barangay Calayo')->assertSee('Nasugbu, Batangas')
@@ -262,7 +262,8 @@ class AuthenticationTest extends TestCase
     public function test_authenticated_users_are_redirected_from_root_and_guest_routes(UserRole $role, string $home): void
     {
         $this->actingAs($this->createUser($role));
-        foreach (['/', '/login', '/register'] as $path) {
+        $this->get('/')->assertOk()->assertSee('Go to Dashboard')->assertSee($home);
+        foreach (['/login', '/register'] as $path) {
             $this->get($path)->assertRedirect($home);
         }
         foreach (['/login', '/register'] as $path) {

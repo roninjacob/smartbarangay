@@ -17,6 +17,10 @@ return [
             ['label' => 'My QR Tickets', 'icon' => 'qr', 'route' => 'resident.qr-tickets.index', 'active' => 'resident.qr-tickets.*'],
             ['label' => 'Request Status', 'icon' => 'status', 'route' => 'resident.request-status.index', 'active' => 'resident.request-status.*'],
         ],
+        'Account preferences' => [
+            ['label' => 'Settings', 'icon' => 'account', 'route' => 'resident.settings.edit', 'active' => 'resident.settings.*'],
+            ['label' => 'Public Website', 'icon' => 'dashboard', 'route' => 'home'],
+        ],
     ],
     'admin' => [
         'Overview' => [
@@ -27,7 +31,6 @@ return [
             ['label' => 'Reservation Management', 'icon' => 'document', 'route' => 'admin.reservations.index', 'active' => 'admin.reservations.*'],
             ['label' => 'Schedule & Slot Management', 'icon' => 'calendar', 'route' => 'admin.schedules.index', 'active' => 'admin.schedules.*'],
             ['label' => 'QR Verification', 'icon' => 'qr', 'route' => 'admin.qr-verification.index', 'active' => 'admin.qr-verification.*'],
-            ['label' => 'Request Status Management', 'icon' => 'status'],
             ['label' => 'Services & Document Management', 'icon' => 'services', 'route' => 'admin.services.index', 'active' => 'admin.services.*'],
             ['label' => 'User Management', 'icon' => 'users', 'route' => 'admin.users.index', 'active' => 'admin.users.*'],
             ['label' => 'Reservation Logs', 'icon' => 'history', 'route' => 'admin.reservation-logs.index', 'active' => 'admin.reservation-logs.*'],
@@ -35,6 +38,10 @@ return [
             ['label' => 'Collections Reports', 'icon' => 'document', 'route' => 'admin.reports.collections', 'active' => 'admin.reports.collections'],
             ['label' => 'Recorded Check-ins', 'icon' => 'history', 'route' => 'admin.reports.checkins', 'active' => 'admin.reports.checkins'],
             ['label' => 'Finalized PDFs', 'icon' => 'document', 'route' => 'admin.reports.documents', 'active' => 'admin.reports.documents'],
+        ],
+        'Administration' => [
+            ['label' => 'Settings', 'icon' => 'account', 'route' => 'admin.settings.edit', 'active' => 'admin.settings.*'],
+            ['label' => 'Public Website', 'icon' => 'dashboard', 'route' => 'home'],
         ],
     ],
 ];

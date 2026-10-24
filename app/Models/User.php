@@ -78,6 +78,11 @@ class User extends Authenticatable implements MustVerifyEmail
         };
     }
 
+    public function preferredTheme(): string
+    {
+        return $this->theme_preference === 'dark' ? 'dark' : 'light';
+    }
+
     public function entryRouteName(): string
     {
         return $this->requiresEmailVerification() ? 'verification.notice' : $this->homeRouteName();

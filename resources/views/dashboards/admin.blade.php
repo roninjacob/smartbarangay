@@ -29,7 +29,7 @@
             <a class="account-quick-link" href="{{ route('admin.reservations.index') }}"><x-app-icon name="document"/><span>Reservation Management</span><x-app-icon name="arrow"/></a>
             <a class="account-quick-link" href="{{ route('admin.users.index') }}"><x-app-icon name="users"/><span>User Management</span><x-app-icon name="arrow"/></a>
             <a class="account-quick-link" href="{{ route('admin.profile.edit') }}"><x-app-icon name="account"/><span>View my profile</span><x-app-icon name="arrow"/></a>
-            <p class="app-note mb-0">Items marked “Soon” are not yet available. Your dashboard reflects current database records.</p>
+            <p class="app-note mb-0">Your dashboard reflects current database records. You can personalize your appearance in Settings.</p>
         </section>
     </div>
 </div>

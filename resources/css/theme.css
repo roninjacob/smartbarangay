@@ -1,0 +1,115 @@
+/* Bootstrap handles native components; these tokens adapt the existing civic UI. */
+:root[data-bs-theme="dark"] {
+    --civic-blue: #8dbbff;
+    --civic-dark: #bdd6ff;
+    --community-green: #8ed6b0;
+    --page-background: #111923;
+    --surface: #1b2634;
+    --main-text: #e6edf5;
+    --muted-text: #acbacb;
+    --border-color: #354456;
+    --bs-body-color: var(--main-text);
+    --bs-body-bg: var(--page-background);
+    --bs-secondary-color: var(--muted-text);
+    --bs-border-color: var(--border-color);
+    --bs-link-color: #8dbbff;
+    --bs-link-hover-color: #bdd6ff;
+}
+
+.user-preferences { overflow-wrap: anywhere; }
+.user-preferences .dashboard-panel { border-radius: 20px; }
+.preference-option { background: var(--bs-tertiary-bg); border: 1px solid var(--bs-border-color); }
+.user-preferences .form-switch { padding-left: 0; }
+.user-preferences .form-switch .form-check-input { float: none; margin-left: 0; width: 3rem; height: 1.5rem; flex-shrink: 0; cursor: pointer; }
+.user-preferences .btn { min-height: 44px; white-space: normal; }
+.user-preferences dd { margin-top: .4rem; margin-bottom: 1rem; }
+
+[data-bs-theme="dark"] .public-site { --public-ink: var(--main-text); background: var(--page-background); }
+[data-bs-theme="dark"] .public-header,
+[data-bs-theme="dark"] .public-journey,
+[data-bs-theme="dark"] .public-step { background: var(--surface); border-color: var(--border-color); }
+[data-bs-theme="dark"] .public-hero { background: radial-gradient(ellipse at 92% 20%, #203e3b, transparent 55%), linear-gradient(125deg, #15243a, #132a2b); }
+[data-bs-theme="dark"] .public-soft-section,
+[data-bs-theme="dark"] .public-contact,
+[data-bs-theme="dark"] .public-instructions { background: #182c30; border-color: var(--border-color); }
+[data-bs-theme="dark"] .public-brand,
+[data-bs-theme="dark"] .public-brand strong,
+[data-bs-theme="dark"] .public-contact a { color: var(--civic-dark); }
+[data-bs-theme="dark"] .public-eyebrow,
+[data-bs-theme="dark"] .public-brand small,
+[data-bs-theme="dark"] .public-site .nav-link,
+[data-bs-theme="dark"] .public-journey-steps p,
+[data-bs-theme="dark"] .public-community-note,
+[data-bs-theme="dark"] .public-contact dd,
+[data-bs-theme="dark"] .public-footer { color: var(--muted-text); }
+[data-bs-theme="dark"] .public-icon,
+[data-bs-theme="dark"] .public-brand-mark,
+[data-bs-theme="dark"] .public-step-number { background: #283d53; color: #b6d3ff; }
+[data-bs-theme="dark"] .public-journey-steps li,
+[data-bs-theme="dark"] .public-footer { border-color: var(--border-color); }
+
+[data-bs-theme="dark"] .app-nav-link,
+[data-bs-theme="dark"] .app-sidebar-note,
+[data-bs-theme="dark"] .app-nav-heading,
+[data-bs-theme="dark"] .app-eyebrow,
+[data-bs-theme="dark"] .app-date,
+[data-bs-theme="dark"] .app-logout,
+[data-bs-theme="dark"] .app-footer,
+[data-bs-theme="dark"] .app-sidebar .brand-location,
+[data-bs-theme="dark"] .app-sidebar-note small,
+[data-bs-theme="dark"] .app-note,
+[data-bs-theme="dark"] .dashboard-empty p,
+[data-bs-theme="dark"] .dashboard-guidance p,
+[data-bs-theme="dark"] .admin-welcome p,
+[data-bs-theme="dark"] .reservation-reference,
+[data-bs-theme="dark"] .notification-body time,
+[data-bs-theme="dark"] .report-empty { color: var(--muted-text); }
+
+[data-bs-theme="dark"] .stat-note,
+[data-bs-theme="dark"] .panel-description,
+[data-bs-theme="dark"] .panel-caption,
+[data-bs-theme="dark"] .form-text,
+[data-bs-theme="dark"] .account-details dt { color: var(--muted-text); }
+[data-bs-theme="dark"] .dashboard-table thead th { background: #243244; color: var(--muted-text); border-color: var(--border-color); }
+[data-bs-theme="dark"] .notification-list { background: var(--surface); }
+[data-bs-theme="dark"] .notification-item.is-unread { background: #22364e; }
+[data-bs-theme="dark"] .notification-count { background: #285fa7; border-color: var(--surface); }
+[data-bs-theme="dark"] .is-current .step-number { background: #285fa7; }
+[data-bs-theme="dark"] .dashboard-welcome:not(.admin-welcome) { background: #174a85; border-color: #477fcb; }
+[data-bs-theme="dark"] .stat-icon,
+[data-bs-theme="dark"] .profile-placeholder,
+[data-bs-theme="dark"] .resident-avatar,
+[data-bs-theme="dark"] .service-empty-icon,
+[data-bs-theme="dark"] .requirement-label,
+[data-bs-theme="dark"] .reservation-notice,
+[data-bs-theme="dark"] .reservation-option:has(input:checked),
+[data-bs-theme="dark"] .qr-camera-frame { background: #283d53; color: #c6dcff; border-color: var(--border-color); }
+
+[data-bs-theme="dark"] .app-nav-link.is-current,
+[data-bs-theme="dark"] .app-nav-link:hover,
+[data-bs-theme="dark"] .app-role-tag,
+[data-bs-theme="dark"] .app-avatar,
+[data-bs-theme="dark"] .app-menu-button,
+[data-bs-theme="dark"] .app-sidebar .brand-mark,
+[data-bs-theme="dark"] .empty-icon,
+[data-bs-theme="dark"] .empty-footnote,
+[data-bs-theme="dark"] .notification-symbol,
+[data-bs-theme="dark"] .notification-read,
+[data-bs-theme="dark"] .notification-unread { background: #283d53; color: #bdd6ff; border-color: var(--border-color); }
+
+[data-bs-theme="dark"] .app-sidebar-brand,
+[data-bs-theme="dark"] .app-sidebar-note,
+[data-bs-theme="dark"] .dashboard-guidance,
+[data-bs-theme="dark"] .dashboard-status-list > div { border-color: var(--border-color); }
+[data-bs-theme="dark"] .report-line text { fill: var(--main-text); }
+[data-bs-theme="dark"] .report-bar-track { background: var(--border-color); }
+[data-bs-theme="dark"] .btn-primary { --bs-btn-bg: #285fa7; --bs-btn-border-color: #477fcb; --bs-btn-hover-bg: #326fbd; --bs-btn-hover-border-color: #6295d8; --bs-btn-active-bg: #245690; color: #fff; }
+[data-bs-theme="dark"] .btn-outline-primary { --bs-btn-color: #b6d3ff; --bs-btn-border-color: #709ee0; --bs-btn-hover-bg: #285fa7; --bs-btn-hover-border-color: #709ee0; --bs-btn-hover-color: #fff; }
+[data-bs-theme="dark"] .public-site .btn-primary { background: #285fa7; border-color: #477fcb; }
+
+/* PDFs, canvases and official document surfaces are deliberately not inverted. */
+@media (prefers-reduced-motion: no-preference) {
+    body, .app-sidebar, .app-topbar, .dashboard-panel, .preference-option {
+        transition: background-color .15s ease, color .15s ease, border-color .15s ease;
+    }
+}

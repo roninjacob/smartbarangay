@@ -11,7 +11,6 @@ use Illuminate\Auth\Events\Verified;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Support\Facades\Artisan;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Hash;
@@ -19,8 +18,8 @@ use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\URL;
 use PHPUnit\Framework\Attributes\DataProvider;
-use Tests\TestCase;
 use Symfony\Component\Mailer\Exception\TransportException;
+use Tests\TestCase;
 
 class AuthenticationAdditionsTest extends TestCase
 {
@@ -57,6 +56,7 @@ class AuthenticationAdditionsTest extends TestCase
         $user->role = $role;
         $user->is_active = $active;
         $user->save();
+
         return $user;
     }
 
@@ -74,7 +74,8 @@ class AuthenticationAdditionsTest extends TestCase
         $destination = route('verification.notice');
         $this->post('/login', ['email' => $user->email, 'password' => 'password'])
             ->assertRedirect($destination);
-        foreach (['/', '/login', '/register'] as $path) {
+        $this->get('/')->assertOk()->assertSee('Verify Email')->assertSee($destination);
+        foreach (['/login', '/register'] as $path) {
             $this->get($path)->assertRedirect($destination);
         }
         $this->get($home)->assertRedirect($destination);

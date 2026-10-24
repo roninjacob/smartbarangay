@@ -37,6 +37,7 @@ use App\Http\Controllers\Resident\RequestStatusController;
 use App\Http\Controllers\Resident\ReservationCancellationController;
 use App\Http\Controllers\Resident\ReservationController;
 use App\Http\Controllers\Resident\ReservationViewController;
+use App\Http\Controllers\UserPreferencesController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', HomeController::class)->name('home');
@@ -78,6 +79,11 @@ Route::middleware('auth')->group(function () {
         ->middleware(['role:'.UserRole::Resident->value, 'verified'])->name('resident.home');
     Route::get('/admin/home', [DashboardController::class, 'admin'])
         ->middleware(['role:'.UserRole::Admin->value, 'verified'])->name('admin.home');
+    Route::prefix('resident/settings')->name('resident.settings.')
+        ->middleware(['role:'.UserRole::Resident->value, 'verified'])->group(function () {
+            Route::get('/', [UserPreferencesController::class, 'edit'])->name('edit');
+            Route::put('/', [UserPreferencesController::class, 'update'])->name('update');
+        });
     Route::prefix('resident/profile')->name('resident.profile.')
         ->middleware(['role:'.UserRole::Resident->value, 'verified'])->group(function () {
             Route::get('/', [ProfileController::class, 'edit'])->name('edit');
@@ -119,6 +125,8 @@ Route::middleware('auth')->group(function () {
             Route::get('/{reservation}', [RequestStatusController::class, 'show'])->whereNumber('reservation')->name('show');
         });
     Route::prefix('admin')->name('admin.')->middleware(['role:'.UserRole::Admin->value, 'verified'])->group(function () {
+        Route::get('/settings', [UserPreferencesController::class, 'edit'])->name('settings.edit');
+        Route::put('/settings', [UserPreferencesController::class, 'update'])->name('settings.update');
         Route::get('/reports/reservations/export', [ReportExportController::class, 'reservations'])->name('reports.reservations.export');
         Route::get('/reports/collections/export', [ReportExportController::class, 'collections'])->name('reports.collections.export');
         Route::get('/reports/checkins/export', [ReportExportController::class, 'checkins'])->name('reports.checkins.export');

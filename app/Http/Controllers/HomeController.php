@@ -2,13 +2,14 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
+use App\Models\Service;
+use Illuminate\View\View;
 
 class HomeController extends Controller
 {
-    public function __invoke(Request $request): RedirectResponse
+    public function __invoke(): View
     {
-        return redirect()->route($request->user()?->entryRouteName() ?? 'login');
+        return view('welcome', ['services' => Service::where('is_active', true)->select(['id', 'name', 'description'])
+            ->orderBy('name')->orderBy('id')->paginate(12, ['*'], 'services_page')->fragment('services')]);
     }
 }

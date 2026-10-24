@@ -175,7 +175,7 @@ class DashboardTest extends TestCase
             ->assertDontSee('href="#"', false)->assertDontSee('name="role"', false)
             ->assertDontSee('name="password"', false);
         if ($role === UserRole::Admin) {
-            $response->assertSee('aria-disabled="true"', false)->assertSee('Soon');
+            $response->assertDontSee('Request Status Management')->assertSee(route('admin.settings.edit'), false);
         } else {
             $response->assertDontSee('aria-disabled="true"', false)
                 ->assertSee(route('resident.qr-tickets.index'), false);
