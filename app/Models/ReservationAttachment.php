@@ -12,6 +12,7 @@ class ReservationAttachment extends Model
     protected $fillable = [
         'reservation_id',
         'service_requirement_id',
+        'reservation_requirement_id',
         'original_filename',
         'stored_path',
         'mime_type',
@@ -33,5 +34,10 @@ class ReservationAttachment extends Model
     public function serviceRequirement(): BelongsTo
     {
         return $this->belongsTo(ServiceRequirement::class);
+    }
+
+    public function requirementSnapshot(): BelongsTo
+    {
+        return $this->belongsTo(ReservationRequirement::class, 'reservation_requirement_id');
     }
 }

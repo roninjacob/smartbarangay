@@ -25,7 +25,7 @@
                 <h3 class="h6">Ticket information</h3>
                 <dl class="reservation-summary">
                     <div><dt>Request</dt><dd>#{{ $reservation->id }}</dd></div>
-                    <div><dt>Schedule</dt><dd>{{ $reservation->schedule->date->format('l, F j, Y') }}<br>{{ \Illuminate\Support\Carbon::parse($reservation->schedule->start_time)->format('g:i A') }} – {{ \Illuminate\Support\Carbon::parse($reservation->schedule->end_time)->format('g:i A') }}</dd></div>
+                    <div><dt>Schedule</dt><dd>{{ $reservation->appointment->date->format('l, F j, Y') }}<br>{{ \Illuminate\Support\Carbon::parse($reservation->appointment->start_time)->format('g:i A') }} – {{ \Illuminate\Support\Carbon::parse($reservation->appointment->end_time)->format('g:i A') }}</dd></div>
                     <div><dt>Issued</dt><dd>{{ $ticket->generated_at->timezone('Asia/Manila')->format('F j, Y, g:i A') }}</dd></div>
                 </dl>
                 <p class="app-note">Keep this QR ticket private. Pickup eligibility is determined by the current reservation status.</p>

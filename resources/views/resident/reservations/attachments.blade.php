@@ -4,7 +4,7 @@
 @else
     <ul class="reservation-requirements">
         @foreach($reservation->attachments as $attachment)
-            <li><strong>{{ $attachment->serviceRequirement?->name ?? 'Previous service requirement' }}</strong>
+            <li><strong>{{ $attachment->requirementSnapshot?->name ?? 'Legacy attachment: original requirement not recorded' }}</strong>
                 <p>{{ $attachment->original_filename }} · {{ number_format($attachment->file_size / 1024, 1) }} KB</p>
                 <a class="btn btn-outline-primary reservation-details-link mt-2" href="{{ route($attachmentRoute, [$reservation, $attachment]) }}" aria-label="Download {{ $attachment->original_filename }}">Download file</a>
             </li>

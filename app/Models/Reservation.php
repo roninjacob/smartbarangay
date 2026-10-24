@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use LogicException;
 
 class Reservation extends Model
 {
@@ -27,7 +28,35 @@ class Reservation extends Model
             'fee_snapshot' => 'decimal:2',
             'resident_snapshot' => 'array',
             'document_template_snapshot' => 'array',
+            'appointment_date' => 'date',
+            'requirements_snapshotted_at' => 'datetime',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        static::updating(function (Reservation $reservation) {
+            if ($reservation->isDirty(['appointment_date', 'appointment_start_time', 'appointment_end_time', 'requirements_snapshotted_at'])) {
+                throw new LogicException('Reservation history snapshots cannot be changed.');
+            }
+        });
+    }
+
+    public function hasAppointmentSnapshot(): bool
+    {
+        return $this->appointment_date !== null && $this->appointment_start_time !== null && $this->appointment_end_time !== null;
+    }
+
+    public function getAppointmentAttribute(): Schedule
+    {
+        return $this->hasAppointmentSnapshot()
+            ? new Schedule(['date' => $this->appointment_date, 'start_time' => $this->appointment_start_time, 'end_time' => $this->appointment_end_time])
+            : $this->schedule;
+    }
+
+    public function requirementSnapshots(): HasMany
+    {
+        return $this->hasMany(ReservationRequirement::class)->orderBy('id');
     }
 
     public function user(): BelongsTo

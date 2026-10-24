@@ -12,7 +12,7 @@
             <div><dt>Resident</dt><dd>{{ $reservation->resident_snapshot ? $reservation->resident_snapshot['resident_name'] : $reservation->user->name }}</dd></div>
             <div><dt>Email</dt><dd>{{ $reservation->user->email }}</dd></div>
             @if($reservation->resident_snapshot ? ($reservation->resident_snapshot['resident_contact'] ?? null) : $reservation->user->contact_number)<div><dt>Contact</dt><dd>{{ $reservation->resident_snapshot ? $reservation->resident_snapshot['resident_contact'] : $reservation->user->contact_number }}</dd></div>@endif
-            <div><dt>Schedule</dt><dd>{{ $reservation->schedule->date->format('l, F j, Y') }}<br>{{ \Illuminate\Support\Carbon::parse($reservation->schedule->start_time)->format('g:i A') }} – {{ \Illuminate\Support\Carbon::parse($reservation->schedule->end_time)->format('g:i A') }}</dd></div>
+            <div><dt>Schedule</dt><dd>{{ $reservation->appointment->date->format('l, F j, Y') }}<br>{{ \Illuminate\Support\Carbon::parse($reservation->appointment->start_time)->format('g:i A') }} – {{ \Illuminate\Support\Carbon::parse($reservation->appointment->end_time)->format('g:i A') }}</dd></div>
             <div><dt>Submitted</dt><dd>{{ $reservation->created_at->timezone('Asia/Manila')->format('F j, Y, g:i A') }}</dd></div>
             <div><dt>Last updated</dt><dd>{{ $reservation->updated_at->timezone('Asia/Manila')->format('F j, Y, g:i A') }}</dd></div>
             @if($reservation->qrTicket)
@@ -20,8 +20,8 @@
             @endif
         </dl>
         @include('reservations.payment-status', ['admin' => true])
-        <h3 class="h6 mt-4">Current service requirements</h3>
-        @include('resident.reservations.requirements-list', ['service' => $reservation->service])
+        @include('reservations.appointment-note')
+        @include('resident.reservations.historical-requirements')
         @include('resident.reservations.document-information')
         @if($documentPreviewAvailable)<a class="btn btn-outline-primary mt-3" href="{{ route('admin.reservations.document-preview.show', $reservation) }}">Preview Document</a>@endif
         @include('resident.reservations.attachments', ['attachmentRoute' => 'admin.reservations.attachments.download'])

@@ -41,8 +41,8 @@ class QrTicketVerifier
             'reservation_url' => route('admin.reservations.show', $reservation), 'reservation' => [
                 'resident' => $reservation->user->name,
                 'service' => $reservation->service->name,
-                'schedule' => $reservation->schedule->date->format('F j, Y').' · '.
-                    substr($reservation->schedule->start_time, 0, 5).'–'.substr($reservation->schedule->end_time, 0, 5),
+                'schedule' => $reservation->appointment->date->format('F j, Y').' · '.
+                    substr($reservation->appointment->start_time, 0, 5).'–'.substr($reservation->appointment->end_time, 0, 5),
                 'status' => $reservation->status->label(),
             ]];
     }

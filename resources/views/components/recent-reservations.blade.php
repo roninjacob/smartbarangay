@@ -18,7 +18,7 @@
                         <tr>
                             <th scope="row"><span class="reservation-service">{{ $reservation->service->name }}</span><span class="reservation-reference">Request #{{ $reservation->id }} · {{ $reservation->created_at->timezone('Asia/Manila')->format('M j, Y') }}</span></th>
                             @if($admin)<td><span class="reservation-resident" title="{{ $reservation->user->name }}">{{ $reservation->user->name }}</span></td>@endif
-                            <td><time datetime="{{ $reservation->schedule->date->toDateString() }}">{{ $reservation->schedule->date->format('M j, Y') }}</time><span class="reservation-reference">{{ substr($reservation->schedule->start_time, 0, 5) }}–{{ substr($reservation->schedule->end_time, 0, 5) }}</span></td>
+                            <td><time datetime="{{ $reservation->appointment->date->toDateString() }}">{{ $reservation->appointment->date->format('M j, Y') }}</time><span class="reservation-reference">{{ substr($reservation->appointment->start_time, 0, 5) }}–{{ substr($reservation->appointment->end_time, 0, 5) }}</span></td>
                             <td><x-reservation-status :status="$reservation->status"/></td>
                         </tr>
                     @endforeach

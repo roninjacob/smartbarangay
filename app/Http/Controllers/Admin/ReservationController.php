@@ -43,7 +43,7 @@ class ReservationController extends Controller
 
     public function show(Reservation $reservation, CertificatePreparationState $documents, GeneratedReservationDocuments $generated): View
     {
-        $reservation->load(['user', 'service.serviceRequirements', 'service.documentTemplate', 'document.generator', 'schedule', 'qrTicket.usedBy', 'attachments.serviceRequirement', 'documentAnswers', 'payment.recorder']);
+        $reservation->load(['user', 'service.serviceRequirements', 'service.documentTemplate', 'document.generator', 'schedule', 'qrTicket.usedBy', 'attachments.requirementSnapshot', 'requirementSnapshots', 'documentAnswers', 'payment.recorder']);
         $previewAvailable = ! $reservation->document && app(ReservationDocumentPreview::class)->data($reservation) !== null;
         $snapshot = $reservation->document_template_snapshot;
         $prepared = $documents->isPrepared($reservation);

@@ -20,7 +20,7 @@
     @forelse($reservations as $reservation)
         <div class="border rounded p-3 mb-3 text-break">
             <strong>{{ $reservation->user->name }}</strong>
-            <p class="app-note">Request #{{ $reservation->id }} &middot; {{ $reservation->schedule->date->format('M j, Y') }}</p>
+            <p class="app-note">Request #{{ $reservation->id }} &middot; {{ $reservation->appointment->date->format('M j, Y') }}</p>
             @if($certificateStates[$reservation->id]['available'])
                 <div class="d-flex flex-wrap gap-2 mb-2">
                     <a class="btn btn-sm btn-outline-primary" href="{{ route('admin.reservations.generated.show', $reservation) }}">Preview Generated Document<span class="visually-hidden"> for Request #{{ $reservation->id }}</span></a>

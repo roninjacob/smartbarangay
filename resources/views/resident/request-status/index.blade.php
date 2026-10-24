@@ -9,7 +9,7 @@
             <article class="request-tracking-row" aria-labelledby="track-{{ $reservation->id }}">
                 <div class="reservation-row-service"><span class="reservation-reference">Request #{{ $reservation->id }}</span><h3 id="track-{{ $reservation->id }}">{{ $reservation->service->name }}</h3><x-reservation-status :status="$reservation->status"/><p class="request-status-message">{{ $reservation->status->residentMessage() }}</p></div>
                 <dl class="request-tracking-facts">
-                    <div><dt>Schedule</dt><dd>{{ $reservation->schedule->date->format('M j, Y') }}<span class="reservation-reference">{{ \Illuminate\Support\Carbon::parse($reservation->schedule->start_time)->format('g:i A') }} – {{ \Illuminate\Support\Carbon::parse($reservation->schedule->end_time)->format('g:i A') }}</span></dd></div>
+                    <div><dt>Schedule</dt><dd>{{ $reservation->appointment->date->format('M j, Y') }}<span class="reservation-reference">{{ \Illuminate\Support\Carbon::parse($reservation->appointment->start_time)->format('g:i A') }} – {{ \Illuminate\Support\Carbon::parse($reservation->appointment->end_time)->format('g:i A') }}</span></dd></div>
                     <div><dt>Submitted</dt><dd><time datetime="{{ $reservation->created_at->toIso8601String() }}">{{ $reservation->created_at->timezone('Asia/Manila')->format('M j, Y, g:i A') }}</time></dd></div>
                     <div><dt>Latest update</dt><dd><time datetime="{{ $reservation->updated_at->toIso8601String() }}">{{ $reservation->updated_at->timezone('Asia/Manila')->format('M j, Y, g:i A') }}</time></dd></div>
                 </dl>

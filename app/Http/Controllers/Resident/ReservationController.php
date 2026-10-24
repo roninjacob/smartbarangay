@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Resident;
 
 use App\Enums\ReservationStatus;
+use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Resident\ReservationWizardRequest;
 use App\Models\DocumentTemplate;
@@ -99,7 +100,7 @@ class ReservationController extends Controller
 
         return $this->page(3, [
             'service' => $service, 'draft' => $draft,
-            'schedules' => Schedule::where('is_active', true)->withCount('occupiedReservations')->orderBy('date')->orderBy('start_time')->get(),
+            'schedules' => Schedule::where('is_active', true)->upcoming()->withCount('occupiedReservations')->orderBy('date')->orderBy('start_time')->get(),
         ]);
     }
 
@@ -109,6 +110,7 @@ class ReservationController extends Controller
         $service = $this->service($request, $draft);
         $this->documentInformation($request, $draft, $service);
         $selected = Schedule::findOrFail($request->validated('schedule_id'));
+        $this->requireUpcomingSchedule($selected);
         if ($selected->remainingSlots() === 0) {
             $this->restartAt('schedule', 'This schedule has just reached full capacity. Please choose another available schedule.');
         }
@@ -146,6 +148,8 @@ class ReservationController extends Controller
         $storedPaths = [];
         try {
             DB::transaction(function () use ($request, $draft, $uploads, &$storedPaths) {
+                $resident = User::lockForUpdate()->findOrFail($request->user()->id);
+                abort_unless($resident->is_active && $resident->email_verified_at !== null && $resident->role === UserRole::Resident, 403, 'Your account is no longer eligible to submit a reservation.');
                 // Serialize final checks against Admin edits to these same records.
                 $service = Service::lockForUpdate()->find($draft['service_id']);
                 $schedule = Schedule::lockForUpdate()->find($draft['schedule_id']);
@@ -156,6 +160,7 @@ class ReservationController extends Controller
                 if (! $schedule?->is_active) {
                     $this->restartAt('schedule', 'The selected schedule is no longer available. Please choose another schedule.');
                 }
+                $this->requireUpcomingSchedule($schedule);
                 $template = $this->documentInformation($request, $draft, $service);
                 // Parent locks serialize separate sessions; a locking read sees the latest committed reservation.
                 $duplicate = $request->user()->reservations()->occupyingSlot()
@@ -176,9 +181,16 @@ class ReservationController extends Controller
                     'service_id' => $service->id, 'schedule_id' => $schedule->id,
                     'status' => ReservationStatus::Pending,
                 ]);
-                $reservation->forceFill(['fee_snapshot' => $service->fee_amount])->save();
+                $reservation->forceFill(['fee_snapshot' => $service->fee_amount,
+                    'appointment_date' => $schedule->date->toDateString(),
+                    'appointment_start_time' => $schedule->start_time, 'appointment_end_time' => $schedule->end_time,
+                    'requirements_snapshotted_at' => now('UTC')])->save();
+                foreach ($requirements as $requirement) {
+                    $snapshot = $reservation->requirementSnapshots()->make();
+                    $snapshot->forceFill(['service_requirement_id' => $requirement->id, 'name' => $requirement->name,
+                        'description' => $requirement->description, 'is_required' => $requirement->is_required])->save();
+                }
                 $information = app(ReservationDocumentInformation::class);
-                $resident = User::lockForUpdate()->findOrFail($request->user()->id);
                 $profile = $information->profile($resident);
                 if ($template && ($draft['document_profile'] ?? null) !== $profile) {
                     $this->resetDocumentInformation($request, $draft, 'Your profile information has changed. Review the document information again.');
@@ -187,6 +199,7 @@ class ReservationController extends Controller
                 $information->store($reservation, $template, $answers, $profile, $storedPaths);
                 $uploads->store($reservation, $files, $storedPaths);
                 app(ReservationNotifications::class)->record('submitted', $reservation);
+                $this->requireUpcomingSchedule($schedule);
             });
         } catch (Throwable $exception) {
             $uploads->cleanup($storedPaths);
@@ -279,6 +292,7 @@ class ReservationController extends Controller
         if (! $schedule?->is_active) {
             $this->restartAt('schedule', 'Please choose an active schedule.');
         }
+        $this->requireUpcomingSchedule($schedule);
 
         return $schedule;
     }
@@ -286,6 +300,13 @@ class ReservationController extends Controller
     private function restartAt(string $step, string $message): never
     {
         throw new HttpResponseException(to_route('resident.reservations.'.$step)->withErrors(['reservation' => $message]));
+    }
+
+    private function requireUpcomingSchedule(Schedule $schedule): void
+    {
+        if (! $schedule->startsInFuture()) {
+            $this->restartAt('schedule', 'This schedule has already started. Please choose a future schedule.');
+        }
     }
 
     private function page(int $step, array $data): View

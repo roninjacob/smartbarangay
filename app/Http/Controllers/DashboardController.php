@@ -43,7 +43,10 @@ class DashboardController extends Controller
                 + $counts[ReservationStatus::UnderReview->value],
             'totalResidents' => User::where('role', UserRole::Resident->value)->count(),
             'collections' => app(PaymentCollections::class)->summary(),
-            'todayReservations' => Reservation::whereHas('schedule', fn (Builder $query) => $query->whereDate('date', $today))->count(),
+            'todayReservations' => Reservation::where(function (Builder $query) use ($today) {
+                $query->whereDate('appointment_date', $today)->orWhere(fn (Builder $legacy) => $legacy
+                    ->whereNull('appointment_date')->whereHas('schedule', fn (Builder $schedule) => $schedule->whereDate('date', $today)));
+            })->count(),
             'recentReservations' => Reservation::with(['user', 'service', 'schedule'])
                 ->latest()->orderByDesc('id')->limit(6)->get(),
         ]);

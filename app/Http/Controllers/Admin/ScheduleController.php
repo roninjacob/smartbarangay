@@ -40,6 +40,8 @@ class ScheduleController extends Controller
 
     public function edit(Schedule $schedule): View
     {
+        $schedule->loadExists('reservations');
+
         return view('admin.schedules.form', [...$this->shellData('Edit Schedule'), 'schedule' => $schedule]);
     }
 
@@ -48,6 +50,11 @@ class ScheduleController extends Controller
         try {
             DB::transaction(function () use ($request, $schedule) {
                 $locked = Schedule::lockForUpdate()->findOrFail($schedule->id);
+                $data = $request->scheduleData();
+                if ($locked->reservations()->lockForUpdate()->first(['id'])
+                    && ($data['date'] !== $locked->date->toDateString() || $data['start_time'] !== $locked->start_time || $data['end_time'] !== $locked->end_time)) {
+                    throw ValidationException::withMessages(['date' => 'Date and time cannot be changed after a reservation is linked. Create another schedule instead.']);
+                }
                 if ($request->integer('capacity') < $locked->lockedOccupancy()) {
                     throw ValidationException::withMessages(['capacity' => 'Capacity cannot be lower than the number of occupying reservations.']);
                 }

@@ -23,8 +23,8 @@
                     @if($ticket->reservation->status === \App\Enums\ReservationStatus::Completed)<p class="app-note mt-2 mb-0">Historical ticket · Request completed</p>@endif
                 </div>
                 <dl class="reservation-row-facts">
-                    <div><dt>Schedule date</dt><dd>{{ $ticket->reservation->schedule->date->format('M j, Y') }}</dd></div>
-                    <div><dt>Time</dt><dd>{{ \Illuminate\Support\Carbon::parse($ticket->reservation->schedule->start_time)->format('g:i A') }} – {{ \Illuminate\Support\Carbon::parse($ticket->reservation->schedule->end_time)->format('g:i A') }}</dd></div>
+                    <div><dt>Schedule date</dt><dd>{{ $ticket->reservation->appointment->date->format('M j, Y') }}</dd></div>
+                    <div><dt>Time</dt><dd>{{ \Illuminate\Support\Carbon::parse($ticket->reservation->appointment->start_time)->format('g:i A') }} – {{ \Illuminate\Support\Carbon::parse($ticket->reservation->appointment->end_time)->format('g:i A') }}</dd></div>
                     <div><dt>Issued</dt><dd>{{ $ticket->generated_at->timezone('Asia/Manila')->format('M j, Y') }}</dd></div>
                 </dl>
                 <a href="{{ route('resident.qr-tickets.show', $ticket) }}" class="btn btn-outline-primary reservation-details-link" aria-label="View QR Ticket for request #{{ $ticket->reservation->id }}">View QR Ticket</a>

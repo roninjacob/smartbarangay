@@ -22,8 +22,8 @@
                     <x-reservation-status :status="$reservation->status"/>
                 </div>
                 <dl class="reservation-row-facts">
-                    <div><dt>Schedule date</dt><dd><time datetime="{{ $reservation->schedule->date->toDateString() }}">{{ $reservation->schedule->date->format('M j, Y') }}</time></dd></div>
-                    <div><dt>Time</dt><dd>{{ \Illuminate\Support\Carbon::parse($reservation->schedule->start_time)->format('g:i A') }} – {{ \Illuminate\Support\Carbon::parse($reservation->schedule->end_time)->format('g:i A') }}</dd></div>
+                    <div><dt>Schedule date</dt><dd><time datetime="{{ $reservation->appointment->date->toDateString() }}">{{ $reservation->appointment->date->format('M j, Y') }}</time></dd></div>
+                    <div><dt>Time</dt><dd>{{ \Illuminate\Support\Carbon::parse($reservation->appointment->start_time)->format('g:i A') }} – {{ \Illuminate\Support\Carbon::parse($reservation->appointment->end_time)->format('g:i A') }}</dd></div>
                     <div><dt>Submitted</dt><dd><time datetime="{{ $reservation->created_at->toIso8601String() }}">{{ $reservation->created_at->timezone('Asia/Manila')->format('M j, Y') }}</time></dd></div>
                 </dl>
                 <a href="{{ route('resident.reservations.show', $reservation) }}" class="btn btn-outline-primary reservation-details-link" aria-label="View Details for request #{{ $reservation->id }}">View Details</a>

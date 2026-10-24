@@ -53,7 +53,12 @@ class ReservationFileUploads
 
     public function store(Reservation $reservation, array $files, array &$storedPaths): void
     {
+        $snapshots = $reservation->requirementSnapshots()->get()->keyBy('service_requirement_id');
         foreach ($files as $requirementId => $file) {
+            $snapshot = $snapshots->get($requirementId);
+            if (! $snapshot) {
+                throw ValidationException::withMessages(['attachments' => 'The submitted requirement could not be matched to the reservation snapshot.']);
+            }
             $path = 'reservation-attachments/'.$reservation->id.'/'.Str::random(40).'.'.$file->extension();
             // Track the generated path before writing so a partial write is also cleaned up.
             $storedPaths[] = $path;
@@ -65,6 +70,7 @@ class ReservationFileUploads
             $name = preg_replace('/[\x00-\x1F\x7F]/u', '', $name) ?: 'Submitted file';
             $reservation->attachments()->create([
                 'service_requirement_id' => $requirementId, 'original_filename' => mb_substr($name, 0, 240),
+                'reservation_requirement_id' => $snapshot->id,
                 'stored_path' => $path, 'mime_type' => $file->getMimeType(), 'file_size' => $file->getSize(),
             ]);
         }

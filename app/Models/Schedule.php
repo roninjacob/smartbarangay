@@ -2,8 +2,10 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 
 class Schedule extends Model
 {
@@ -27,6 +29,21 @@ class Schedule extends Model
     public function reservations(): HasMany
     {
         return $this->hasMany(Reservation::class);
+    }
+
+    public function scopeUpcoming(Builder $query): Builder
+    {
+        $now = now('Asia/Manila');
+
+        return $query->where(function (Builder $query) use ($now) {
+            $query->whereDate('date', '>', $now->toDateString())
+                ->orWhere(fn (Builder $today) => $today->whereDate('date', $now->toDateString())->where('start_time', '>', $now->format('H:i:s')));
+        });
+    }
+
+    public function startsInFuture(): bool
+    {
+        return Carbon::parse($this->date->toDateString().' '.$this->start_time, 'Asia/Manila')->gt(now('Asia/Manila'));
     }
 
     public function occupiedReservations(): HasMany
