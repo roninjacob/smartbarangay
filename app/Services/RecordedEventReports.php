@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-use App\Models\CheckinLog;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
 
@@ -16,40 +15,13 @@ class RecordedEventReports
 
         return DB::transaction(function () use ($kind, $filters, $period) {
             $ids = app(ReportingExclusions::class)->validatedIds();
-            $documents = $kind === 'documents';
-            $table = $documents ? 'reservation_documents' : 'checkin_logs';
-            $time = $documents ? 'generated_at' : 'verified_at';
-            $actor = $documents ? 'generated_by' : 'verified_by';
-            $population = DB::table($table.' as event')->where('event.'.$time, '>=', $period['from'])
-                ->where('event.'.$time, '<', $period['until']);
-            if (! $documents) {
-                $population->where('event.verification_result', CheckinLog::ARRIVAL);
-            }
-            $excluded = (clone $population)->whereIn('event.reservation_id', $ids)->count();
-            // NULL reservation IDs must remain visible as warnings, not disappear in NOT IN.
-            $base = (clone $population)->where(fn ($q) => $q->whereNull('event.reservation_id')->orWhereNotIn('event.reservation_id', $ids))
-                ->leftJoin('reservations as r', 'r.id', '=', 'event.reservation_id')
-                ->leftJoin('services as s', 's.id', '=', 'r.service_id')
-                ->leftJoin('users as resident', 'resident.id', '=', 'r.user_id')
-                ->leftJoin('schedules as schedule', 'schedule.id', '=', 'r.schedule_id');
-            $validity = 'r.id IS NOT NULL AND s.id IS NOT NULL AND resident.id IS NOT NULL AND schedule.id IS NOT NULL';
-            if ($documents) {
-                $hex = DB::getDriverName() === 'sqlite'
-                    ? "event.content_hash NOT GLOB '*[^0-9a-f]*' AND event.template_revision NOT GLOB '*[^0-9a-f]*'"
-                    : "BINARY event.content_hash NOT REGEXP '[^0-9a-f]' AND BINARY event.template_revision NOT REGEXP '[^0-9a-f]'";
-                $path = DB::getDriverName() === 'sqlite'
-                    ? "substr(event.stored_path, 1, length('reservation-documents/' || event.reservation_id || '/')) = ('reservation-documents/' || event.reservation_id || '/') AND substr(event.stored_path, -4) = '.pdf' AND length(event.stored_path) = length('reservation-documents/' || event.reservation_id || '/') + 44 AND substr(event.stored_path, -44, 40) NOT GLOB '*[^A-Za-z0-9]*'"
-                    : "BINARY event.stored_path REGEXP CONCAT('^reservation-documents/', event.reservation_id, '/[A-Za-z0-9]{40}[.]pdf$') AND length(event.stored_path) = length(CONCAT('reservation-documents/', event.reservation_id, '/')) + 44";
-                $mime = DB::getDriverName() === 'sqlite' ? "event.mime_type = 'application/pdf'" : "BINARY event.mime_type = 'application/pdf'";
-                $validity .= " AND ($mime) AND event.file_size > 0 AND event.template_version >= 1"
-                    ." AND length(event.content_hash) = 64 AND length(event.template_revision) = 64 AND ($hex) AND ($path)"
-                    .' AND length(trim(event.template_filename)) > 0 AND length(trim(event.original_filename)) > 0';
-
-            }
-            // CASE explicitly partitions FALSE and NULL metadata into the warning population.
-            $partition = "CASE WHEN $validity THEN 1 ELSE 0 END";
-            $valid = (clone $base)->whereRaw("($partition) = 1");
-            $issues = (clone $base)->whereRaw("($partition) = 0")->count();
+            $queries = app(ReportQueries::class);
+            $parts = $queries->build($kind, $period, $ids);
+            $base = $parts['base'];
+            $valid = $parts['valid'];
+            $time = $kind === 'documents' ? 'generated_at' : 'verified_at';
+            $excluded = (clone $parts['population'])->whereIn($parts['reservation_key'], $ids)->count();
+            $issues = (clone $parts['invalid'])->count();
             $count = (clone $valid)->count();
             if ((clone $base)->count() !== $count + $issues) {
                 throw new RuntimeException(ReportingExclusions::UNAVAILABLE);
@@ -90,9 +62,7 @@ class RecordedEventReports
             }
             unset($row);
             // Explicit projection: never load QR credentials, paths, snapshots, notes or passwords.
-            $events = (clone $valid)->leftJoin('users as actor', 'actor.id', '=', 'event.'.$actor)
-                ->select('event.id', 'event.reservation_id', 'event.'.$time.' as occurred_at', 'resident.name as resident_name',
-                    's.name as service_name', 'actor.name as actor_name')
+            $events = $queries->details($kind, $valid)
                 ->orderByDesc('event.'.$time)->orderByDesc('event.id')->paginate(15)->appends($filters);
             foreach ([$series, $services, $ranking] as $rows) {
                 if (array_sum(array_column($rows, 'count')) !== $count) {

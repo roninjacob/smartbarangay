@@ -46,7 +46,7 @@
                 @endif
             </div></section>
         </div>
-        <section class="dashboard-panel p-3 p-md-4 mt-3" aria-labelledby="report-table-title"><h2 class="h5" id="report-table-title">Submitted Requests</h2>
+        <section class="dashboard-panel p-3 p-md-4 mt-3" aria-labelledby="report-table-title"><div class="report-filter-actions justify-content-between mb-3"><h2 class="h5" id="report-table-title">Submitted Requests</h2>@include('admin.reports.partials.csv-download', ['exportKind' => 'reservations'])</div><p class="text-secondary">Downloads all matching submissions, across all pages, excluding reviewed acceptance fixtures. Status is current at export time.</p>
             @if($report['reservations']->isEmpty())<p class="report-empty">No requests on this page. Choose another period or return to the first page.</p>@endif
             <div class="table-responsive report-table" tabindex="0" role="region" aria-label="Submitted requests; scroll horizontally on small screens">
                 <table class="table align-middle"><caption>Newest submissions first. Current status, not historical period-end status.</caption><thead><tr><th scope="col">Request</th><th scope="col">Resident</th><th scope="col">Service</th><th scope="col">Submitted (Philippine time)</th><th scope="col">Current status</th><th scope="col">Action</th></tr></thead><tbody>

@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-use App\Models\ReservationPayment;
 use Brick\Math\BigDecimal;
 use Brick\Math\RoundingMode;
 use Illuminate\Support\Facades\DB;
@@ -14,15 +13,15 @@ class CollectionReports
     {
         return DB::transaction(function () use ($filters, $period) {
             $ids = app(ReportingExclusions::class)->validatedIds();
-            $population = ReservationPayment::where('reservation_payments.paid_at', '>=', $period['from'])
-                ->where('reservation_payments.paid_at', '<', $period['until']);
-            $excluded = (clone $population)->whereIn('reservation_payments.reservation_id', $ids)->count();
-            $base = (clone $population)->whereNotIn('reservation_payments.reservation_id', $ids);
-            $valid = (clone $base)->consistent();
-            $invalid = (clone $base)->whereNotIn('reservation_payments.id', ReservationPayment::consistent()->select('id'));
-            $sum = $this->sumExpression();
+            $queries = app(ReportQueries::class);
+            $parts = $queries->build('collections', $period, $ids);
+            $base = $parts['base'];
+            $valid = $parts['valid'];
+            $invalid = $parts['invalid'];
+            $excluded = (clone $parts['population'])->whereIn($parts['reservation_key'], $ids)->count();
+            $sum = $queries->sumExpression();
             $summary = (clone $valid)->selectRaw("COUNT(*) AS transactions, $sum AS total_amount")->first();
-            $amount = $this->amount($summary->total_amount);
+            $amount = $queries->amount($summary->total_amount);
             $count = (int) $summary->transactions;
             $issues = $invalid->count();
             if ($base->count() !== $count + $issues) {
@@ -45,7 +44,7 @@ class CollectionReports
             while ($cursor <= $period['end']->endOfDay()) {
                 $key = $cursor->format($format);
                 $row = $grouped->get($key);
-                $series[] = ['label' => $key, 'amount' => $row ? $this->amount($row->total_amount) : '0.00', 'count' => (int) ($row?->transactions ?? 0)];
+                $series[] = ['label' => $key, 'amount' => $row ? $queries->amount($row->total_amount) : '0.00', 'count' => (int) ($row?->transactions ?? 0)];
                 $cursor = match ($bucket) {
                     'hour' => $cursor->addHour(), 'day' => $cursor->addDay(), 'month' => $cursor->addMonth(), 'year' => $cursor->addYear(),
                 };
@@ -56,7 +55,7 @@ class CollectionReports
                 ->select('report_reservation.service_id', 'services.name')->selectRaw("COUNT(*) AS transactions, $sum AS total_amount")
                 ->groupBy('report_reservation.service_id', 'services.name')->orderByDesc('total_amount')->orderBy('report_reservation.service_id')
                 ->get()->map(fn ($row) => ['service_id' => $row->service_id, 'name' => $row->name ?? 'Unavailable service',
-                    'amount' => $this->amount($row->total_amount), 'count' => (int) $row->transactions])->all();
+                    'amount' => $queries->amount($row->total_amount), 'count' => (int) $row->transactions])->all();
 
             $this->reconcile($series, $amount, $count);
             $this->reconcile($services, $amount, $count);
@@ -91,7 +90,7 @@ class CollectionReports
                 $points[] = $x.','.$y;
             }
             $query = ($filters['view'] ?? 'valid') === 'integrity' ? $invalid : $valid;
-            $payments = (clone $query)->select('reservation_payments.*')->with(['reservation.user:id,name', 'reservation.service:id,name', 'recorder:id,name'])
+            $payments = $queries->details('collections', $query)
                 ->orderByDesc('reservation_payments.paid_at')->orderByDesc('reservation_payments.id')->paginate(15)->appends($filters);
             if ($payments->total() !== (($filters['view'] ?? 'valid') === 'integrity' ? $issues : $count)) {
                 throw new RuntimeException(ReportingExclusions::UNAVAILABLE);
@@ -101,21 +100,6 @@ class CollectionReports
                 'series' => $series, 'bucket' => $bucket, 'peak' => (string) $peak->toScale(2), 'points' => implode(' ', $points),
                 'services' => $services, 'ranking' => $ranking, 'payments' => $payments];
         });
-    }
-
-    private function sumExpression(): string
-    {
-        // MariaDB sums DECIMAL exactly. SQLite NUMERIC uses floats: sum integer centavos there.
-        return DB::getDriverName() === 'sqlite'
-            ? 'COALESCE(SUM(CAST(ROUND(reservation_payments.amount * 100) AS INTEGER)), 0)'
-            : 'COALESCE(SUM(reservation_payments.amount), 0)';
-    }
-
-    private function amount(mixed $value): string
-    {
-        $amount = BigDecimal::of((string) $value);
-
-        return (string) (DB::getDriverName() === 'sqlite' ? $amount->dividedBy(100, 2) : $amount->toScale(2));
     }
 
     private function reconcile(array $rows, string $amount, int $count): void

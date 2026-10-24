@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\DocumentLayoutController;
 use App\Http\Controllers\Admin\DocumentTemplateController;
 use App\Http\Controllers\Admin\QrVerificationController;
 use App\Http\Controllers\Admin\RecordedEventReportController;
+use App\Http\Controllers\Admin\ReportExportController;
 use App\Http\Controllers\Admin\ReservationCheckInController;
 use App\Http\Controllers\Admin\ReservationController as AdminReservationController;
 use App\Http\Controllers\Admin\ReservationDocumentController;
@@ -118,6 +119,10 @@ Route::middleware('auth')->group(function () {
             Route::get('/{reservation}', [RequestStatusController::class, 'show'])->whereNumber('reservation')->name('show');
         });
     Route::prefix('admin')->name('admin.')->middleware(['role:'.UserRole::Admin->value, 'verified'])->group(function () {
+        Route::get('/reports/reservations/export', [ReportExportController::class, 'reservations'])->name('reports.reservations.export');
+        Route::get('/reports/collections/export', [ReportExportController::class, 'collections'])->name('reports.collections.export');
+        Route::get('/reports/checkins/export', [ReportExportController::class, 'checkins'])->name('reports.checkins.export');
+        Route::get('/reports/documents/export', [ReportExportController::class, 'documents'])->name('reports.documents.export');
         Route::get('/reports/reservations', ReservationReportController::class)->name('reports.reservations');
         Route::get('/reports/collections', CollectionReportController::class)->name('reports.collections');
         Route::get('/reports/checkins', [RecordedEventReportController::class, 'checkins'])->name('reports.checkins');

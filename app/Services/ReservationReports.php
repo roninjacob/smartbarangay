@@ -2,11 +2,8 @@
 
 namespace App\Services;
 
-use App\Enums\ReservationStatus;
-use App\Models\Reservation;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
-use RuntimeException;
 
 class ReservationReports
 {
@@ -36,18 +33,11 @@ class ReservationReports
         // A consistent read snapshot keeps validation, counts and pagination in agreement.
         return DB::transaction(function () use ($filters, $period) {
             $ids = app(ReportingExclusions::class)->validatedIds();
-            $population = Reservation::where('reservations.created_at', '>=', $period['from'])
-                ->where('reservations.created_at', '<', $period['until']);
-            $excluded = (clone $population)->whereIn('reservations.id', $ids)->count();
-            $base = (clone $population)->whereNotIn('reservations.id', $ids);
-            $grouped = (clone $base)->select('status')->selectRaw('COUNT(*) AS total')->groupBy('status')->pluck('total', 'status');
-            $counts = [];
-            foreach (ReservationStatus::cases() as $status) {
-                $counts[$status->value] = (int) ($grouped[$status->value] ?? 0);
-            }
-            if (count(array_diff(array_keys($grouped->all()), array_keys($counts))) > 0) {
-                throw new RuntimeException(ReportingExclusions::UNAVAILABLE);
-            }
+            $queries = app(ReportQueries::class);
+            $parts = $queries->build('reservations', $period, $ids);
+            $base = $parts['base'];
+            $excluded = (clone $parts['population'])->whereIn($parts['reservation_key'], $ids)->count();
+            $counts = $queries->reservationCounts($base);
             $days = (int) $period['start']->diffInDays($period['end']) + 1;
             // Bound chart size for long ranges without truncating the reporting population.
             $bucket = $days === 1 ? 'hour' : ($days <= 93 ? 'day' : ($days <= 731 ? 'month' : 'year'));
@@ -74,7 +64,7 @@ class ReservationReports
 
             return ['total' => array_sum($counts), 'counts' => $counts, 'excluded' => $excluded,
                 'series' => $series, 'bucket' => $bucket, 'services' => $services,
-                'reservations' => (clone $base)->with(['user:id,name', 'service:id,name'])
+                'reservations' => $queries->details('reservations', $base)
                     ->orderByDesc('reservations.created_at')->orderByDesc('reservations.id')->paginate(15)->appends($filters)];
         });
     }
