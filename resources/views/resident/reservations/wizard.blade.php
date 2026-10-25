@@ -10,7 +10,7 @@
         @endforeach
     </ol>
     @if($errors->any())
-        <div class="alert alert-danger" role="alert"><strong>Please check your request.</strong><ul class="mb-0 mt-1">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>
+        <div class="alert alert-danger" role="alert" tabindex="-1" data-validation-summary><strong>Please check your request.</strong><ul class="mb-0 mt-1">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>
     @endif
     <section class="card dashboard-panel reservation-panel" aria-labelledby="reservation-step-heading">
         <span class="reservation-step-label">STEP {{ $step }} OF 4</span>

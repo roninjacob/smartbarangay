@@ -43,7 +43,7 @@ class AuthenticationTest extends TestCase
 
     public function test_guest_root_shows_public_website_and_auth_pages_show_calayo_branding(): void
     {
-        $this->get('/')->assertOk()->assertSee('Barangay services, made simpler.');
+        $this->get('/')->assertOk()->assertSee('Your barangay.')->assertSee('Your services.')->assertSee('Made simpler.');
         foreach (['/login', '/register'] as $path) {
             $this->get($path)->assertOk()->assertSee('SmartBarangay')
                 ->assertSee('Barangay Calayo')->assertSee('Nasugbu, Batangas')

@@ -12,7 +12,7 @@
 <div class="public-site">
     <header class="public-header">
         <nav class="navbar navbar-expand-lg container py-3" aria-label="Public navigation">
-            <a class="public-brand text-decoration-none" href="{{ route('home') }}"><span class="public-brand-mark" aria-hidden="true">SB<span></span></span><span><strong>SmartBarangay</strong><small>Barangay Calayo &middot; Nasugbu, Batangas</small></span></a>
+            <a class="public-brand text-decoration-none" href="{{ route('home') }}"><x-brand-mark/><span><strong>SmartBarangay</strong><small>Barangay Calayo &middot; Nasugbu, Batangas</small></span></a>
             <button class="navbar-toggler border-0 shadow-sm rounded-3" type="button" data-bs-toggle="collapse" data-bs-target="#public-nav" aria-controls="public-nav" aria-expanded="false" aria-label="Toggle public navigation"><x-app-icon name="menu"/></button>
             <div class="collapse navbar-collapse mt-3 mt-lg-0" id="public-nav">
                 <ul class="navbar-nav ms-auto gap-lg-2 align-items-lg-center"><li class="nav-item"><a class="nav-link" href="#services">Services</a></li><li class="nav-item"><a class="nav-link" href="#how-it-works">How it works</a></li><li class="nav-item"><a class="nav-link" href="#about">About</a></li><li class="nav-item"><a class="nav-link" href="#contact">Contact</a></li>
@@ -25,8 +25,8 @@
     <main id="main-content">
         <section class="public-hero" aria-labelledby="hero-title">
             <div class="container py-5"><div class="row align-items-center gx-4 gy-5 py-lg-4">
-                <div class="col-lg-7"><span class="public-eyebrow"><span aria-hidden="true"></span> YOUR COMMUNITY, CONNECTED</span><h1 class="display-5 fw-bold mt-4 mb-4" id="hero-title">Barangay services, made simpler.</h1>
-                    <p class="lead public-copy mb-4">Request a barangay document, choose an available schedule, and follow your request from wherever you are.</p>
+                <div class="col-lg-7"><span class="public-eyebrow"><span aria-hidden="true"></span> YOUR COMMUNITY, CONNECTED</span><h1 class="display-5 fw-bold mt-4 mb-4" id="hero-title">Your barangay.<br>Your services.<br><em>Made simpler.</em></h1>
+                    <p class="lead public-copy mb-4">Less guesswork, a clearer next step. Request your documents, choose an available schedule, and stay updated wherever you are.</p>
                     <div class="d-flex flex-wrap gap-3">@if($viewer)<a class="btn btn-primary btn-lg rounded-pill px-4" href="{{ $entry }}">{{ $verified ? 'Go to Dashboard' : 'Verify Email' }} <span aria-hidden="true">&rarr;</span></a>@else<a class="btn btn-primary btn-lg rounded-pill px-4" href="{{ $start }}">Request a Document <span aria-hidden="true">&rarr;</span></a>@endif
                         <a class="btn btn-outline-primary btn-lg rounded-pill px-4" href="{{ $viewer ? $requests : route('register') }}">{{ $viewer ? ($resident ? 'View My Requests' : 'View Reservations') : 'Create an Account' }}</a></div>
                     <p class="small text-secondary mt-4 mb-0">Built for Barangay Calayo residents. Your documents and personal information stay in your protected account.</p>

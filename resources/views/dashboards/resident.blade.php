@@ -1,7 +1,7 @@
 @extends('layouts.authenticated')
 @section('dashboard')
 <section class="dashboard-welcome resident-welcome" aria-labelledby="welcome-heading">
-    <div class="welcome-copy"><span class="welcome-eyebrow">YOUR COMMUNITY, CONNECTED</span><h2 id="welcome-heading">Welcome, {{ auth()->user()->name }}</h2><p>Your barangay services, in one place.<br>Stay up to date with your document requests.</p><span class="welcome-location">Barangay Calayo · Nasugbu, Batangas</span></div>
+    <div class="welcome-copy"><span class="welcome-eyebrow">YOUR COMMUNITY, CONNECTED</span><h2 id="welcome-heading">Welcome, {{ auth()->user()->name }}</h2><p>Your barangay services, in one place.<br>We'll guide you through your next document request.</p><a href="{{ route('resident.reservations.create') }}" class="btn btn-primary resident-start-action">Request a document <x-app-icon name="arrow"/></a><span class="welcome-location">Barangay Calayo · Nasugbu, Batangas</span></div>
     <div class="welcome-art" aria-hidden="true"><x-app-icon name="services"/><span>Reserve. Track. Verify.</span></div>
 </section>
 

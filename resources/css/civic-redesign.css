@@ -1,0 +1,1533 @@
+/* Milestone 4: shared presentation only. PDF canvas, print geometry and business rules are untouched. */
+body.civic-ui {
+    --civic-blue: #225FE5;
+    --civic-dark: #204DAD;
+    --community-green: #327554;
+    --page-background: #F6F8FA;
+    --surface: #FFF;
+    --main-text: #182A38;
+    --muted-text: #5F707E;
+    --border-color: #E4EBEF;
+    --sb-soft: #EDF3FF;
+    --sb-mint: #E7F3EB;
+    --sb-shadow: 0 4px 20px rgb(24 42 56 / 3%);
+    --sb-radius: 20px;
+    --bs-body-color: var(--main-text);
+    --bs-body-bg: var(--page-background);
+    --bs-primary-rgb: 34,95,229;
+    font-family: 'Segoe UI Variable','Segoe UI',system-ui,sans-serif;
+    color: var(--main-text);
+    background: var(--page-background);
+    font-size: 15px;
+    line-height: 1.65;
+}
+[data-bs-theme=dark] body.civic-ui {
+    --civic-blue: #9CC1FF;
+    --civic-dark: #C0D6FF;
+    --community-green: #A1DAB9;
+    --page-background: #121D28;
+    --surface: #1B2937;
+    --main-text: #E9F0F6;
+    --muted-text: #AFBECC;
+    --border-color: #364757;
+    --sb-soft: #233C5B;
+    --sb-mint: #203D33;
+    --sb-shadow: 0 4px 20px rgb(0 0 0 / 8%);
+}
+.civic-ui :is(h1,h2,h3) {
+    letter-spacing: -.035em;
+    line-height: 1.2;
+    font-weight: 700;
+}
+.civic-ui :is(a,button,input,select,textarea) {
+    -webkit-tap-highlight-color: transparent;
+}
+.civic-ui :is(a,button):focus-visible {
+    outline: 3px solid var(--civic-blue);
+    outline-offset: 4px;
+}
+.civic-ui .sb-brand-mark {
+    width: 44px;
+    height: 44px;
+    flex: 0 0 44px;
+    display: block;
+}
+.civic-ui .brand-lockup {
+    gap: 12px;
+}
+.civic-ui .brand-name {
+    color: var(--main-text);
+    font-size: 22px;
+    font-weight: 750;
+    letter-spacing: -.055em;
+}
+.civic-ui .brand-location {
+    color: var(--muted-text);
+    font-size: 10px;
+    line-height: 1.5;
+}
+.civic-ui .app-sidebar .sb-brand-mark {
+    width: 37px;
+    height: 37px;
+    flex-basis: 37px;
+}
+.civic-ui .app-sidebar .brand-name {
+    font-size: 19px;
+}
+.civic-ui .app-sidebar .brand-location {
+    font-size: 9px;
+}
+.civic-ui .brand-lockup>div {
+    min-width: 0;
+}
+.civic-ui :is(.btn,.page-link) {
+    border-radius: 12px;
+    font-weight: 600;
+    transition: background-color .16s ease,border-color .16s ease,box-shadow .16s ease,transform .16s ease;
+}
+.civic-ui .btn {
+    min-height: 44px;
+    padding: 10px 17px;
+    font-size: 14px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    white-space: normal;
+    line-height: 1.5;
+}
+.civic-ui .btn-sm {
+    min-height: 40px;
+    padding: 8px 13px;
+    font-size: 13px;
+    border-radius: 10px;
+}
+.civic-ui .btn-primary {
+    background: #225FE5;
+    border-color: #225FE5;
+    color: #FFF;
+    box-shadow: 0 4px 12px #225FE51A;
+}
+.civic-ui .btn-primary:hover {
+    background: #194FC7;
+    border-color: #194FC7;
+    box-shadow: 0 6px 17px #225FE526;
+}
+.civic-ui .btn-outline-primary {
+    background: var(--sb-soft);
+    color: var(--civic-dark);
+    border-color: transparent;
+}
+.civic-ui .btn-outline-primary:hover {
+    background: var(--civic-dark);
+    border-color: var(--civic-dark);
+    color: var(--surface);
+}
+.civic-ui .btn-outline-secondary {
+    border-color: var(--border-color);
+    color: var(--muted-text);
+    background: var(--surface);
+}
+.civic-ui .btn-outline-secondary:hover {
+    background: var(--sb-soft);
+    color: var(--civic-dark);
+}
+.civic-ui .btn:disabled {
+    box-shadow: none;
+    transform: none;
+}
+.civic-ui .btn-close {
+    min-width: 44px;
+    min-height: 44px;
+    padding: 12px;
+    background-size: 12px;
+}
+.civic-ui :is(.form-control,.form-select) {
+    min-height: 48px;
+    border-radius: 12px;
+    border-color: var(--border-color);
+    background-color: var(--surface);
+    color: var(--main-text);
+    font-size: 15px;
+    padding: 11px 14px;
+}
+.civic-ui .form-select {
+    padding-right: 38px;
+}
+.civic-ui :is(.form-control,.form-select):focus {
+    border-color: var(--civic-blue);
+    box-shadow: 0 0 0 3px rgb(34 95 229 / 12%);
+}
+.civic-ui .form-label {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+.civic-ui :is(.form-text,.invalid-feedback) {
+    font-size: 13px;
+    line-height: 1.65;
+}
+.civic-ui input[type=file] {
+    font-size: 13px;
+}
+.civic-ui :is(.form-check-input,input[type=radio]) {
+    accent-color: var(--civic-blue);
+}
+.civic-ui .form-check {
+    min-height: 30px;
+}
+.civic-ui .form-check-label {
+    padding-block: 3px;
+}
+.civic-ui .alert {
+    border-radius: 15px;
+    padding: 17px 20px;
+    font-size: 14px;
+    line-height: 1.75;
+    overflow-wrap: anywhere;
+}
+.civic-ui .alert-success {
+    --bs-alert-bg: var(--sb-mint);
+    --bs-alert-color: var(--community-green);
+    --bs-alert-border-color: var(--border-color);
+}
+.civic-ui .civic-feedback {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+.civic-feedback .app-icon {
+    margin-top: 3px;
+    flex-shrink: 0;
+}
+.civic-ui .modal-content {
+    background: var(--surface);
+    color: var(--main-text);
+    border: 1px solid var(--border-color);
+    border-radius: 24px;
+    box-shadow: 0 25px 80px rgb(13 35 57 / 18%);
+}
+.civic-ui .modal-header {
+    padding: 23px 25px 16px;
+    border-bottom-color: var(--border-color);
+    align-items: flex-start;
+    gap: 16px;
+}
+.civic-ui .modal-body {
+    padding: 24px 25px;
+}
+.civic-ui .modal-footer {
+    padding: 16px 25px 23px;
+    border-top-color: var(--border-color);
+    gap: 8px;
+}
+.civic-ui .modal-title {
+    font-weight: 700;
+}
+.civic-ui .modal.fade .modal-dialog {
+    transform: translateY(12px);
+    transition: transform .18s ease-out;
+}
+.civic-ui .modal.show .modal-dialog {
+    transform: none;
+}
+.civic-ui .offcanvas {
+    background: var(--surface);
+    color: var(--main-text);
+}
+.civic-ui .app-shell {
+    --sidebar-width: 252px;
+}
+.civic-ui .app-sidebar {
+    border-color: var(--border-color);
+}
+.civic-ui .app-sidebar-brand {
+    padding: 28px 20px 24px;
+    border-bottom: 0;
+}
+.civic-ui .app-sidebar-body {
+    padding: 14px 15px 22px;
+}
+.civic-ui .app-role-tag {
+    background: none;
+    border: 0;
+    color: var(--muted-text);
+    font-size: 9px;
+    letter-spacing: .12em;
+    padding: 0;
+    margin-bottom: 23px;
+}
+.civic-ui .app-nav-heading {
+    font-size: 9px;
+    color: var(--muted-text);
+    letter-spacing: .12em;
+}
+.civic-ui .app-nav-link {
+    font-size: 13px;
+    min-height: 47px;
+    border-radius: 12px;
+    color: var(--muted-text);
+    padding: 12px;
+    gap: 12px;
+}
+.civic-ui .app-nav-link:hover {
+    background: var(--page-background);
+    color: var(--main-text);
+}
+.civic-ui .app-nav-link.is-current {
+    background: var(--sb-soft);
+    color: var(--civic-dark);
+    box-shadow: none;
+    font-weight: 650;
+}
+.civic-ui .app-nav-link .app-icon {
+    width: 19px;
+    height: 19px;
+    flex-basis: 19px;
+}
+.civic-ui .app-sidebar-note {
+    border-color: var(--border-color);
+    font-size: 11px;
+}
+.civic-ui .app-topbar {
+    min-height: 81px;
+    padding: 16px 34px;
+}
+.civic-ui .app-topbar-location strong {
+    font-size: 13px;
+}
+.civic-ui .app-topbar-location span {
+    font-size: 11px;
+}
+.civic-ui .app-main {
+    padding: 34px;
+    max-width: 1500px;
+}
+.civic-ui .app-page-heading {
+    margin-bottom: 27px;
+}
+.civic-ui .app-page-heading h1 {
+    font-size: 32px;
+    letter-spacing: -.045em;
+    font-weight: 700;
+    overflow-wrap: anywhere;
+}
+.civic-ui .app-eyebrow {
+    font-size: 9px;
+    color: var(--muted-text);
+    letter-spacing: .12em;
+    margin-bottom: 9px;
+}
+.civic-ui .app-date {
+    font-size: 11px;
+    padding: 8px 12px;
+    border: 1px solid var(--border-color);
+    background: var(--surface);
+    border-radius: 10px;
+    color: var(--muted-text);
+}
+.civic-ui .app-menu-button {
+    background: var(--surface);
+    border-radius: 12px;
+}
+.civic-ui .app-avatar {
+    border: 0;
+    background: var(--sb-soft);
+    color: var(--civic-dark);
+    width: 36px;
+    height: 36px;
+    flex-basis: 36px;
+}
+.civic-ui .app-user-text strong {
+    font-size: 12px;
+}
+.civic-ui .app-user-button {
+    border-radius: 12px;
+}
+.civic-ui .app-footer {
+    color: var(--muted-text);
+    font-size: 11px;
+}
+.civic-ui :is(.dashboard-panel,.dashboard-stat,.profile-card) {
+    background: var(--surface);
+    border: 1px solid var(--border-color);
+    border-radius: var(--sb-radius);
+    box-shadow: var(--sb-shadow);
+}
+.civic-ui .dashboard-panel-heading {
+    padding: 25px;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+.civic-ui .dashboard-panel-heading h2 {
+    font-size: 20px;
+}
+.civic-ui .panel-description {
+    font-size: 14px;
+    line-height: 1.7;
+    color: var(--muted-text);
+}
+.civic-ui .panel-caption {
+    font-size: 11px;
+}
+.civic-ui .dashboard-welcome {
+    border-radius: 22px;
+    padding: 30px;
+    border-color: var(--border-color);
+    background: var(--sb-soft);
+    color: var(--main-text);
+}
+.civic-ui .dashboard-welcome h2 {
+    color: var(--main-text);
+    font-size: 30px;
+    font-weight: 700;
+}
+.civic-ui .dashboard-welcome p {
+    font-size: 15px;
+    color: var(--muted-text);
+}
+.civic-ui .welcome-eyebrow {
+    color: var(--civic-dark);
+    font-size: 9px;
+}
+.civic-ui .welcome-art {
+    color: var(--civic-blue);
+}
+.civic-ui .welcome-location {
+    display: block;
+    width: fit-content;
+    margin-top: 18px;
+    color: var(--muted-text);
+    border-color: var(--border-color);
+    font-size: 11px;
+}
+.civic-ui .admin-welcome {
+    background: var(--surface);
+}
+.civic-ui .welcome-today {
+    border-color: var(--border-color);
+}
+.civic-ui .welcome-today small {
+    font-size: 11px;
+    color: var(--muted-text);
+}
+.civic-ui .dashboard-stat .card-body {
+    padding: 22px;
+}
+.civic-ui .stat-heading h2 {
+    font-size: 13px;
+    color: var(--muted-text);
+}
+.civic-ui .stat-value {
+    font-size: 32px;
+    color: var(--main-text);
+    font-weight: 700;
+}
+.civic-ui .stat-note {
+    font-size: 12px;
+    color: var(--muted-text);
+}
+.civic-ui .stat-icon {
+    border-radius: 12px;
+    background: var(--sb-soft);
+    color: var(--civic-blue);
+}
+.civic-ui .dashboard-status-list {
+    padding: 0 25px 16px;
+}
+.civic-ui .dashboard-status-list>div {
+    border-color: var(--border-color);
+    padding-block: 13px;
+}
+.civic-ui .dashboard-quick-actions {
+    background: var(--surface);
+    border: 1px solid var(--border-color);
+    padding: 24px;
+    border-radius: 20px;
+    box-shadow: var(--sb-shadow);
+    margin-top: 20px;
+}
+.civic-ui .dashboard-quick-actions h2 {
+    font-size: 18px;
+}
+.civic-ui .account-quick-link {
+    font-size: 14px;
+    min-height: 44px;
+    color: var(--civic-dark);
+}
+.civic-ui .dashboard-guidance {
+    border-color: var(--border-color);
+}
+.civic-ui .dashboard-guidance h2 {
+    font-size: 15px;
+}
+.civic-ui .dashboard-guidance p {
+    font-size: 14px;
+    color: var(--muted-text);
+}
+.civic-ui :is(.app-note,.service-empty p,.dashboard-empty p) {
+    font-size: 13px;
+    color: var(--muted-text);
+}
+.civic-ui :is(.service-empty,.dashboard-empty) {
+    padding: 45px 25px;
+}
+.civic-ui :is(.empty-icon,.service-empty-icon) {
+    border-radius: 18px;
+    background: var(--sb-soft);
+    color: var(--civic-blue);
+    border-color: var(--border-color);
+}
+.civic-ui .table-responsive {
+    position: relative;
+    max-width: 100%;
+    overscroll-behavior-x: contain;
+}
+.civic-ui .table {
+    --bs-table-bg: transparent;
+    --bs-table-color: var(--main-text);
+    --bs-table-border-color: var(--border-color);
+    font-size: 14px;
+}
+.civic-ui .dashboard-table thead th {
+    background: var(--page-background);
+    color: var(--muted-text);
+    text-transform: none;
+    letter-spacing: 0;
+    font-size: 12px;
+    font-weight: 600;
+    border-color: var(--border-color);
+    padding: 15px 20px;
+}
+.civic-ui .dashboard-table tbody :is(td,th) {
+    padding: 23px 20px;
+    border-color: var(--border-color);
+    vertical-align: middle;
+}
+.civic-ui .dashboard-table tbody tr:hover {
+    background: var(--page-background);
+}
+.civic-ui .dashboard-table th:first-child {
+    padding-left: 25px;
+}
+.civic-ui .reservation-service {
+    font-weight: 650;
+    font-size: 14px;
+}
+.civic-ui .reservation-reference {
+    font-size: 11px;
+    line-height: 1.6;
+    color: var(--muted-text);
+}
+.civic-ui :is(.reservation-status,.service-status,.account-status,.requirement-label) {
+    border-radius: 8px;
+    font-size: 12px;
+    line-height: 1.5;
+    padding: 6px 10px;
+}
+.civic-ui .reservation-status {
+    white-space: normal;
+    width: fit-content;
+}
+.civic-ui .reservation-status>span {
+    flex-shrink: 0;
+}
+.civic-ui .service-pagination {
+    padding: 20px 25px;
+    border-color: var(--border-color);
+}
+.civic-ui .pagination {
+    gap: 5px;
+    flex-wrap: wrap;
+}
+.civic-ui .page-link {
+    margin: 0;
+    min-width: 40px;
+    min-height: 40px;
+    display: grid;
+    place-items: center;
+    border-color: var(--border-color);
+    font-size: 13px;
+    background: var(--surface);
+    color: var(--civic-dark);
+}
+.civic-ui .active>.page-link {
+    background: #225FE5;
+    border-color: #225FE5;
+    color: white;
+}
+.civic-ui .disabled>.page-link {
+    background: var(--page-background);
+    color: var(--muted-text);
+}
+.civic-ui .reservation-panel {
+    padding: 30px;
+}
+.civic-ui .reservation-intro {
+    font-size: 15px;
+    line-height: 1.8;
+}
+.civic-ui .reservation-steps {
+    gap: 10px;
+}
+.civic-ui .reservation-steps li {
+    border: 1px solid var(--border-color);
+    border-radius: 13px;
+    background: var(--surface);
+    padding: 14px 12px;
+    font-size: 12px;
+}
+.civic-ui .reservation-steps .is-current {
+    border-color: var(--civic-blue);
+    background: var(--sb-soft);
+    color: var(--civic-dark);
+}
+.civic-ui .reservation-steps .is-complete {
+    border-color: var(--border-color);
+    background: var(--sb-mint);
+}
+.civic-ui .step-number {
+    flex-basis: 25px;
+    width: 25px;
+    height: 25px;
+    font-size: 12px;
+}
+.civic-ui .reservation-option {
+    border-radius: 16px;
+    padding: 20px;
+    transition: background-color .16s,border-color .16s,box-shadow .16s;
+}
+.civic-ui .reservation-option:hover {
+    border-color: var(--civic-blue);
+}
+.civic-ui .reservation-option:has(input:checked) {
+    background: var(--sb-soft);
+    border-color: var(--civic-blue);
+    box-shadow: 0 0 0 1px var(--civic-blue);
+}
+.civic-ui .reservation-option:has(input:disabled) {
+    opacity: .65;
+    cursor: not-allowed;
+}
+.civic-ui .reservation-step-label {
+    font-size: 10px;
+    letter-spacing: .1em;
+    color: var(--civic-dark);
+}
+.civic-ui .reservation-notice {
+    border-radius: 12px;
+    background: var(--sb-soft);
+    font-size: 14px;
+}
+.civic-ui .reservation-summary>div {
+    padding-block: 14px;
+    border-color: var(--border-color);
+}
+.civic-ui .reservation-summary dt {
+    font-size: 13px;
+    color: var(--muted-text);
+}
+.civic-ui .reservation-summary dd {
+    font-size: 14px;
+    font-weight: 550;
+}
+.civic-ui .resident-reservation-row {
+    margin: 0 22px 18px;
+    border: 1px solid var(--border-color);
+    border-radius: 17px;
+    background: var(--surface);
+    padding: 23px;
+}
+.civic-ui .reservation-row-service h3 {
+    font-size: 19px;
+}
+.civic-ui .reservation-row-facts dt {
+    font-size: 12px;
+}
+.civic-ui .reservation-row-facts dd {
+    font-size: 14px;
+}
+.civic-ui .reservation-details-link {
+    border-radius: 12px;
+}
+.civic-ui :is(.reservation-service-description,.option-description) {
+    font-size: 14px;
+}
+.civic-ui :is(.service-catalog-card,.resident-account-details) {
+    border-radius: 18px;
+}
+.civic-ui .service-catalog-card {
+    background: var(--surface);
+    border-color: var(--border-color);
+    padding: 26px;
+}
+.civic-ui .service-card-name {
+    font-size: 21px;
+}
+.civic-ui .service-card-details .service-description {
+    font-size: 14px;
+}
+.civic-ui .service-card-actions .btn {
+    font-size: 13px;
+    border-radius: 11px;
+}
+.civic-ui .resident-account-name {
+    font-size: 15px;
+}
+.civic-ui .resident-account-contact {
+    font-size: 13px;
+}
+.civic-ui .resident-avatar {
+    border: 0;
+    background: var(--sb-soft);
+    color: var(--civic-dark);
+}
+.civic-ui .profile-card {
+    padding: 27px;
+}
+.civic-ui .profile-placeholder {
+    background: var(--sb-soft);
+    color: var(--civic-dark);
+    border-color: var(--border-color);
+}
+.civic-ui .dashboard-panel :is(details,summary) {
+    overflow-wrap: anywhere;
+}
+.civic-ui summary {
+    min-height: 44px;
+    padding-block: 10px;
+    color: var(--civic-dark);
+    font-weight: 600;
+}
+.civic-ui .document-information-summary dd {
+    font-weight: 500;
+}
+.civic-ui .notification-item {
+    border-color: var(--border-color);
+    border-radius: 13px;
+}
+.civic-ui .report-line text {
+    fill: var(--muted-text);
+}
+.civic-ui .report-filter-actions {
+    gap: 12px;
+}
+.civic-ui :is(.designer-panel,.document-field-card) {
+    border-radius: 16px;
+    border-color: var(--border-color);
+}
+.civic-ui .auth-page {
+    background: var(--page-background);
+}
+.civic-ui .auth-shell-modern .brand-panel {
+    background: #EAF1FC;
+    color: #1C3B55;
+    border-right: 1px solid #DFE8F3;
+}
+.civic-ui .brand-panel .brand-name {
+    color: #182A38;
+}
+.civic-ui .brand-panel .brand-location {
+    color: #586E81;
+}
+.civic-ui .brand-panel .brand-eyebrow {
+    color: #365E8E;
+}
+.civic-ui .brand-panel :is(.brand-description,.brand-footer) {
+    color: #50677D;
+}
+.civic-ui .brand-panel .brand-message h1 {
+    color: #182A38;
+    font-weight: 750;
+    font-size: clamp(35px,3.8vw,58px);
+    letter-spacing: -.05em;
+}
+.civic-ui .brand-panel .brand-capabilities {
+    color: #345B82;
+}
+.civic-ui .brand-panel .brand-process {
+    border-color: #CDDAEA;
+}
+.civic-ui .brand-panel :is(.brand-process h2,.brand-process-steps) {
+    color: #365E8E;
+}
+.civic-ui .brand-panel .civic-illustration {
+    color: #5C87AE;
+}
+.civic-ui .auth-form-panel {
+    background: var(--surface);
+}
+.civic-ui .auth-heading h2 {
+    font-size: 34px;
+    font-weight: 700;
+    letter-spacing: -.045em;
+}
+.civic-ui .auth-heading p {
+    font-size: 15px;
+    color: var(--muted-text);
+}
+.civic-ui .auth-form-card {
+    border-radius: 22px;
+}
+.civic-ui .auth-support {
+    border-radius: 14px;
+    background: var(--page-background);
+    border-color: var(--border-color);
+}
+.civic-ui .auth-feature-icon {
+    background: var(--sb-soft);
+    border-radius: 11px;
+}
+.civic-ui .auth-feature-icon-green {
+    background: var(--sb-mint);
+}
+.civic-ui .auth-action-hint,.civic-ui .auth-info-note {
+    color: var(--muted-text);
+}
+.civic-ui .public-site {
+    color: var(--main-text);
+    background: var(--page-background);
+}
+.civic-ui .public-header {
+    background: var(--page-background);
+    border: 0;
+}
+.civic-ui .public-site .container {
+    max-width: 1240px;
+}
+.civic-ui .public-brand {
+    gap: 11px;
+    color: var(--main-text);
+}
+.civic-ui .public-brand strong {
+    font-size: 23px;
+    font-weight: 750;
+    letter-spacing: -.055em;
+    color: var(--main-text);
+}
+.civic-ui .public-brand small {
+    font-size: 10px;
+    color: var(--muted-text);
+}
+.civic-ui .public-site .btn {
+    border-radius: 13px!important;
+}
+.civic-ui .public-site .btn-lg {
+    min-height: 54px;
+    padding: 15px 23px;
+    font-size: 15px;
+}
+.civic-ui .public-hero {
+    background: var(--page-background);
+    padding-block: 20px 32px;
+}
+.civic-ui .public-hero h1 {
+    font-size: clamp(42px,4.7vw,67px);
+    font-weight: 750;
+    line-height: 1.06;
+    letter-spacing: -.055em;
+    max-width: 680px;
+}
+.civic-ui .public-hero h1 em {
+    color: var(--civic-blue);
+    font-style: normal;
+}
+.civic-ui .public-hero .lead {
+    max-width: 470px;
+    font-size: 17px;
+    color: var(--muted-text);
+    line-height: 1.8;
+}
+.civic-ui .public-eyebrow {
+    font-size: 10px;
+    letter-spacing: .13em;
+    color: var(--community-green);
+}
+.civic-ui .public-journey {
+    border-radius: 26px!important;
+    box-shadow: 0 20px 60px rgb(40 70 60 / 7%)!important;
+    background: var(--surface);
+    border-color: var(--border-color);
+    position: relative;
+}
+.civic-ui .public-journey h2 {
+    font-size: 28px;
+    letter-spacing: -.04em;
+}
+.civic-ui .public-journey-steps li {
+    border: 0;
+    padding-block: 15px;
+    gap: 14px;
+}
+.civic-ui .public-journey-steps li>span {
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 31px;
+    height: 31px;
+    border-radius: 50%;
+    background: var(--sb-mint);
+    font-size: 11px;
+    padding: 0;
+    color: var(--community-green);
+}
+.civic-ui .public-journey-steps h3 {
+    font-size: 15px;
+}
+.civic-ui .public-journey-steps p {
+    font-size: 13px;
+    color: var(--muted-text);
+}
+.civic-ui .public-community-note {
+    border-top: 1px solid var(--border-color);
+    padding-top: 20px;
+    color: var(--muted-text);
+}
+.civic-ui .public-icon {
+    border-radius: 15px;
+    background: var(--sb-soft);
+    color: var(--civic-blue);
+}
+.civic-ui .public-site h2.display-6 {
+    font-size: clamp(28px,3vw,38px);
+    font-weight: 700;
+    letter-spacing: -.045em;
+}
+.civic-ui .public-service-card {
+    background: var(--surface);
+    border: 1px solid var(--border-color)!important;
+    border-radius: 20px!important;
+    box-shadow: var(--sb-shadow)!important;
+}
+.civic-ui .public-service-card .card-body {
+    padding: 29px!important;
+}
+.civic-ui .public-service-card h3 {
+    font-size: 21px;
+}
+.civic-ui .public-service-card p {
+    font-size: 14px;
+    color: var(--muted-text)!important;
+}
+.civic-ui .public-service-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 18px;
+    min-height: 44px;
+    color: var(--civic-dark);
+    font-size: 14px;
+}
+.civic-ui .public-soft-section {
+    background: var(--sb-mint);
+}
+.civic-ui .public-step {
+    background: var(--surface);
+    border-color: var(--border-color);
+    border-radius: 20px!important;
+}
+.civic-ui .public-step h3 {
+    font-size: 21px;
+}
+.civic-ui .public-step-number {
+    background: var(--sb-mint);
+    color: var(--community-green);
+}
+.civic-ui .public-contact {
+    border-color: var(--border-color);
+    background: var(--sb-mint);
+    border-radius: 24px!important;
+}
+.civic-ui .public-footer {
+    border-color: var(--border-color);
+    color: var(--muted-text);
+}
+.civic-ui .resident-mobile-nav {
+    display: none;
+}
+.civic-ui .resident-recent-cards {
+    padding: 0 23px 23px;
+    display: grid;
+    gap: 15px;
+}
+.civic-ui .resident-recent-card {
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 23px;
+    background: var(--surface);
+}
+.civic-ui .resident-recent-card h3 {
+    font-size: 19px;
+    margin: 8px 0 12px;
+    overflow-wrap: anywhere;
+}
+.civic-ui .resident-recent-card p {
+    font-size: 14px;
+    color: var(--muted-text);
+    margin: 16px 0;
+}
+.civic-ui .resident-recent-appointment {
+    padding: 13px 16px;
+    background: var(--page-background);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 13px;
+    margin-bottom: 18px;
+}
+.civic-ui .resident-recent-appointment small {
+    display: block;
+    color: var(--muted-text);
+}
+.civic-ui .resident-recent-card .btn {
+    width: 100%;
+}
+[data-bs-theme=dark] .civic-ui .auth-shell-modern .brand-panel {
+    background: #192E43;
+    color: #E9F0F6;
+    border-color: var(--border-color);
+}
+[data-bs-theme=dark] .civic-ui .brand-panel :is(.brand-name,.brand-message h1) {
+    color: #E9F0F6;
+}
+[data-bs-theme=dark] .civic-ui .brand-panel :is(.brand-location,.brand-description,.brand-footer,.brand-eyebrow,.brand-capabilities,.brand-process h2,.brand-process-steps) {
+    color: #B7CBE1;
+}
+[data-bs-theme=dark] .civic-ui .brand-panel .brand-process {
+    border-color: #38516A;
+}
+[data-bs-theme=dark] .civic-ui .btn-outline-primary:hover {
+    color: #152133;
+}
+@media(min-width:992px) {
+    .civic-ui .app-sidebar {
+        background: var(--surface)!important;
+    }
+    .civic-ui .public-hero .col-lg-5 {
+        position: relative;
+    }
+    .civic-ui .public-hero .col-lg-5::before {
+        content: '';
+        position: absolute;
+        inset: -24px 20px 10px -15px;
+        background: var(--sb-mint);
+        border-radius: 50%;
+        transform: rotate(-8deg);
+    }
+    .civic-ui .public-hero .col-lg-5::after {
+        content: '';
+        position: absolute;
+        right: 0;
+        bottom: -20px;
+        width: 130px;
+        height: 130px;
+        background: #FCEDDC;
+        border-radius: 50%;
+        z-index: 0;
+    }
+    .civic-ui .public-journey {
+        z-index: 1;
+    }
+}
+@media(max-width:1199.98px) {
+    .civic-ui .app-main {
+        padding: 27px;
+    }
+    .civic-ui .app-topbar {
+        padding-inline: 27px;
+    }
+    .civic-ui .dashboard-aside .dashboard-quick-actions {
+        margin-top: 0;
+    }
+}
+@media(max-width:991.98px) {
+    .civic-ui .app-shell {
+        --sidebar-width: 280px;
+    }
+    .civic-ui .app-main {
+        padding: 25px;
+    }
+    .civic-ui .app-topbar {
+        padding: 15px 25px;
+        min-height: 74px;
+    }
+    .civic-ui .app-role-resident .app-main {
+        padding-bottom: 105px;
+    }
+    .civic-ui .resident-mobile-nav {
+        position: fixed;
+        inset: auto 0 0;
+        z-index: 1020;
+        display: grid;
+        grid-template-columns: repeat(4,minmax(0,1fr));
+        background: var(--surface);
+        border-top: 1px solid var(--border-color);
+        padding: 8px 9px calc(8px + env(safe-area-inset-bottom));
+        gap: 5px;
+        box-shadow: 0 -5px 20px rgb(20 40 60 / 3%);
+    }
+    .civic-ui .resident-mobile-link {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        gap: 5px;
+        min-height: 50px;
+        font-size: 11px;
+        line-height: 1.3;
+        text-decoration: none;
+        color: var(--muted-text);
+        border-radius: 12px;
+        padding: 5px;
+    }
+    .civic-ui .resident-mobile-link.is-current {
+        color: var(--civic-dark);
+        background: var(--sb-soft);
+        font-weight: 650;
+    }
+    .civic-ui .resident-mobile-link .app-icon {
+        width: 22px;
+        height: 22px;
+        flex-basis: 22px;
+    }
+    .civic-ui .admin-reservation-table tbody tr {
+        padding: 23px;
+    }
+    .civic-ui .admin-reservation-table tbody tr>* {
+        padding: 0;
+    }
+    .civic-ui .admin-reservation-table th:first-child {
+        padding: 0;
+    }
+    .civic-ui .resident-account-table tbody tr>* {
+        padding: 0;
+    }
+    .civic-ui .resident-account-table th:first-child {
+        padding: 0;
+    }
+}
+@media(max-width:575.98px) {
+    .civic-ui .app-main {
+        padding: 25px 17px;
+    }
+    .civic-ui .app-topbar {
+        padding: 12px 17px;
+        gap: 12px;
+        min-height: 70px;
+    }
+    .civic-ui .app-page-heading {
+        gap: 10px;
+    }
+    .civic-ui .app-page-heading h1 {
+        font-size: 29px;
+    }
+    .civic-ui .app-date {
+        padding: 0;
+        border: 0;
+        background: none;
+        font-size: 11px;
+    }
+    .civic-ui .app-eyebrow {
+        font-size: 9px;
+    }
+    .civic-ui .dashboard-welcome {
+        padding: 25px 22px;
+    }
+    .civic-ui .dashboard-welcome h2 {
+        font-size: 28px;
+    }
+    .civic-ui .dashboard-welcome p {
+        font-size: 14px;
+    }
+    .civic-ui .resident-start-action {
+        width: 100%;
+    }
+    .civic-ui .dashboard-stat .card-body {
+        padding: 17px 14px;
+    }
+    .civic-ui .stat-heading h2 {
+        font-size: 12px;
+    }
+    .civic-ui .stat-value {
+        font-size: 28px;
+    }
+    .civic-ui .stat-note {
+        font-size: 11px;
+    }
+    .civic-ui .dashboard-panel-heading {
+        padding: 22px 20px;
+        gap: 12px;
+    }
+    .civic-ui .dashboard-panel-heading h2 {
+        font-size: 20px;
+    }
+    .civic-ui .panel-description {
+        font-size: 13px;
+    }
+    .civic-ui .reservation-panel {
+        padding: 23px 20px;
+    }
+    .civic-ui .reservation-steps {
+        gap: 8px;
+    }
+    .civic-ui .reservation-steps li {
+        padding: 12px 9px;
+        font-size: 11px;
+        gap: 8px;
+    }
+    .civic-ui .reservation-option {
+        padding: 18px 15px;
+    }
+    .civic-ui .reservation-intro {
+        font-size: 14px;
+    }
+    .civic-ui .reservation-summary>div {
+        gap: 6px;
+        grid-template-columns: minmax(0,1fr);
+    }
+    .civic-ui .resident-reservation-row {
+        margin: 0 15px 15px;
+        padding: 20px;
+    }
+    .civic-ui .reservation-row-facts {
+        gap: 16px;
+    }
+    .civic-ui .service-catalog-card {
+        padding: 20px;
+    }
+    .civic-ui .service-card-name {
+        font-size: 20px;
+    }
+    .civic-ui .service-pagination {
+        padding: 18px;
+    }
+    .civic-ui .modal-header {
+        padding: 22px 20px 13px;
+    }
+    .civic-ui .modal-body {
+        padding: 21px 20px;
+    }
+    .civic-ui .modal-footer {
+        padding: 14px 20px 20px;
+    }
+    .civic-ui .profile-card {
+        padding: 22px;
+    }
+    .civic-ui .resident-recent-cards {
+        padding: 0 17px 18px;
+    }
+    .civic-ui .resident-recent-card {
+        padding: 21px;
+    }
+    .civic-ui .dashboard-quick-actions {
+        padding: 22px;
+    }
+    .civic-ui .public-brand {
+        gap: 9px;
+    }
+    .civic-ui .public-brand strong {
+        font-size: 20px;
+    }
+    .civic-ui .public-brand small {
+        font-size: 9px;
+        max-width: 195px;
+    }
+    .civic-ui .public-brand .sb-brand-mark {
+        width: 38px;
+        height: 38px;
+        flex-basis: 38px;
+    }
+    .civic-ui .public-hero h1 {
+        font-size: 46px;
+        max-width: 400px;
+    }
+    .civic-ui .public-hero .lead {
+        font-size: 16px;
+    }
+    .civic-ui .public-hero .btn {
+        width: 100%;
+    }
+    .civic-ui .public-hero {
+        padding-block: 0 12px;
+    }
+    .civic-ui .public-journey {
+        padding: 25px!important;
+    }
+    .civic-ui .auth-heading h2 {
+        font-size: 29px;
+    }
+    .civic-ui .auth-heading p {
+        font-size: 14px;
+    }
+    .civic-ui .brand-name {
+        font-size: 21px;
+    }
+    .civic-ui .brand-location {
+        font-size: 9px;
+    }
+    .civic-ui .app-footer {
+        flex-wrap: wrap;
+        gap: 7px;
+    }
+    .civic-ui .btn {
+        padding-inline: 14px;
+    }
+    .civic-ui .resident-recent-appointment {
+        padding: 12px;
+        font-size: 12px;
+    }
+}
+@media(prefers-reduced-motion:no-preference) {
+    .civic-ui .civic-feedback {
+        animation: civic-feedback-in .2s ease-out;
+    }
+    .civic-ui .service-catalog-card {
+        transition: border-color .16s ease,box-shadow .16s ease;
+    }
+    .civic-ui .service-catalog-card:focus-within {
+        border-color: var(--civic-blue);
+    }
+    @keyframes civic-feedback-in {
+        from {
+            opacity: .25;
+            transform: translateY(4px);
+        }
+        to {
+            opacity: 1;
+            transform: none;
+        }
+    }
+}
+@media(prefers-reduced-motion:reduce) {
+    .civic-ui *, .civic-ui *::before,.civic-ui *::after {
+        scroll-behavior: auto!important;
+        animation: none!important;
+        transition: none!important;
+    }
+    .civic-ui .public-service-card:hover,.civic-ui .public-service-card:focus-within {
+        transform: none;
+    }
+}
+@media print {
+    .civic-ui .resident-mobile-nav {
+        display: none!important;
+    }
+}
+.civic-ui .brand-panel .brand-capabilities li {
+    color: #345B82;
+    border-color: #CDDAEA;
+    background: #F4F8FF;
+    border-radius: 11px;
+}
+.civic-ui .brand-panel .brand-capabilities svg {
+    color: #416D9D;
+}
+.civic-ui .brand-panel .brand-footer strong {
+    color: #345B82;
+}
+.civic-ui .brand-panel .brand-footer {
+    border-color: #CDDAEA;
+}
+.civic-ui .brand-panel .brand-step-number {
+    color: #745A27;
+}
+.civic-ui .brand-panel .brand-step-arrow {
+    color: #527296;
+}
+[data-bs-theme=dark] .civic-ui .brand-panel .brand-capabilities li {
+    color: #CFDDEE;
+    background: #203B54;
+    border-color: #3F5B73;
+}
+[data-bs-theme=dark] .civic-ui .brand-panel .brand-capabilities svg,[data-bs-theme=dark] .civic-ui .brand-panel .brand-footer strong {
+    color: #BBD8F5;
+}
+.civic-ui .request-section-nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 0 0 25px;
+}
+.civic-ui .request-section-nav a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 10px 15px;
+    background: var(--surface);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    color: var(--civic-dark);
+    font-size: 13px;
+    text-decoration: none;
+}
+.civic-ui .request-section-nav a:hover {
+    background: var(--sb-soft);
+}
+.civic-ui .reservation-wizard [id] {
+    scroll-margin-top: 24px;
+}
+.civic-ui .designer-toolbox {
+    background: var(--surface);
+    border-color: var(--border-color);
+    border-radius: 17px;
+    padding: 20px;
+}
+.civic-ui .designer-toolbar {
+    padding: 17px;
+    background: var(--page-background);
+    border: 1px solid var(--border-color);
+    border-radius: 15px;
+}
+.civic-ui .designer-status {
+    border-radius: 12px;
+}
+.civic-ui .designer-tool.is-selected {
+    background: #225FE5;
+    color: white;
+    border-color: #225FE5;
+}
+.civic-ui .notification-count {
+    background: #225FE5;
+    color: #FFF;
+    border-color: var(--surface);
+}
+.civic-ui .reservation-steps .is-current .step-number {
+    background: #225FE5;
+    color: #FFF;
+}
+
+/* Resident-first Reservation Management worklist, matching the approved reference. */
+.civic-ui .reservation-overview {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 24px;
+    margin-bottom: 32px;
+}
+.civic-ui .reservation-overview-card {
+    background: var(--surface);
+    border: 1px solid var(--border-color);
+    border-radius: 27px;
+    padding: 30px 34px;
+    box-shadow: var(--sb-shadow);
+    min-width: 0;
+}
+.civic-ui .reservation-overview-card h2 {
+    font-size: 15px;
+    color: var(--muted-text);
+    font-weight: 400;
+    letter-spacing: 0;
+    margin: 0 0 25px;
+}
+.civic-ui .reservation-overview-card>div {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 17px;
+}
+.civic-ui .reservation-overview-card strong {
+    font-size: 44px;
+    font-weight: 750;
+    letter-spacing: -.05em;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+}
+.civic-ui .worklist-attention {
+    border-radius: 10px;
+    background: #FCF1D9;
+    color: #805B14;
+    padding: 7px 12px;
+    font-size: 11px;
+    font-weight: 650;
+}
+.civic-ui .reservation-worklist { border-radius: 27px; }
+.civic-ui .worklist-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 31px 34px 24px;
+}
+.civic-ui .worklist-heading h2 { font-size: 24px; margin: 0; }
+.civic-ui .worklist-heading p { font-size: 12px; color: var(--muted-text); margin: 0; }
+.civic-ui .worklist-filters {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(180px, .4fr) auto;
+    gap: 16px;
+    align-items: start;
+    padding: 0 34px 30px;
+}
+.civic-ui .worklist-search { position: relative; min-width: 0; }
+.civic-ui .worklist-filters :is(.form-control,.form-select,.worklist-clear) { min-height: 56px; border-radius: 15px; }
+.civic-ui .worklist-search input { padding-left: 53px; background: var(--page-background); }
+.civic-ui .worklist-status .form-select { background-color: var(--page-background); }
+.civic-ui .worklist-search-button {
+    position: absolute;
+    inset: 6px auto 6px 7px;
+    width: 43px;
+    display: grid;
+    place-items: center;
+    border: 0;
+    border-radius: 10px;
+    background: transparent;
+    color: var(--muted-text);
+}
+.civic-ui .worklist-search-button:hover { color: var(--civic-blue); background: var(--sb-soft); }
+.civic-ui .worklist-clear { padding-inline: 24px; }
+.civic-ui .reservation-worklist>.table-responsive { max-height: 650px; }
+.civic-ui .reservation-worklist-table { min-width: 930px; table-layout: fixed; }
+.civic-ui .reservation-worklist-table thead th { position: sticky; top: 0; z-index: 1; font-size: 13px; padding: 19px 22px; }
+.civic-ui .reservation-worklist-table thead th:nth-child(1) { width: 28%; }
+.civic-ui .reservation-worklist-table thead th:nth-child(2) { width: 19%; }
+.civic-ui .reservation-worklist-table thead th:nth-child(3) { width: 20%; }
+.civic-ui .reservation-worklist-table thead th:nth-child(4) { width: 18%; }
+.civic-ui .reservation-worklist-table thead th:nth-child(5) { width: 15%; }
+.civic-ui .reservation-worklist-table tbody :is(td,th) { padding: 26px 22px; font-size: 15px; width: auto; }
+.civic-ui .reservation-worklist-table :is(th,td):first-child { padding-left: 30px; }
+.civic-ui .worklist-person { display: flex; align-items: center; gap: 15px; }
+.civic-ui .worklist-person>div { min-width: 0; }
+.civic-ui .worklist-person .resident-avatar { width: 44px; height: 44px; flex-basis: 44px; font-size: 12px; }
+.civic-ui .worklist-person-name { display: block; font-size: 15px; font-weight: 650; overflow-wrap: anywhere; }
+.civic-ui .worklist-person .reservation-reference { font-size: 12px; line-height: 1.65; }
+.civic-ui .worklist-service { overflow-wrap: anywhere; }
+.civic-ui .worklist-view { font-size: 14px; min-height: 50px; width: 100%; padding-inline: 12px; }
+.civic-ui .worklist-mobile-label { display: none; }
+.civic-ui .reservation-worklist .status-pending { background: #E9F0FF; color: #225FE5; }
+.civic-ui .reservation-worklist .status-under_review { background: #FCF1D9; color: #805B14; }
+[data-bs-theme=dark] .civic-ui .reservation-worklist .status-pending { background: #233C5B; color: #B8D2FF; }
+[data-bs-theme=dark] .civic-ui :is(.reservation-worklist .status-under_review,.worklist-attention) { background: #3B321F; color: #F3D18C; }
+@media(max-width:1199.98px) {
+    .civic-ui .reservation-overview { gap: 16px; }
+    .civic-ui .reservation-overview-card { padding: 25px; }
+    .civic-ui .worklist-heading { padding: 27px 25px 22px; }
+    .civic-ui .worklist-filters { padding: 0 25px 25px; }
+}
+@media(max-width:767.98px) {
+    .civic-ui .reservation-overview { gap: 9px; margin-bottom: 23px; }
+    .civic-ui .reservation-overview-card { padding: 18px 13px; border-radius: 17px; }
+    .civic-ui .reservation-overview-card h2 { font-size: 12px; line-height: 1.5; margin-bottom: 16px; min-height: 36px; }
+    .civic-ui .reservation-overview-card strong { font-size: 31px; }
+    .civic-ui .worklist-attention { font-size: 9px; padding: 5px 7px; }
+    .civic-ui .reservation-overview-card>div { gap: 9px; }
+    .civic-ui .worklist-heading { padding: 25px 21px 21px; }
+    .civic-ui .worklist-heading h2 { font-size: 23px; }
+    .civic-ui .worklist-filters { grid-template-columns: minmax(0,1fr) auto; padding: 0 20px 25px; gap: 11px; }
+    .civic-ui .worklist-search { grid-column: 1 / -1; }
+    .civic-ui .worklist-filters :is(.form-control,.form-select,.worklist-clear) { min-height: 48px; font-size: 13px; border-radius: 12px; }
+    .civic-ui .worklist-clear { padding-inline: 16px; }
+    .civic-ui .reservation-worklist>.table-responsive { max-height: none; }
+    .civic-ui .reservation-worklist-table { display: block; min-width: 0; }
+    .civic-ui .reservation-worklist-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+    .civic-ui .reservation-worklist-table tbody { display: block; }
+    .civic-ui .reservation-worklist-table tbody tr { display: grid; grid-template-columns: minmax(0,1fr); gap: 17px; padding: 23px 21px; border-top: 1px solid var(--border-color); }
+    .civic-ui .reservation-worklist-table tbody tr>:is(td,th) { display: block; width: auto; padding: 0; border: 0; }
+    .civic-ui .worklist-mobile-label { display: block; font-size: 12px; color: var(--muted-text); margin-bottom: 5px; }
+    .civic-ui .worklist-person-name { font-size: 16px; }
+    .civic-ui .reservation-worklist-table td { font-size: 14px; }
+}
+@media(max-width:359.98px) {
+    .civic-ui .reservation-overview { grid-template-columns: minmax(0,1fr); }
+    .civic-ui .reservation-overview-card { display: flex; justify-content: space-between; align-items: center; gap: 14px; padding: 18px; }
+    .civic-ui .reservation-overview-card h2 { min-height: 0; margin: 0; }
+    .civic-ui .reservation-overview-card strong { font-size: 28px; }
+}

@@ -13,3 +13,4 @@ import './qr-verification';
 import './document-builder';
 
 import './document-designer';
+import './civic-interface';

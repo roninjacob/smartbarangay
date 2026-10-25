@@ -28,6 +28,21 @@ class ReservationController extends Controller
     {
         $filters = $request->validated();
         $search = $filters['search'] ?? '';
+        $today = now('Asia/Manila')->startOfDay();
+        $start = $today->copy()->utc();
+        $end = $today->copy()->addDay()->utc();
+        // Operational overview, independent of the list filters. Completion time comes from history.
+        $overview = Reservation::query()->selectRaw(
+            'COALESCE(SUM(CASE WHEN status IN (?, ?) THEN 1 ELSE 0 END), 0) AS needs_review,
+             COALESCE(SUM(CASE WHEN status = ? THEN 1 ELSE 0 END), 0) AS ready_for_pickup,
+             COALESCE(SUM(CASE WHEN status = ? AND EXISTS (
+                SELECT 1 FROM reservation_status_histories h WHERE h.reservation_id = reservations.id
+                AND h.to_status = ? AND h.changed_at >= ? AND h.changed_at < ?
+             ) THEN 1 ELSE 0 END), 0) AS completed_today',
+            [ReservationStatus::Pending->value, ReservationStatus::UnderReview->value,
+                ReservationStatus::ReadyForPickup->value, ReservationStatus::Completed->value,
+                ReservationStatus::Completed->value, $start, $end]
+        )->first();
         $reservations = Reservation::with(['user', 'service', 'schedule'])
             ->when($search !== '', function (Builder $query) use ($search) {
                 $query->where(function (Builder $query) use ($search) {
@@ -38,7 +53,8 @@ class ReservationController extends Controller
             ->when($filters['status'] ?? null, fn (Builder $query, string $status) => $query->where('status', $status))
             ->latest()->orderByDesc('id')->paginate(10)->appends($filters);
 
-        return view('admin.reservations.index', [...$this->shellData('Reservation Management'), 'reservations' => $reservations, 'filters' => $filters, 'statuses' => ReservationStatus::cases()]);
+        return view('admin.reservations.index', [...$this->shellData('Reservation Management'),
+            'overview' => $overview, 'reservations' => $reservations, 'filters' => $filters, 'statuses' => ReservationStatus::cases()]);
     }
 
     public function show(Reservation $reservation, CertificatePreparationState $documents, GeneratedReservationDocuments $generated): View

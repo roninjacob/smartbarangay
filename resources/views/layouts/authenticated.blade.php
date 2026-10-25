@@ -2,7 +2,7 @@
 @section('title', $pageTitle ?? $roleLabel.' Dashboard')
 
 @section('content')
-<div class="app-shell">
+<div class="app-shell app-role-{{ auth()->user()->role->value }}">
     <aside class="app-sidebar offcanvas-lg offcanvas-start" tabindex="-1" id="app-sidebar" aria-labelledby="app-sidebar-heading">
         <div class="app-sidebar-brand">
             @include('partials.brand')
@@ -36,11 +36,14 @@
                 <div><span class="app-eyebrow">{{ $roleLabel }} / {{ $pageSection ?? 'Overview' }}</span><h1>{{ $pageHeading ?? 'Dashboard' }}</h1></div>
                 <time datetime="{{ $dashboardDate->toDateString() }}" class="app-date"><x-app-icon name="calendar"/>{{ $dashboardDate->format('D, M j, Y') }}</time>
             </div>
-            @if(session('status'))<div class="alert alert-success" role="status">{{ session('status') }}</div>@endif
+            @if(session('status'))<div class="alert alert-success civic-feedback" role="status"><x-app-icon name="check"/><span>{{ session('status') }}</span></div>@endif
             @yield('dashboard')
             <footer class="app-footer"><span>SmartBarangay</span><span>Barangay Calayo · Nasugbu, Batangas</span></footer>
         </main>
     </div>
 </div>
+@if(auth()->user()->role === \App\Enums\UserRole::Resident)
+    <x-resident-mobile-navigation/>
+@endif
 <x-account-summary :user="auth()->user()" :role-label="$roleLabel"/>
 @endsection

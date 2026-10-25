@@ -142,7 +142,7 @@ class DashboardTest extends TestCase
         $reservation = $this->reservation($resident, ReservationStatus::UnderReview, 'Barangay Clearance');
         $reservation->update(['purpose' => 'Private purpose text', 'admin_notes' => 'Internal processing note']);
         $this->actingAs($resident)->get('/resident/home')->assertOk()
-            ->assertSee('Barangay Clearance')->assertSee('Under Review')->assertSee('09:00–10:00')
+            ->assertSee('Barangay Clearance')->assertSee('Under Review')->assertSee('9:00 AM')->assertSee('10:00 AM')
             ->assertDontSee('Private purpose text')->assertDontSee('Internal processing note');
     }
 

@@ -14,6 +14,7 @@
 @import './qr-verification.css';
 @import './document-builder.css';
 @import './theme.css';
+@import './civic-redesign.css';
 
 /* SmartBarangay civic identity, shared by authentication and the application shell. */
 :root {

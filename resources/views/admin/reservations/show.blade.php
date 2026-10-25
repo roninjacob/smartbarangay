@@ -2,6 +2,13 @@
 @section('dashboard')
 <div class="reservation-wizard">
     <a href="{{ route('admin.reservations.index') }}" class="service-back-link reservation-details-back"><x-app-icon name="arrow"/>Back to reservations</a>
+    <nav class="request-section-nav" aria-label="Reservation sections">
+        <a href="#admin-request-heading">Request information</a>
+        <a href="#payment-heading">Payment</a>
+        @if($reservation->qrTicket)<a href="#qr-lifecycle-heading">QR ticket</a>@endif
+        @if($reservation->status->canPrepareDocument() || $reservation->document?->mime_type === 'application/pdf')<a href="#certificate-heading">Certificate</a>@endif
+        <a href="#processing-heading">Process request</a>
+    </nav>
     @if($errors->any())<div class="alert alert-danger" role="alert"><strong>Please check your request.</strong><ul class="mb-0">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
     <section class="card dashboard-panel reservation-panel reservation-detail" aria-labelledby="admin-request-heading">
         <div class="reservation-detail-header"><div><span class="reservation-step-label">REQUEST #{{ $reservation->id }}</span><h2 id="admin-request-heading">{{ $reservation->service->name }}</h2></div><x-reservation-status :status="$reservation->status"/></div>

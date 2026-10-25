@@ -9,6 +9,7 @@ use App\Models\Schedule;
 use App\Models\Service;
 use App\Models\User;
 use Illuminate\Database\QueryException;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -29,6 +30,7 @@ class AdminReservationProcessingTest extends TestCase
 
     protected function tearDown(): void
     {
+        $this->travelBack();
         DB::disconnect('sqlite');
         parent::tearDown();
     }
@@ -86,10 +88,10 @@ class AdminReservationProcessingTest extends TestCase
         $this->get('/admin/reservations?search=Document&status=pending')->assertOk()->assertSee('Showing 1–10 of 11 reservations')
             ->assertSee('Document 11')->assertDontSee('Document 01')->assertSee('search=Document', false)->assertSee('status=pending', false);
         $selects = collect(DB::getQueryLog())->filter(fn ($query) => str_starts_with(strtolower($query['query']), 'select'));
-        // The shared Phase 13 header adds two bounded queries, independent of row count.
+        // Header and operational overview are bounded queries, independent of row count.
         $notificationQueries = $selects->filter(fn ($query) => str_contains($query['query'], '"notifications"'));
         $this->assertCount(2, $notificationQueries);
-        $this->assertLessThanOrEqual(5, $selects->count() - $notificationQueries->count());
+        $this->assertLessThanOrEqual(6, $selects->count() - $notificationQueries->count());
         DB::disableQueryLog();
         $this->get('/admin/reservations?search=Document&status=pending&page=2')->assertOk()->assertSee('Document 01')->assertDontSee('Document 11');
     }
@@ -205,6 +207,39 @@ class AdminReservationProcessingTest extends TestCase
         }
         $this->assertSame(Status::Pending, $reservation->fresh()->status);
         $this->assertDatabaseCount('reservation_status_histories', 0);
+    }
+
+    public function test_worklist_overview_uses_current_statuses_and_philippine_completion_history_boundaries(): void
+    {
+        $this->travelTo(Carbon::parse('2026-11-01 12:00:00', 'Asia/Manila'));
+        $admin = $this->user();
+        $this->reservation('Pending service', 'Jamie Dela Cruz');
+        $this->reservation('Review service', 'Mika Reyes', Status::UnderReview);
+        $this->reservation('Ready service', 'Leo Santos', Status::ReadyForPickup);
+        foreach (['2026-10-31 15:59:59', '2026-10-31 16:00:00', '2026-11-01 15:59:59', '2026-11-01 16:00:00'] as $time) {
+            $completed = $this->reservation('Completed service', 'Historical Resident', Status::Completed);
+            $completed->statusHistories()->create(['from_status' => Status::ReadyForPickup, 'to_status' => Status::Completed,
+                'changed_by' => $admin->id, 'changed_at' => $time]);
+            if ($time === '2026-10-31 16:00:00') {
+                // A malformed duplicated historical event must not double-count the same request.
+                $completed->statusHistories()->create(['from_status' => Status::ReadyForPickup, 'to_status' => Status::Completed,
+                    'changed_by' => $admin->id, 'changed_at' => $time]);
+            }
+        }
+        $this->reservation('Legacy completion without timestamp evidence', 'Legacy Resident', Status::Completed);
+        $before = Reservation::orderBy('id')->get()->map->getAttributes()->all();
+        $response = $this->actingAs($admin)->get('/admin/reservations?search=NoMatchingName')->assertOk()->assertSee('No matching reservations');
+        $overview = $response->viewData('overview');
+        $this->assertSame(2, (int) $overview->needs_review);
+        $this->assertSame(1, (int) $overview->ready_for_pickup);
+        $this->assertSame(2, (int) $overview->completed_today);
+        $this->get('/admin/reservations')->assertOk()->assertSee('Resident requests')->assertSee('Resident / request')
+            ->assertSee('Default avatar for Jamie Dela Cruz')->assertSee('JD')->assertSee('Submitted')
+            ->assertDontSee('Illustrative sample records')->assertDontSee('DEMO-014');
+        $this->assertSame($before, Reservation::orderBy('id')->get()->map->getAttributes()->all());
+        $this->assertDatabaseCount('reservation_status_histories', 5);
+        $this->assertDatabaseCount('reservation_payments', 0);
+        $this->assertDatabaseCount('qr_tickets', 0);
     }
 
     private function data(): array

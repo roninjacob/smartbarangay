@@ -69,7 +69,8 @@ class ResidentReservationViewingTest extends TestCase
             ->assertSee('Submitted')->assertSee(route('resident.reservations.show', $own), false)
             ->assertHeader('Cache-Control', 'no-store, private');
         $this->assertSame(1, $response->viewData('reservations')->total());
-        $this->assertSame(1, substr_count($response->getContent(), 'aria-current="page"'));
+        // One active destination in each of the sidebar and Resident quick navigation.
+        $this->assertSame(2, substr_count($response->getContent(), 'aria-current="page"'));
         $this->assertMatchesRegularExpression('/href="[^"]*\/resident\/reservations" class="[^"]*is-current/', $response->getContent());
     }
 
@@ -79,7 +80,8 @@ class ResidentReservationViewingTest extends TestCase
             ->assertSee('Create your first reservation')->assertSee(route('resident.reservations.create'), false);
         $this->get('/resident/home')->assertOk()->assertSee(route('resident.reservations.index'), false);
         $response = $this->get('/resident/reservations/create')->assertOk();
-        $this->assertSame(1, substr_count($response->getContent(), 'aria-current="page"'));
+        // One active destination in each of the sidebar and Resident quick navigation.
+        $this->assertSame(2, substr_count($response->getContent(), 'aria-current="page"'));
         $this->assertMatchesRegularExpression('/href="[^"]*\/resident\/reservations\/create" class="[^"]*is-current/', $response->getContent());
     }
 
@@ -123,7 +125,8 @@ class ResidentReservationViewingTest extends TestCase
             ->assertSee('Required')->assertSee('Optional')->assertSee('Back to My Reservations')
             ->assertDontSee('Private admin note')->assertDontSee('type="file"', false)->assertDontSee('Approve Reservation')
             ->assertHeader('Cache-Control', 'no-store, private');
-        $this->assertSame(1, substr_count($response->getContent(), 'aria-current="page"'));
+        // One active destination in each of the sidebar and Resident quick navigation.
+        $this->assertSame(2, substr_count($response->getContent(), 'aria-current="page"'));
         $this->assertSame($before, $reservation->fresh()->getRawOriginal());
         $reservation->service->serviceRequirements()->delete();
         $this->get(route('resident.reservations.show', $reservation))->assertOk()->assertSee('No requirements have been listed');
