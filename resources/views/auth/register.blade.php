@@ -32,6 +32,7 @@ Access QR-based verification after approval.
     <div class="alert alert-danger" role="alert">Please correct the highlighted fields to create your account.</div>
 @endif
 
+<p class="auth-action-hint">Create your account first, verify your email, then complete your profile in Profile / Account Settings. Your selected document will tell you which information is required.</p>
 <form method="POST" action="{{ route('register.store') }}" data-auth-form>
     @csrf
     <div class="row g-3">

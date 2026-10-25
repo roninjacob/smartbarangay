@@ -12,6 +12,8 @@ class DocumentField extends Model
     public const SYSTEM_FIELDS = [
         'resident_name' => 'text', 'resident_address' => 'text', 'resident_contact' => 'text',
         'date_issued' => 'date', 'barangay_name' => 'text',
+        'resident_birthdate' => 'date', 'resident_civil_status' => 'text', 'resident_occupation' => 'text',
+        'resident_address_street' => 'text', 'resident_address_zone_purok' => 'text',
     ];
 
     protected $fillable = ['field_name', 'label', 'source', 'field_type', 'is_required', 'validation_rules', 'options', 'sort_order'];

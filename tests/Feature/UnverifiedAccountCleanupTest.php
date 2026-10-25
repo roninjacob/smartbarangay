@@ -20,8 +20,8 @@ use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
-use Tests\TestCase;
 use Symfony\Component\Mailer\Exception\TransportException;
+use Tests\TestCase;
 
 class UnverifiedAccountCleanupTest extends TestCase
 {
@@ -56,6 +56,7 @@ class UnverifiedAccountCleanupTest extends TestCase
     {
         $service = Service::create(['name' => 'Barangay Clearance']);
         $schedule = Schedule::create(['date' => now()->addDays(2)->toDateString(), 'start_time' => '09:00:00', 'end_time' => '10:00:00', 'capacity' => 10]);
+
         return Reservation::create(['user_id' => $user->id, 'service_id' => $service->id, 'schedule_id' => $schedule->id]);
     }
 
@@ -141,7 +142,7 @@ class UnverifiedAccountCleanupTest extends TestCase
     {
         $user = $this->resident(8);
         $link = URL::temporarySignedRoute('verification.verify', now()->addHour(), ['id' => $user->id, 'hash' => sha1($user->email)]);
-        $this->actingAs($user)->get($link)->assertRedirect('/resident/home');
+        $this->actingAs($user)->get($link)->assertRedirect(route('resident.profile.edit'));
         $this->artisan('smartbarangay:cleanup-unverified-users')
             ->expectsOutput('Candidates: 0; eligible: 0; removed: 0; skipped: 0.')->assertSuccessful();
         $this->assertTrue($user->fresh()->hasVerifiedEmail());
@@ -272,21 +273,19 @@ class UnverifiedAccountCleanupTest extends TestCase
         $this->assertTrue($user->is_active);
         $this->assertNull($user->email_verified_at);
         $this->assertSame($createdAt, $user->created_at->toDateTimeString());
-        Notification::assertSentTo($user, VerifyEmail::class, fn ($notification, $channels, $notifiable) =>
-            $notifiable->routeNotificationFor('mail', $notification) === 'corrected@example.com');
+        Notification::assertSentTo($user, VerifyEmail::class, fn ($notification, $channels, $notifiable) => $notifiable->routeNotificationFor('mail', $notification) === 'corrected@example.com');
         $this->get('/email/verify')->assertSee('corrected@example.com')->assertDontSee($originalEmail);
         $this->get(route($user->homeRouteName()))->assertRedirect(route('verification.notice'));
 
         Notification::fake();
         $this->travel(61)->seconds();
         $this->post('/email/verification-notification')->assertRedirect(route('verification.notice'));
-        Notification::assertSentTo($user, VerifyEmail::class, fn ($notification, $channels, $notifiable) =>
-            $notifiable->routeNotificationFor('mail', $notification) === 'corrected@example.com');
+        Notification::assertSentTo($user, VerifyEmail::class, fn ($notification, $channels, $notifiable) => $notifiable->routeNotificationFor('mail', $notification) === 'corrected@example.com');
         $notification = Notification::sent($user, VerifyEmail::class)->sole();
         $link = $notification->toMail($user)->actionUrl;
         $this->assertStringContainsString(sha1('corrected@example.com'), $link);
         $this->assertStringNotContainsString(sha1($originalEmail), $link);
-        $this->get($link)->assertRedirect(route($user->homeRouteName()));
+        $this->get($link)->assertRedirect(route('resident.profile.edit'));
         $this->assertTrue($user->fresh()->hasVerifiedEmail());
     }
 

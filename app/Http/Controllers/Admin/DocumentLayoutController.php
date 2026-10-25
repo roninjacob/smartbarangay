@@ -21,7 +21,10 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 class DocumentLayoutController extends Controller
 {
     private const SYSTEM_LABELS = ['resident_name' => 'Resident Name', 'resident_address' => 'Resident Address',
-        'resident_contact' => 'Resident Contact', 'date_issued' => 'Date Issued', 'barangay_name' => 'Barangay Name'];
+        'resident_contact' => 'Resident Contact', 'date_issued' => 'Date Issued', 'barangay_name' => 'Barangay Name',
+        'resident_birthdate' => 'Resident Birthdate', 'resident_civil_status' => 'Resident Civil Status',
+        'resident_occupation' => 'Resident Occupation', 'resident_address_street' => 'Resident Street',
+        'resident_address_zone_purok' => 'Resident Zone / Purok'];
 
     public function edit(Service $service, CertificatePreview $pdf): View
     {

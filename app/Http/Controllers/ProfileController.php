@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Enums\UserRole;
 use App\Http\Requests\UpdateProfilePictureRequest;
 use App\Http\Requests\UpdateProfileRequest;
+use App\Http\Requests\UpdateResidentDemographicsRequest;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -22,6 +23,7 @@ class ProfileController extends Controller
         $role = $this->profileRole($request);
 
         return view('profile.edit', [
+            'residentProfile' => $role === UserRole::Resident ? $request->user()->profile()->first() : null,
             'user' => $request->user(), 'roleLabel' => $role === UserRole::Admin ? 'Admin' : 'Resident',
             'navigation' => config('navigation.'.$role->value), 'profileRoutePrefix' => $role->value.'.profile',
             'dashboardDate' => now('Asia/Manila'), 'pageTitle' => 'Profile / Account Settings',
@@ -66,6 +68,19 @@ class ProfileController extends Controller
         }
 
         return to_route($this->profileRole($request)->value.'.profile.edit')->with('status', 'Your profile picture has been updated.');
+    }
+
+    public function updateDemographics(UpdateResidentDemographicsRequest $request): RedirectResponse
+    {
+        DB::transaction(function () use ($request) {
+            // Same parent lock as reservation submission, including the first profile insert.
+            $user = $this->lockedUser($request);
+            abort_unless($user->role === UserRole::Resident, 403);
+            $profile = $user->profile()->lockForUpdate()->first() ?? $user->profile()->make();
+            $profile->forceFill($request->validated())->save();
+        });
+
+        return to_route('resident.profile.edit')->with('status', 'Your resident demographic profile has been updated. Existing requests remain unchanged.');
     }
 
     public function destroyPicture(Request $request): RedirectResponse

@@ -1,6 +1,12 @@
 @extends('layouts.authenticated')
 @section('dashboard')
 <p class="text-secondary mb-4">Keep your contact details up to date for Barangay Calayo services.</p>
+@if($user->role === \App\Enums\UserRole::Resident)
+    <div class="alert alert-info" role="status">
+        <strong>{{ session('profile_onboarding') ? 'Your email is verified. Prepare your profile next.' : 'Your profile supports your document requests.' }}</strong>
+        <p class="mb-0 mt-2">You can complete this information gradually. Only the profile fields required by your selected document must be filled before continuing that request. Emergency contacts are optional and stay private.</p>
+    </div>
+@endif
 @if($errors->any())
     <div class="alert alert-danger" role="alert"><strong>Please check your profile.</strong><ul class="mb-0 mt-2">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>
 @endif
@@ -64,6 +70,9 @@
                 <div class="profile-actions"><a href="{{ route($user->homeRouteName()) }}" class="btn btn-outline-secondary">Back to dashboard</a><button type="submit" class="btn btn-primary" data-saving-label="Saving…">Save changes</button></div>
             </form>
         </section>
+        @if($user->role === \App\Enums\UserRole::Resident)
+            @include('profile.demographics')
+        @endif
     </div>
 </div>
 @endsection

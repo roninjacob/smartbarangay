@@ -9,10 +9,10 @@ use App\Models\User;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\View\View;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\View\View;
 use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
 
 class EmailVerificationController extends Controller
@@ -26,16 +26,21 @@ class EmailVerificationController extends Controller
 
     public function verify(EmailVerificationRequest $request): RedirectResponse
     {
-        DB::transaction(function () use ($request) {
+        $newlyVerified = DB::transaction(function () use ($request) {
             $user = User::whereKey($request->user()->id)->lockForUpdate()->firstOrFail();
             abort_unless($user->is_active && hash_equals(sha1($user->getEmailForVerification()), (string) $request->route('hash')), 403);
             $request->setUserResolver(fn () => $user);
+            $newlyVerified = ! $user->hasVerifiedEmail();
             $request->fulfill();
             Auth::setUser($user);
+
+            return $newlyVerified;
         });
 
-        return redirect()->route($request->user()->homeRouteName())
-            ->with('status', 'Email verified successfully.');
+        $onboarding = $newlyVerified && $request->user()->role === UserRole::Resident;
+
+        return redirect()->route($onboarding ? 'resident.profile.edit' : $request->user()->homeRouteName())
+            ->with('status', 'Email verified successfully.')->with('profile_onboarding', $onboarding);
     }
 
     public function resend(Request $request): RedirectResponse
@@ -48,6 +53,7 @@ class EmailVerificationController extends Controller
             $request->user()->sendEmailVerificationNotification();
         } catch (TransportExceptionInterface $exception) {
             report($exception);
+
             return redirect()->route('verification.notice')->with('warning',
                 'We could not send the verification email. Please try again shortly or contact the Barangay Calayo office.');
         }
@@ -73,6 +79,7 @@ class EmailVerificationController extends Controller
             $user->email = $request->validated('email');
             $user->email_verified_at = null;
             $user->save();
+
             return $user;
         });
         $request->session()->forget('url.intended');
@@ -82,9 +89,11 @@ class EmailVerificationController extends Controller
             $user->sendEmailVerificationNotification();
         } catch (TransportExceptionInterface $exception) {
             report($exception);
+
             return redirect()->route('verification.notice')->with('warning',
                 'Your email address was updated, but we could not send the verification email. Please try resending it shortly.');
         }
+
         return redirect()->route('verification.notice')->with('status',
             'Your email address has been updated. A new verification link has been sent.');
     }

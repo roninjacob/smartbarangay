@@ -96,10 +96,11 @@ class AuthenticationAdditionsTest extends TestCase
         Event::fake([Verified::class]);
         $user = $this->user($role);
         $link = $this->signedLink($user);
-        $this->actingAs($user)->get($link)->assertRedirect($home)->assertSessionHas('status', 'Email verified successfully.');
+        $destination = $role === UserRole::Resident ? route('resident.profile.edit') : $home;
+        $this->actingAs($user)->get($link)->assertRedirect($destination)->assertSessionHas('status', 'Email verified successfully.');
         $this->assertTrue($user->fresh()->hasVerifiedEmail());
         Event::assertDispatched(Verified::class, fn ($event) => $event->user->id === $user->id);
-        $this->get($home)->assertOk()->assertSee('Email verified successfully.');
+        $this->get($destination)->assertOk()->assertSee('Email verified successfully.');
         $this->get('/email/verify')->assertRedirect($home);
         // Opening an already-used valid verification link is idempotent.
         $this->get($link)->assertRedirect($home);
@@ -374,9 +375,10 @@ class AuthenticationAdditionsTest extends TestCase
         $this->assertFalse($user->fresh()->hasVerifiedEmail());
         $this->post('/login', ['email' => $user->email, 'password' => 'password'])
             ->assertRedirect($link)->assertSessionMissing('url.intended');
-        $this->get($link)->assertRedirect($home)->assertSessionHas('status', 'Email verified successfully.');
+        $destination = $user->role === UserRole::Resident ? route('resident.profile.edit') : $home;
+        $this->get($link)->assertRedirect($destination)->assertSessionHas('status', 'Email verified successfully.');
         $this->assertTrue($user->fresh()->hasVerifiedEmail());
-        $this->get($home)->assertOk()->assertSee('Email verified successfully.');
+        $this->get($destination)->assertOk()->assertSee('Email verified successfully.');
         $this->get('/email/verify')->assertRedirect($home);
     }
 

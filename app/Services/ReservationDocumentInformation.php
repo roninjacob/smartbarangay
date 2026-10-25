@@ -50,9 +50,24 @@ class ReservationDocumentInformation
 
     public function profile(User $resident): array
     {
+        // Query afresh: the final submission already holds the same parent User lock as profile writes.
+        $demographics = $resident->profile()->first();
+
         return ['resident_name' => $resident->name, 'resident_address' => $resident->address,
             'resident_contact' => $resident->contact_number, 'date_issued' => now('Asia/Manila')->toDateString(),
-            'barangay_name' => 'Barangay Calayo'];
+            'barangay_name' => 'Barangay Calayo',
+            'resident_birthdate' => $demographics?->birthdate?->toDateString(),
+            'resident_civil_status' => $demographics?->civil_status,
+            'resident_occupation' => $demographics?->occupation,
+            'resident_address_street' => $demographics?->address_street,
+            'resident_address_zone_purok' => $demographics?->address_zone_purok];
+    }
+
+    public function missingRequiredProfileFields(?DocumentTemplate $template, array $profile): array
+    {
+        return ($template?->fields ?? collect())->filter(fn ($field) => $field->source === 'system'
+            && $field->is_required && blank($profile[$field->field_name] ?? null))
+            ->pluck('label')->unique()->values()->all();
     }
 
     public function validate(?DocumentTemplate $template, mixed $input, array $profile): array

@@ -58,10 +58,12 @@ class ReservationController extends Controller
         $request->session()->put(self::SESSION_KEY, $draft);
         $information = app(ReservationDocumentInformation::class);
         $template = $this->currentDocumentConfiguration($request, $draft, $service, $information);
+        $profile = $information->profile($request->user());
 
         return $this->page(2, ['service' => $service, 'draft' => $draft, 'documentTemplate' => $template,
             'documentSignature' => $information->signature($template),
-            'residentInformation' => $information->profile($request->user())]);
+            'residentInformation' => $profile,
+            'missingProfileFields' => $information->missingRequiredProfileFields($template, $profile)]);
     }
 
     public function reviewRequirements(ReservationWizardRequest $request): RedirectResponse

@@ -31,7 +31,7 @@ class CleanupUnverifiedUsers extends Command
                         if (! $user) {
                             return 'no_longer_eligible';
                         }
-                        if ($user->reservations()->exists() || $user->checkinLogs()->exists() || $user->statusHistories()->exists()) {
+                        if ($user->reservations()->exists() || $user->checkinLogs()->exists() || $user->statusHistories()->exists() || $user->profile()->exists()) {
                             return 'business_records';
                         }
                         if ($dryRun) {
@@ -41,6 +41,7 @@ class CleanupUnverifiedUsers extends Command
                         DB::table('password_reset_tokens')->where('email', $user->email)->delete();
                         DB::table('sessions')->where('user_id', $user->id)->delete();
                         $user->delete();
+
                         return 'removed';
                     });
                 } catch (QueryException $exception) {

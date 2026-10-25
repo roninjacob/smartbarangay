@@ -86,6 +86,7 @@ Route::middleware('auth')->group(function () {
         });
     Route::prefix('resident/profile')->name('resident.profile.')
         ->middleware(['role:'.UserRole::Resident->value, 'verified'])->group(function () {
+            Route::put('/demographics', [ProfileController::class, 'updateDemographics'])->block(10, 10)->name('demographics.update');
             Route::get('/', [ProfileController::class, 'edit'])->name('edit');
             Route::put('/', [ProfileController::class, 'update'])->block(10, 10)->name('update');
             Route::get('/picture', [ProfileController::class, 'picture'])->name('picture');

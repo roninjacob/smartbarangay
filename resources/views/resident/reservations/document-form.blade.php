@@ -3,6 +3,13 @@
     <fieldset class="mt-4">
         <legend class="h5">Resident information</legend>
         <p class="app-note">System information comes from your profile. <a href="{{ route('resident.profile.edit') }}">Update your profile</a> if anything needs correcting, then return to this form.</p>
+        @if(!empty($missingProfileFields))
+            <div class="alert alert-warning" role="alert">
+                <strong>Complete the profile information required for this document.</strong>
+                <p class="mb-2 mt-2">Missing: {{ implode(', ', $missingProfileFields) }}.</p>
+                <a class="btn btn-outline-primary" href="{{ route('resident.profile.edit') }}">Complete required profile information</a>
+            </div>
+        @endif
         <dl class="reservation-summary document-information-summary">
             @foreach($documentTemplate->fields->where('source', 'system') as $field)
                 <div><dt>{{ $field->label }}</dt><dd>{{ $residentInformation[$field->field_name] ?? 'Not provided' }}</dd></div>

@@ -17,7 +17,7 @@
                     <p class="app-note mt-2">Review every page before finalizing. This preview expires after 30 minutes. An expired or changed preview must be reviewed again.</p>
                 </form>
             @endif
-            <details class="mt-3"><summary>Recorded document information</summary><dl class="reservation-summary document-information-summary">@foreach($reservation->documentAnswers as $answer)<div><dt>{{ $answer->field_snapshot['label'] }}</dt><dd>{{ $answer->answer ?? '—' }}</dd></div>@endforeach</dl></details>
+            <details class="mt-3"><summary>Recorded document information</summary><dl class="reservation-summary document-information-summary">@foreach($reservation->documentAnswers as $answer)<div><dt>{{ $answer->field_snapshot['label'] }}</dt><dd>{{ $answer->answer ?? 'Not provided' }}</dd></div>@endforeach</dl></details>
         @endif
     </div>
 </section>

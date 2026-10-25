@@ -6,5 +6,5 @@
 <form method="POST" action="{{ route('resident.reservations.requirements.review') }}" data-service-submit>
     @csrf
     @include('resident.reservations.document-form')
-    <div class="reservation-actions"><a href="{{ route('resident.reservations.create') }}" class="btn btn-outline-secondary">Change service</a><button class="btn btn-primary" type="submit">Continue to schedules</button></div>
+    <div class="reservation-actions"><a href="{{ route('resident.reservations.create') }}" class="btn btn-outline-secondary">Change service</a><button class="btn btn-primary" type="submit" @disabled(!empty($missingProfileFields))>Continue to schedules</button></div>
 </form>
