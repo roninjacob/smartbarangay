@@ -49,7 +49,7 @@
                     </li>
                 @endforeach
         </ul>
-        <div class="service-pagination"><span class="app-note">Showing {{ $services->firstItem() }}–{{ $services->lastItem() }} of {{ $services->total() }} services</span>{{ $services->links('pagination::bootstrap-5') }}</div>
+        <div class="service-pagination"><span class="app-note">Showing {{ $services->firstItem() }}–{{ $services->lastItem() }} of {{ $services->total() }} services</span>{{ $services->links('pagination.civic') }}</div>
     @endif
 </section>
 <p class="app-note mt-3">Deactivate a service to mark it unavailable. Existing reservations and history are preserved.</p>

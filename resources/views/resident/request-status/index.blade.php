@@ -16,7 +16,7 @@
                 <a class="btn btn-outline-primary reservation-details-link" href="{{ route('resident.request-status.show', $reservation) }}" aria-label="Track request #{{ $reservation->id }}">View progress</a>
             </article>
         @endforeach
-        <div class="service-pagination"><span class="app-note">Showing {{ $reservations->firstItem() }}–{{ $reservations->lastItem() }} of {{ $reservations->total() }} requests</span>{{ $reservations->links('pagination::bootstrap-5') }}</div>
+        <div class="service-pagination"><span class="app-note">Showing {{ $reservations->firstItem() }}–{{ $reservations->lastItem() }} of {{ $reservations->total() }} requests</span>{{ $reservations->links('pagination.civic') }}</div>
     @endif
 </section>
 @endsection

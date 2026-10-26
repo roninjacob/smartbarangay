@@ -1,6 +1,9 @@
 @props(['name' => 'document'])
 <svg {{ $attributes->class(['app-icon']) }} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
     @switch($name)
+        @case('support')
+            <path d="M4 13v-2a8 8 0 0 1 16 0v2M4 12H3v6h4v-6H4ZM20 12h1v6h-4v-6h3ZM20 18c0 3-3 3-6 3"/>
+            @break
         @case('search')
             <circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/>
             @break

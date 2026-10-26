@@ -100,8 +100,8 @@
                     </ul>
                 </section>
                 <aside class="auth-support" aria-label="Account assistance">
-                    <span class="auth-support-icon" aria-hidden="true">?</span>
-                    <p class="mb-0"><strong>@yield('support-heading', 'Need help accessing your account?')</strong><br>Please contact the Barangay Calayo office.</p>
+                    <span class="auth-support-icon" aria-hidden="true"><x-app-icon name="support"/></span>
+                    <div><p class="mb-0"><strong>@yield('support-heading', 'Need help accessing your account?')</strong><br>Please contact the Barangay Calayo office.</p><a href="{{ route('home') }}#contact" class="auth-help-link">View barangay contact information <x-app-icon name="arrow"/></a></div>
                 </aside>
             </div>
             <footer class="auth-footer">SmartBarangay <span aria-hidden="true">·</span> Barangay Calayo, Nasugbu, Batangas</footer>

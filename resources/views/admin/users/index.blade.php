@@ -27,7 +27,7 @@
                 @endforeach</tbody>
             </table>
         </div>
-        <div class="service-pagination"><span class="app-note">Showing {{ $users->firstItem() }}–{{ $users->lastItem() }} of {{ $users->total() }} residents</span>{{ $users->links('pagination::bootstrap-5') }}</div>
+        <div class="service-pagination"><span class="app-note">Showing {{ $users->firstItem() }}–{{ $users->lastItem() }} of {{ $users->total() }} residents</span>{{ $users->links('pagination.civic') }}</div>
     @endif
 </section>
 @endsection

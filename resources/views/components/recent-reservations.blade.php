@@ -30,16 +30,17 @@
         </div>
     @else
         <div class="table-responsive" tabindex="0" role="region" aria-label="Recent reservations table">
-            <table class="table dashboard-table align-middle mb-0">
+            <table class="table dashboard-table recent-reservations-table align-middle mb-0">
                 <caption class="visually-hidden">{{ $admin ? 'Latest six barangay reservations' : 'Your latest six reservations' }}</caption>
-                <thead><tr><th scope="col">Document / Service</th>@if($admin)<th scope="col">Resident</th>@endif<th scope="col">Appointment</th><th scope="col">Status</th></tr></thead>
+                <thead><tr><th scope="col">Resident / request</th><th scope="col">Document / Service</th><th scope="col">Appointment</th><th scope="col">Status</th><th scope="col"><span class="visually-hidden">Action</span></th></tr></thead>
                 <tbody>
                     @foreach($reservations as $reservation)
                         <tr>
-                            <th scope="row"><span class="reservation-service">{{ $reservation->service->name }}</span><span class="reservation-reference">Request #{{ $reservation->id }} · {{ $reservation->created_at->timezone('Asia/Manila')->format('M j, Y') }}</span></th>
-                            @if($admin)<td><span class="reservation-resident" title="{{ $reservation->user->name }}">{{ $reservation->user->name }}</span></td>@endif
-                            <td><time datetime="{{ $reservation->appointment->date->toDateString() }}">{{ $reservation->appointment->date->format('M j, Y') }}</time><span class="reservation-reference">{{ substr($reservation->appointment->start_time, 0, 5) }}–{{ substr($reservation->appointment->end_time, 0, 5) }}</span></td>
-                            <td><x-reservation-status :status="$reservation->status"/></td>
+                            <th scope="row"><div class="recent-person"><x-resident-avatar :user="$reservation->user" :initials="true"/><div><span class="recent-resident-name">{{ $reservation->user->name }}</span><span class="reservation-reference">Request #{{ $reservation->id }} &middot; {{ $reservation->created_at->timezone('Asia/Manila')->format('M j, Y') }}</span></div></div></th>
+                            <td data-label="Document / Service"><span class="reservation-service">{{ $reservation->service->name }}</span></td>
+                            <td class="recent-appointment" data-label="Appointment"><time datetime="{{ $reservation->appointment->date->toDateString() }}">{{ $reservation->appointment->date->format('M j, Y') }}</time><span class="reservation-reference">{{ \Illuminate\Support\Carbon::parse($reservation->appointment->start_time)->format('g:i A') }} &ndash; {{ \Illuminate\Support\Carbon::parse($reservation->appointment->end_time)->format('g:i A') }}</span></td>
+                            <td data-label="Status"><x-reservation-status :status="$reservation->status"/></td>
+                            <td class="recent-action"><a class="recent-open" href="{{ route('admin.reservations.show', $reservation) }}" aria-label="View request #{{ $reservation->id }}"><span class="recent-action-label">View request</span><x-app-icon name="arrow"/></a></td>
                         </tr>
                     @endforeach
                 </tbody>

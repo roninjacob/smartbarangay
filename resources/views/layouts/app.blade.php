@@ -9,7 +9,7 @@
     <title>@yield('title', 'SmartBarangay') · Barangay Calayo</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="civic-ui">
+<body class="civic-ui civic-refined">
     <a class="skip-link" href="#main-content">Skip to main content</a>
     @yield('content')
 </body>

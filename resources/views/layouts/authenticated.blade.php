@@ -19,7 +19,7 @@
         <header class="app-topbar">
             <div class="d-flex align-items-center gap-3 min-w-0">
                 <button type="button" class="app-menu-button btn d-lg-none" data-bs-toggle="offcanvas" data-bs-target="#app-sidebar" aria-controls="app-sidebar" aria-label="Open navigation"><x-app-icon name="menu"/></button>
-                <div class="app-topbar-location"><strong>Barangay Calayo</strong><span>Nasugbu, Batangas</span></div>
+                <div class="app-topbar-location"><x-app-icon name="services"/><div><strong>Barangay Calayo</strong><span>Nasugbu, Batangas</span></div></div>
             </div>
             <div class="app-header-actions">
             @include('partials.notification-bell')

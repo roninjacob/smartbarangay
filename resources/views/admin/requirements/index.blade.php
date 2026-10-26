@@ -33,7 +33,7 @@
                 </tbody>
             </table>
         </div>
-        <div class="service-pagination"><span class="app-note">Showing {{ $requirements->firstItem() }}–{{ $requirements->lastItem() }} of {{ $requirements->total() }} requirements</span>{{ $requirements->links('pagination::bootstrap-5') }}</div>
+        <div class="service-pagination"><span class="app-note">Showing {{ $requirements->firstItem() }}–{{ $requirements->lastItem() }} of {{ $requirements->total() }} requirements</span>{{ $requirements->links('pagination.civic') }}</div>
     @endif
 </section>
 <p class="app-note mt-3">Requirements belong to this service. Requirements linked to existing attachments are protected from deletion.</p>

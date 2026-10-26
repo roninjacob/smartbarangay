@@ -11,11 +11,11 @@
     @if($activities->isEmpty())<div class="service-empty"><h3>No matching activities</h3><p>Try another search or activity type. Older requests may have only partial history.</p><a href="{{ route('admin.reservation-logs.index') }}" class="btn btn-outline-primary">View all activities</a></div>@else
         <ol class="reservation-log-feed" aria-label="Recent reservation activities">
             @foreach($activities as $activity)
-                <li><div class="activity-context"><a href="{{ route('admin.reservations.show', $activity['reservation_id']) }}">Request #{{ $activity['reservation_id'] }}</a><span>{{ $activity['service'] }}</span><span class="text-secondary">{{ $activity['resident'] }}</span></div>
+                <li><span class="activity-feed-marker" aria-hidden="true"><x-app-icon name="history"/></span><div class="activity-context"><a href="{{ route('admin.reservations.show', $activity['reservation_id']) }}">Request #{{ $activity['reservation_id'] }}</a><span>{{ $activity['service'] }}</span><span class="text-secondary">{{ $activity['resident'] }}</span></div>
                     <div class="activity-content">@include('admin.reservations.activity-item')</div></li>
             @endforeach
         </ol>
-        <div class="service-pagination"><span class="app-note">Showing {{ $activities->firstItem() }}–{{ $activities->lastItem() }} of {{ $activities->total() }} activities</span>{{ $activities->links('pagination::bootstrap-5') }}</div>
+        <div class="service-pagination"><span class="app-note">Showing {{ $activities->firstItem() }}–{{ $activities->lastItem() }} of {{ $activities->total() }} activities</span>{{ $activities->links('pagination.civic') }}</div>
     @endif
 </section>
 @endsection

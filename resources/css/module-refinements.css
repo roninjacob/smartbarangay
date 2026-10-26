@@ -1,0 +1,106 @@
+/* Authenticated module surfaces only. Never style PDF sheets, canvases or placement boxes. */
+.civic-ui.civic-refined .app-workspace { background:radial-gradient(ellipse at 100% 0,#E8F0FF55,transparent 55%),var(--page-background); }
+.civic-ui.civic-refined .app-topbar { min-height:76px; border-bottom:1px solid var(--border-color); gap:20px; }
+.civic-ui.civic-refined .app-topbar-location { display:flex; align-items:center; gap:12px; }
+.civic-ui.civic-refined .app-topbar-location>.app-icon { width:36px; height:36px; flex:0 0 36px; padding:8px; background:var(--sb-soft); color:var(--civic-dark); border-radius:11px; }
+.civic-ui.civic-refined .app-topbar-location>div { display:flex; flex-direction:column; gap:3px; }
+.civic-ui.civic-refined .app-user-button { padding:8px 12px; border:1px solid var(--border-color); border-radius:14px; background:var(--surface); gap:10px; }
+.civic-ui.civic-refined .app-user-button:hover { background:var(--sb-soft); }
+.civic-ui.civic-refined .app-header-actions { gap:12px; }
+.civic-ui.civic-refined .app-page-heading { padding:24px; border:1px solid var(--border-color); border-radius:20px; background:linear-gradient(115deg,var(--sb-soft),var(--surface)); gap:24px; margin-bottom:28px; }
+.civic-ui.civic-refined .app-page-heading h1 { font-size:clamp(26px,2.4vw,34px); margin-top:8px; }
+.civic-ui.civic-refined .app-date { flex-shrink:0; }
+.civic-ui.civic-refined .app-sidebar-body { scrollbar-width:thin; scrollbar-color:#BECEE5 transparent; scrollbar-gutter:stable; }
+.civic-ui.civic-refined .app-sidebar-body::-webkit-scrollbar { width:6px; }
+.civic-ui.civic-refined .app-sidebar-body::-webkit-scrollbar-thumb { background:#BECEE5; border-radius:8px; }
+.civic-ui.civic-refined .app-sidebar-body::-webkit-scrollbar-track { background:transparent; }
+.civic-ui.civic-refined .app-nav-link { border-radius:12px; }
+.civic-ui.civic-refined .app-nav-link:not(.is-current):hover { background:var(--sb-soft); color:var(--civic-dark); }
+.civic-ui.civic-refined .app-main .service-back-link { display:inline-flex; align-items:center; gap:9px; min-height:44px; padding:10px 15px; margin-bottom:22px; background:var(--surface); border:1px solid var(--border-color); border-radius:11px; color:var(--civic-dark); font-size:13px; font-weight:600; text-decoration:none; }
+.civic-ui.civic-refined .app-main .service-back-link:hover { background:var(--sb-soft); border-color:#B8CFF2; }
+.civic-ui.civic-refined .app-main .alert-info { --bs-alert-bg:var(--sb-soft); --bs-alert-color:var(--main-text); --bs-alert-border-color:var(--border-color); border-left:3px solid #729FF0; font-size:13px; line-height:1.8; }
+.civic-ui.civic-refined .app-main .alert { border-radius:13px; padding:16px 18px; }
+.civic-ui.civic-refined .app-main .form-label { font-size:13px; font-weight:650; margin-bottom:9px; }
+.civic-ui.civic-refined .app-main :is(.form-control,.form-select) { background-color:var(--surface); border-color:var(--border-color); min-height:46px; }
+.civic-ui.civic-refined .app-main :is(.form-control,.form-select):focus { border-color:#79A4EF; box-shadow:0 0 0 3px #225FE517; }
+.civic-ui.civic-refined .app-main :is(.form-control,.form-select):disabled { background-color:var(--page-background); }
+.civic-ui.civic-refined .app-main .form-text { font-size:12px; line-height:1.7; margin-top:8px; }
+.civic-ui.civic-refined .app-main :is(.service-actions,.profile-actions,.reservation-actions) { gap:14px; padding-top:22px; margin-top:24px; border-top:1px solid var(--border-color); }
+.civic-ui.civic-refined .dashboard-panel-heading { gap:24px; }
+.civic-ui.civic-refined .dashboard-panel-heading h2 { font-size:19px; }
+.civic-ui.civic-refined .panel-description { margin-top:9px; font-size:13px; line-height:1.75; }
+.civic-ui.civic-refined .builder-body { padding:0 26px 26px; }
+.civic-ui.civic-refined .builder-guide { color:var(--muted-text); font-size:13px; line-height:1.8; padding:0 0 18px; margin-bottom:20px; border-bottom:1px solid var(--border-color); }
+.civic-ui.civic-refined .builder-flow { display:flex; flex-wrap:wrap; gap:12px; margin-bottom:24px; }
+.civic-ui.civic-refined .builder-flow a { display:flex; align-items:center; gap:10px; background:var(--surface); border:1px solid var(--border-color); border-radius:12px; padding:12px 16px; min-height:48px; color:var(--civic-dark); text-decoration:none; font-size:13px; font-weight:600; }
+.civic-ui.civic-refined .builder-flow span { display:grid; place-items:center; width:24px; height:24px; border-radius:8px; background:var(--sb-soft); font-size:11px; }
+.civic-ui.civic-refined .builder-metadata { gap:16px; margin-block:24px; }
+.civic-ui.civic-refined .builder-metadata>div { padding:16px 18px; border:1px solid var(--border-color); border-radius:12px; background:var(--page-background); }
+.civic-ui.civic-refined .builder-status-form { display:flex; flex-wrap:wrap; align-items:end; gap:16px; padding-top:22px; border-top:1px solid var(--border-color); }
+.civic-ui.civic-refined .builder-status-form>div { flex:1 1 240px; max-width:440px; }
+.civic-ui.civic-refined .builder-fields-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:20px; align-items:start; }
+.civic-ui.civic-refined .builder-field-card { padding:22px; border-radius:15px; margin:0; background:var(--surface); }
+.civic-ui.civic-refined .builder-field-card h3 { font-size:17px; margin-bottom:12px; }
+.civic-ui.civic-refined .builder-field-card .builder-actions { gap:12px; padding-top:16px; margin-top:16px; border-top:1px solid var(--border-color); }
+.civic-ui.civic-refined .designer-toolbar { padding:16px; border-radius:14px; background:var(--sb-soft); border:1px solid var(--border-color); gap:18px; }
+.civic-ui.civic-refined .designer-help { padding:14px 16px; border:1px solid var(--border-color); border-radius:12px; margin-bottom:18px; }
+.civic-ui.civic-refined .designer-help summary { font-size:13px; font-weight:600; color:var(--civic-dark); cursor:pointer; }
+.civic-ui.civic-refined .designer-help .app-note { margin:12px 0 0; line-height:1.8; }
+.civic-ui.civic-refined .designer-toolbox { padding:22px; border-color:var(--border-color); border-radius:15px; background:var(--surface); }
+.civic-ui.civic-refined .designer-field-list { gap:12px; }
+.civic-ui.civic-refined .designer-field-list .btn { justify-content:flex-start; font-size:13px; }
+.civic-ui.civic-refined .report-controls>h2 { font-size:18px; line-height:1.5; }
+.civic-ui.civic-refined .report-controls>p { font-size:13px; line-height:1.8; max-width:960px; }
+.civic-ui.civic-refined .report-controls form { padding-top:20px; margin-top:18px; border-top:1px solid var(--border-color); }
+.civic-ui.civic-refined .report-controls [hidden] { display:none!important; }
+.civic-ui.civic-refined .report-filter-actions { gap:14px; }
+.civic-ui.civic-refined .report-filter-actions>span { font-size:12px; line-height:1.8; }
+.civic-ui.civic-refined .report-total { background:linear-gradient(135deg,#143A7E,#225FE5); color:#FFF; }
+.civic-ui.civic-refined .report-total :is(h2,strong,p,svg) { color:#FFF; }
+.civic-ui.civic-refined .report-total p { opacity:.85; }
+.civic-ui.civic-refined .report-status-grid { grid-template-columns:repeat(12,minmax(0,1fr)); gap:12px; padding:16px; }
+.civic-ui.civic-refined .report-status-entry { grid-column:span 3; padding:14px; }
+.civic-ui.civic-refined .report-status-entry:nth-child(n+5) { grid-column:span 4; }
+.civic-ui.civic-refined .report-status-entry h3 { line-height:1.5; margin-bottom:8px; font-size:12px; }
+.civic-ui.civic-refined .report-period { padding:16px 20px; border:1px solid var(--border-color); background:var(--surface); border-radius:13px; line-height:1.8; }
+.civic-ui.civic-refined .report-period>span { font-size:12px; }
+.civic-ui.civic-refined .request-section-nav { gap:12px; margin-bottom:24px; }
+.civic-ui.civic-refined .request-section-nav a { padding:11px 15px; border:1px solid var(--border-color); border-radius:11px; background:var(--surface); font-weight:600; font-size:12px; text-decoration:none; }
+.civic-ui.civic-refined .reservation-summary { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; }
+.civic-ui.civic-refined .reservation-summary>div { display:block; padding:16px 18px; border:1px solid var(--border-color); border-radius:12px; background:var(--page-background); }
+.civic-ui.civic-refined .reservation-summary>div:last-child:nth-child(odd) { grid-column:1/-1; }
+.civic-ui.civic-refined .reservation-summary dt { margin-bottom:7px; font-size:12px; }
+.civic-ui.civic-refined .reservation-summary dd { font-size:14px; font-weight:550; line-height:1.8; }
+.civic-ui.civic-refined .reservation-options { gap:18px; }
+.civic-ui.civic-refined .reservation-option { border:1px solid var(--border-color); padding:23px; }
+.civic-ui.civic-refined .reservation-option .option-description { font-size:13px; line-height:1.8; margin-top:9px; }
+.civic-ui.civic-refined .reservation-option input { accent-color:#225FE5; min-width:19px; min-height:19px; }
+.civic-ui.civic-refined .profile-card { border-top:3px solid #8EB6F5; }
+.civic-ui.civic-refined .notification-list { display:grid; gap:16px; border:0; border-radius:0; background:transparent; overflow:visible; }
+.civic-ui.civic-refined .notification-list .notification-item { border:1px solid var(--border-color); border-radius:16px; padding:24px; background:var(--surface); }
+.civic-ui.civic-refined .notification-list .is-unread { background:var(--sb-soft); border-left:3px solid #6C9EF0; box-shadow:none; }
+.civic-ui.civic-refined .notification-toolbar { padding:16px; background:var(--surface); border:1px solid var(--border-color); border-radius:14px; gap:16px; }
+.civic-ui.civic-refined .app-main details>summary { min-height:36px; padding-block:6px; }
+.civic-ui.civic-refined .service-empty { background:radial-gradient(ellipse at 50% 0,var(--sb-soft),transparent 70%); }
+[data-bs-theme=dark] .civic-ui.civic-refined .app-workspace { background:var(--page-background); }
+[data-bs-theme=dark] .civic-ui.civic-refined .app-sidebar-body { scrollbar-color:#49617D transparent; }
+@media(max-width:1199px) {
+    .civic-ui.civic-refined .report-status-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    .civic-ui.civic-refined .report-status-entry,.civic-ui.civic-refined .report-status-entry:nth-child(n+5) { grid-column:auto; }
+    .civic-ui.civic-refined .report-status-entry:last-child { grid-column:1/-1; }
+}
+@media(max-width:767px) {
+    .civic-ui.civic-refined .app-topbar-location>.app-icon { display:none; }
+    .civic-ui.civic-refined .app-user-button { padding:6px; border-color:transparent; }
+    .civic-ui.civic-refined .app-page-heading { padding:20px; gap:16px; }
+    .civic-ui.civic-refined .builder-fields-grid { grid-template-columns:1fr; }
+    .civic-ui.civic-refined .builder-body { padding:0 20px 20px; }
+    .civic-ui.civic-refined .reservation-summary { grid-template-columns:1fr; }
+    .civic-ui.civic-refined .report-controls form>div:has(select[name=period]) { width:100%; }
+    .civic-ui.civic-refined .designer-toolbox { padding:18px; }
+}
+@media(max-width:359px) {
+    .civic-ui.civic-refined .app-header-actions { gap:5px; }
+    .civic-ui.civic-refined .app-topbar { gap:8px; }
+    .civic-ui.civic-refined .app-page-heading { padding:18px 16px; }
+}

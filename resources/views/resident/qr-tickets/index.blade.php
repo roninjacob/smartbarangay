@@ -30,7 +30,7 @@
                 <a href="{{ route('resident.qr-tickets.show', $ticket) }}" class="btn btn-outline-primary reservation-details-link" aria-label="View QR Ticket for request #{{ $ticket->reservation->id }}">View QR Ticket</a>
             </article>
         @endforeach
-        <div class="service-pagination"><span class="app-note">Showing {{ $tickets->firstItem() }}–{{ $tickets->lastItem() }} of {{ $tickets->total() }} tickets</span>{{ $tickets->links('pagination::bootstrap-5') }}</div>
+        <div class="service-pagination"><span class="app-note">Showing {{ $tickets->firstItem() }}–{{ $tickets->lastItem() }} of {{ $tickets->total() }} tickets</span>{{ $tickets->links('pagination.civic') }}</div>
     @endif
 </section>
 @endsection

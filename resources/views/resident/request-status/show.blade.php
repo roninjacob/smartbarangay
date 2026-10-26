@@ -30,7 +30,7 @@
             @endforeach
         </ol>
         @if($histories->total() === 0)<p class="app-note">No status changes recorded yet. Your current status is {{ $reservation->status->label() }}.</p>@elseif($histories->isEmpty())<p>No timeline entries on this page.</p><a href="{{ route('resident.request-status.show', $reservation) }}">Back to first page</a>@endif
-        {{ $histories->links('pagination::bootstrap-5') }}
+        {{ $histories->links('pagination.civic', ['showSummary' => true]) }}
     </section>
     @include('resident.reservations.cancellation-form')
     <p class="reservation-help">For assistance, contact the Barangay Calayo office in Nasugbu, Batangas.</p>

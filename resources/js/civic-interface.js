@@ -16,3 +16,20 @@ document.querySelectorAll('.civic-ui .table-responsive').forEach((region) => {
         region.setAttribute('aria-label', caption || 'Data table: scroll to see more columns');
     }
 });
+
+// Reveal only the date controls relevant to the selected report period.
+// Values, request parameters and existing validation/disabled rules stay unchanged.
+document.querySelectorAll('.report-controls form').forEach((form) => {
+    const period = form.elements.namedItem('period');
+    if (!period) return;
+    const showErrors = Boolean(form.closest('.report-controls').querySelector('.alert-danger'));
+    const update = () => {
+        for (const name of ['date', 'start', 'end']) {
+            const input = form.elements.namedItem(name);
+            const container = input?.closest('div');
+            if (container) container.hidden = !showErrors && period.value !== (name === 'date' ? 'date' : 'custom');
+        }
+    };
+    period.addEventListener('change', update);
+    update();
+});

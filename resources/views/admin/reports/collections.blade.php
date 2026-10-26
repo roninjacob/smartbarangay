@@ -1,7 +1,7 @@
 @extends('layouts.authenticated')
 @section('dashboard')
 <div class="reservation-reports collection-reports">
-    <section class="dashboard-panel p-3 p-md-4" aria-labelledby="collection-scope">
+    <section class="dashboard-panel report-controls p-3 p-md-4" aria-labelledby="collection-scope">
         <h2 class="h5" id="collection-scope">Recorded collections excluding reviewed acceptance fixtures.</h2>
         <p class="text-secondary">Based on recorded payment time, not request or appointment date. Only valid payments contribute to collection totals. Philippine time (Asia/Manila).</p>
         @if($errors->any())<div class="alert alert-danger" role="alert">Please correct the filters. No collection totals are shown.<ul class="mb-0">@foreach($errors->all() as $message)<li>{{ $message }}</li>@endforeach</ul></div>@endif
@@ -22,7 +22,7 @@
             <div class="col-12 col-md-6"><x-dashboard-stat label="Valid Paid Transactions" :value="$report['count']" icon="status" note="Valid payments within the selected period"/></div>
         </section>
         @if($report['integrity_count'] > 0)<div class="alert alert-danger mt-3" role="alert">{{ $report['integrity_count'] }} payment integrity {{ $report['integrity_count'] === 1 ? 'issue' : 'issues' }} within this payment period. These records are excluded from all collection totals and charts. Select Integrity Issues below to review the original reservations.</div>@endif
-        <div class="row g-3 mt-1">
+        <div class="row g-3 mt-1 report-chart-grid">
             <section class="col-12 col-xl-7"><div class="dashboard-panel p-3 p-md-4 h-100"><h2 class="h5">Collections Over Time</h2><p class="text-secondary">{{ ucfirst($report['bucket']) }} buckets · Philippine time · {{ \App\Support\ServiceFee::format($report['amount']) }} across {{ $report['count'] }} valid payments.</p>
                 @if($report['count'] === 0)<p class="report-empty">No valid recorded collections in this period.</p>@else
                     <svg class="report-line" viewBox="0 0 680 290" role="img" aria-labelledby="collection-chart-title collection-chart-description"><title id="collection-chart-title">Valid collections over time</title><desc id="collection-chart-description">Amounts in Philippine pesos. Exact dates, amounts and transaction counts are provided below.</desc><path d="M55 35 V215 H650" fill="none" stroke="#6B7280"/><text x="55" y="25">Peak: {{ \App\Support\ServiceFee::format($report['peak']) }}</text><text x="45" y="219" text-anchor="end">0</text><polyline points="{{ $report['points'] }}" fill="none" stroke="#1F5EA8" stroke-width="3"/><text x="55" y="243">{{ $report['series'][0]['label'] }}</text><text x="645" y="264" text-anchor="end">{{ $report['series'][count($report['series'])-1]['label'] }}</text><text x="350" y="286" text-anchor="middle">Payment date / time</text></svg>
@@ -45,7 +45,7 @@
             <div class="table-responsive collection-table" tabindex="0" role="region" aria-label="Recorded payments; scroll horizontally on small screens"><table class="table align-middle"><caption>Newest payment time first · Philippine time</caption><thead><tr><th scope="col">Request</th><th scope="col">Resident</th><th scope="col">Service</th><th scope="col">Recorded amount</th><th scope="col">Paid at</th><th scope="col">Recorded by</th><th scope="col">Status</th><th scope="col">Action</th></tr></thead><tbody>
             @foreach($report['payments'] as $payment)<tr><th scope="row">Request #{{ $payment->reservation_id }}</th><td>{{ $payment->reservation?->user?->name ?? 'Former account' }}</td><td>{{ $payment->reservation?->service?->name ?? 'Unavailable service' }}</td><td>{{ \App\Support\ServiceFee::format($payment->amount) }}</td><td>{{ $payment->paid_at->timezone('Asia/Manila')->format('M j, Y g:i A') }}</td><td>{{ $payment->recorder?->name ?? 'Former account' }}</td><td>{{ $filters['view'] === 'integrity' ? 'Payment integrity issue' : 'Paid' }}</td><td>@if($payment->reservation)<a class="btn btn-outline-primary btn-sm" href="{{ route('admin.reservations.show', $payment->reservation_id) }}" aria-label="View Request #{{ $payment->reservation_id }}">View details</a>@else Unavailable reservation @endif</td></tr>@endforeach
             </tbody></table></div>
-            <div class="report-pagination"><span>{{ $report['payments']->total() }} matching {{ $filters['view'] === 'integrity' ? 'integrity issues' : 'valid payments' }}</span>{{ $report['payments']->links('pagination::bootstrap-5') }}</div>
+            <div class="report-pagination"><span>{{ $report['payments']->total() }} matching {{ $filters['view'] === 'integrity' ? 'integrity issues' : 'valid payments' }}</span>{{ $report['payments']->links('pagination.civic') }}</div>
         </section>
     @endif
 </div>

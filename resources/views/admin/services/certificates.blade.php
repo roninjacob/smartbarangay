@@ -35,6 +35,6 @@
     @empty
         <p class="app-note">No approved requests for this service.</p>
     @endforelse
-    {{ $reservations->links('pagination::bootstrap-5') }}
+    {{ $reservations->links('pagination.civic', ['showSummary' => true]) }}
 </section>
 @endsection

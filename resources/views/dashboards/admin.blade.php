@@ -21,10 +21,10 @@
 @if($collections['integrity_issues'] > 0)<p class="alert alert-danger" role="alert">Payment integrity issues detected ({{ $collections['integrity_issues'] }}). Collections exclude inconsistent payment records. Review Reservation Details.</p>@endif
 
 <div class="row g-4 dashboard-content-grid">
-    <div class="col-xl-8"><x-recent-reservations :reservations="$recentReservations" :admin="true"/>
+    <div class="col-12 dashboard-primary"><x-recent-reservations :reservations="$recentReservations" :admin="true"/>
         <section class="dashboard-guidance" aria-labelledby="operations-heading"><span class="guidance-icon"><x-app-icon name="services"/></span><div><h2 id="operations-heading">Your operations workspace</h2><p>Open Reservation Management to review requests and record their next status. Service and schedule configuration are available in the sidebar.</p></div></section>
     </div>
-    <div class="col-xl-4 dashboard-aside"><x-dashboard-statuses :statuses="$statuses" :counts="$counts" :total="$totalReservations"/>
+    <div class="col-12 dashboard-aside dashboard-support"><x-dashboard-statuses :statuses="$statuses" :counts="$counts" :total="$totalReservations"/>
         <section class="dashboard-quick-actions" aria-labelledby="quick-actions-heading"><h2 id="quick-actions-heading">Quick access</h2>
             <a class="account-quick-link" href="{{ route('admin.reservations.index') }}"><x-app-icon name="document"/><span>Reservation Management</span><x-app-icon name="arrow"/></a>
             <a class="account-quick-link" href="{{ route('admin.users.index') }}"><x-app-icon name="users"/><span>User Management</span><x-app-icon name="arrow"/></a>

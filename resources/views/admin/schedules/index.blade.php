@@ -34,7 +34,7 @@
                 </tbody>
             </table>
         </div>
-        <div class="service-pagination"><span class="app-note">Showing {{ $schedules->firstItem() }}–{{ $schedules->lastItem() }} of {{ $schedules->total() }} schedules</span>{{ $schedules->links('pagination::bootstrap-5') }}</div>
+        <div class="service-pagination"><span class="app-note">Showing {{ $schedules->firstItem() }}–{{ $schedules->lastItem() }} of {{ $schedules->total() }} schedules</span>{{ $schedules->links('pagination.civic') }}</div>
     @endif
 </section>
 <p class="app-note mt-3">All appointment times use Philippine local time. Deactivation preserves existing records. Only schedules without linked reservations can be deleted.</p>

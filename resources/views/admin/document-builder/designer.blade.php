@@ -12,7 +12,7 @@
             <div class="designer-pagination" aria-label="Document pages"><button type="button" class="btn btn-outline-secondary" data-designer-previous disabled>Previous Page</button><span data-designer-page>Loading document…</span><button type="button" class="btn btn-outline-secondary" data-designer-next disabled>Next Page</button></div>
             <button type="button" class="btn btn-primary" data-designer-save disabled>Save Layout</button>
         </div>
-        <p class="app-note">Select a field, then tap the document to place it. Drag a placed field to move it; drag its corner to resize. You can also use the move and size buttons below.</p>
+        <details class="designer-help"><summary>How to place and adjust fields</summary><p class="app-note">Select a field, then tap the document to place it. Drag a placed field to move it; drag its corner to resize. You can also use the move and size buttons below.</p></details>
         <div class="designer-status" role="status" aria-live="polite" data-designer-status>Loading official PDF…</div>
         <div class="designer-grid">
             <div class="designer-paper-area">

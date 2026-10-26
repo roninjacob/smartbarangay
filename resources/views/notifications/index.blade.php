@@ -16,6 +16,6 @@
             <li class="notification-empty"><x-app-icon name="bell"/><h2>{{ $filter === 'unread' ? "You're all caught up." : 'No notifications yet.' }}</h2><p>{{ $filter === 'unread' ? 'You have no unread notifications. Your read updates remain in All.' : 'New request updates will appear here.' }}</p></li>
         @endforelse
     </ul>
-    {{ $notifications->links('pagination::bootstrap-5') }}
+    {{ $notifications->links('pagination.civic', ['showSummary' => true]) }}
 </section>
 @endsection

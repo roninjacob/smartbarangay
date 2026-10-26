@@ -15,6 +15,9 @@
 @import './document-builder.css';
 @import './theme.css';
 @import './civic-redesign.css';
+@import './civic-refinements.css';
+@import './public-landing.css';
+@import './module-refinements.css';
 
 /* SmartBarangay civic identity, shared by authentication and the application shell. */
 :root {
