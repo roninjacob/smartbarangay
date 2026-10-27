@@ -7,8 +7,8 @@
             <div class="dashboard-panel-heading"><div><h2 id="service-form-heading">{{ $service->exists ? 'Service details' : 'Add a barangay service' }}</h2><p class="panel-description">{{ $service->exists ? 'Keep service information clear and up to date.' : 'Prepare a document or service for the Barangay Calayo catalog.' }}</p></div></div>
             <form method="POST" action="{{ $service->exists ? route('admin.services.update', $service) : route('admin.services.store') }}" enctype="multipart/form-data" class="service-form" data-service-submit>
                 @csrf
-                @if($service->exists) @method('PUT') @endif
-                @if($errors->any())<div class="alert alert-danger" role="alert">Please correct the highlighted fields and try again.</div>@endif
+                @if($service->exists) @method('PUT')<input type="hidden" name="edit_revision" value="{{ is_string(old('edit_revision')) ? old('edit_revision') : app(\App\Services\ConfigurationAudit::class)->revision($service) }}"> @endif
+                @if($errors->any())<div class="alert alert-danger" role="alert">Please correct the highlighted fields and try again. @error('edit_revision')<p class="mb-2 mt-2">{{ $message }}</p><a class="btn btn-outline-primary" href="{{ route('admin.services.edit', $service) }}">Reload current details</a>@enderror</div>@endif
                 <div class="mb-4">
                     <label for="service-name" class="form-label">Service / Document Name <span class="service-required">(required)</span></label>
                     <input id="service-name" name="name" type="text" @class(['form-control', 'is-invalid' => $errors->has('name')]) value="{{ is_string(old('name', $service->name)) ? old('name', $service->name) : '' }}" required maxlength="255" aria-describedby="service-name-help{{ $errors->has('name') ? ' service-name-error' : '' }}" @if($errors->has('name')) aria-invalid="true" @endif>

@@ -21,7 +21,7 @@
             @foreach($service->serviceRequirements as $requirement)
                 <div class="mb-4">
                     <label class="form-label" for="requirement-file-{{ $requirement->id }}">{{ $requirement->name }} <span class="requirement-label">{{ $requirement->is_required ? 'Required' : 'Optional' }}</span></label>
-                    <input id="requirement-file-{{ $requirement->id }}" name="attachments[{{ $requirement->id }}]" type="file" class="form-control @error('attachments.'.$requirement->id) is-invalid @enderror" accept=".pdf,.jpg,.jpeg,.png" @required($requirement->is_required) aria-describedby="upload-help file-error-{{ $requirement->id }}">
+                    <input id="requirement-file-{{ $requirement->id }}" name="attachments[{{ $requirement->id }}]" type="file" data-friendly-upload class="form-control @error('attachments.'.$requirement->id) is-invalid @enderror" accept=".pdf,.jpg,.jpeg,.png" @required($requirement->is_required) aria-describedby="upload-help file-error-{{ $requirement->id }}">
                     @error('attachments.'.$requirement->id)<p id="file-error-{{ $requirement->id }}" class="invalid-feedback" role="alert">{{ $message }}</p>@else<span id="file-error-{{ $requirement->id }}"></span>@enderror
                 </div>
             @endforeach

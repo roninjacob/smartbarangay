@@ -8,6 +8,17 @@
             <x-reservation-status :status="$reservation->status"/>
         </div>
         @if($reservation->service->description)<p class="reservation-service-description">{{ $reservation->service->description }}</p>@endif
+        <div class="request-next-step">
+            <strong>Your next step</strong>
+            <p>{{ $reservation->status->residentMessage() }}</p>
+            @if($residentMessage)<p class="mb-0"><strong>Message from the office:</strong> {{ $residentMessage }}</p>@endif
+            @if($reservation->qrTicket && $reservation->status->canDisplayQrTicket())
+                <a class="btn btn-primary" href="{{ route('resident.qr-tickets.show', $reservation->qrTicket) }}">{{ $reservation->status === \App\Enums\ReservationStatus::Completed ? 'View historical QR ticket' : 'Show QR Ticket' }}</a>
+            @endif
+            @if($reservation->status === \App\Enums\ReservationStatus::ReadyForPickup)
+                <p class="app-note mt-3 mb-0">Review the payment details below before visiting. Follow the office collection instructions.</p>
+            @endif
+        </div>
         <h3 class="h6 mt-4">Reservation information</h3>
         <dl class="reservation-summary">
             <div><dt>Service Fee</dt><dd>{{ \App\Support\ServiceFee::format($reservation->fee_snapshot) }}</dd></div>

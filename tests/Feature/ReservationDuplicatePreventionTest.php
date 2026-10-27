@@ -157,7 +157,7 @@ class ReservationDuplicatePreventionTest extends TestCase
     private function completeDraft(Service $service, Schedule $schedule): string
     {
         $this->post('/resident/reservations/service', ['service_id' => $service->id])->assertRedirect(route('resident.reservations.requirements'));
-        $this->post('/resident/reservations/requirements')->assertRedirect(route('resident.reservations.schedule'));
+        $this->post('/resident/reservations/requirements', ['requirement_signature' => $this->requirementSignature()])->assertRedirect(route('resident.reservations.schedule'));
         $this->post('/resident/reservations/schedule', ['schedule_id' => $schedule->id])->assertRedirect(route('resident.reservations.confirm'));
 
         return session('reservation_wizard.confirmation_token');

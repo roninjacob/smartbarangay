@@ -63,7 +63,7 @@ class ResidentReservationViewingTest extends TestCase
         $other = $this->user();
         $own = $this->reservation($resident, 'My Clearance');
         $this->reservation($other, 'Private foreign service');
-        $response = $this->actingAs($resident)->get('/resident/reservations?user_id='.$other->id.'&status=approved')->assertOk()
+        $response = $this->actingAs($resident)->get('/resident/reservations?user_id='.$other->id.'&status=pending')->assertOk()
             ->assertViewIs('resident.reservations.index')->assertSee('My Clearance')->assertDontSee('Private foreign service')
             ->assertSee('Nov 1, 2026')->assertSee('9:00 AM')->assertSee('10:00 AM')->assertSee('Pending')
             ->assertSee('Submitted')->assertSee(route('resident.reservations.show', $own), false)

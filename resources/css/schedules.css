@@ -1,0 +1,39 @@
+/* Schedule workspace: scoped to this module; historical records remain visible on demand. */
+.civic-ui.civic-refined .schedule-catalog .schedule-tabs { display:flex; flex-wrap:wrap; gap:8px; padding:0 26px 20px; border-bottom:1px solid var(--border-color); }
+.schedule-tab { padding:12px 20px; border-radius:12px; color:var(--muted-text); text-decoration:none; font-weight:650; min-height:46px; }
+.schedule-tab:hover { background:var(--sb-soft); color:var(--civic-dark); }
+.schedule-tab.is-selected { background:var(--civic-blue); color:#fff; box-shadow:0 4px 12px #225fe520; }
+.schedule-workspace { padding:26px; display:grid; gap:24px; }
+.schedule-context { display:flex; gap:16px; align-items:flex-start; padding:20px; border:1px solid var(--border-color); border-radius:16px; background:linear-gradient(120deg,var(--sb-soft),var(--surface)); }
+.schedule-context-icon { padding:10px; border-radius:12px; color:var(--civic-dark); background:var(--surface); display:flex; flex-shrink:0; }
+.schedule-context h3 { font-size:17px; margin:0 0 8px; }
+.schedule-context p { margin:0; color:var(--muted-text); font-size:13px; line-height:1.7; max-width:80ch; }
+.schedule-filters { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:20px; align-items:end; }
+.schedule-filter-actions { grid-column:1/-1; display:flex; flex-wrap:wrap; gap:12px; }
+.civic-ui.civic-refined .schedule-table { table-layout:auto; }
+.civic-ui.civic-refined .schedule-table :is(td,th) { padding:24px; vertical-align:middle; }
+.civic-ui.civic-refined .schedule-table .schedule-time { white-space:nowrap; }
+.schedule-row-actions { display:flex; flex-wrap:wrap; align-items:center; gap:12px; }
+.schedule-row-actions form { margin:0; }
+.schedule-history-note { flex-basis:100%; color:var(--muted-text); font-size:12px; line-height:1.6; }
+.schedule-past-label { display:block; margin-top:9px; color:var(--muted-text); font-size:12px; }
+@media (max-width:1199.98px) {
+    .civic-ui.civic-refined .schedule-table { min-width:0; width:100%; }
+    .civic-ui.civic-refined .schedule-table thead { display:none; }
+    .civic-ui.civic-refined .schedule-table tbody { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:20px; padding:0 24px 24px; }
+    .civic-ui.civic-refined .schedule-table tr { display:grid; align-content:start; border:1px solid var(--border-color); border-radius:16px; padding:20px; background:var(--surface); min-width:0; }
+    .civic-ui.civic-refined .schedule-table :is(td,th) { display:block; width:auto; padding:12px 0; border:0; background:transparent; overflow-wrap:anywhere; }
+    .civic-ui.civic-refined .schedule-table :is(td,th)::before { content:attr(data-label); display:block; font-size:11px; font-weight:600; color:var(--muted-text); margin-bottom:7px; }
+    .civic-ui.civic-refined .schedule-table td:last-child { margin-top:8px; border-top:1px solid var(--border-color); padding-top:20px; }
+}
+@media (max-width:767.98px) {
+    .schedule-filters { grid-template-columns:1fr; gap:16px; }
+    .schedule-workspace { padding:20px; }
+    .civic-ui.civic-refined .schedule-catalog .schedule-tabs { padding-inline:20px; }
+    .civic-ui.civic-refined .schedule-table tbody { grid-template-columns:1fr; padding-inline:20px; }
+    .schedule-context { padding:16px; gap:12px; }
+    .schedule-context-icon { display:none; }
+    .civic-ui.civic-refined .schedule-catalog .schedule-tabs { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+    .schedule-tab { padding:12px 8px; font-size:13px; text-align:center; }
+    .schedule-filter-actions .btn { flex:1; }
+}

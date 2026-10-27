@@ -75,7 +75,7 @@ class ResidentReservationWizardTest extends TestCase
         $this->post('/resident/reservations/service', ['service_id' => $service->id])->assertRedirect(route('resident.reservations.requirements'));
         $this->get('/resident/reservations/requirements')->assertOk()->assertSee('Valid ID')->assertSee('Required')->assertSee('Optional')
             ->assertDontSee('type="file"', false);
-        $this->post('/resident/reservations/requirements')->assertRedirect(route('resident.reservations.schedule'));
+        $this->post('/resident/reservations/requirements', ['requirement_signature' => $this->requirementSignature()])->assertRedirect(route('resident.reservations.schedule'));
         $this->get('/resident/reservations/schedule')->assertOk()->assertSee('No schedules available');
         $this->schedule();
         $this->schedule(['date' => '2026-12-31', 'is_active' => false]);
@@ -129,7 +129,7 @@ class ResidentReservationWizardTest extends TestCase
             $this->post('/resident/reservations/service', ['service_id' => $value])->assertSessionHasErrors('service_id')->assertSessionMissing('reservation_wizard');
         }
         $this->post('/resident/reservations/service', ['service_id' => $service->id]);
-        $this->post('/resident/reservations/requirements');
+        $this->post('/resident/reservations/requirements', ['requirement_signature' => $this->requirementSignature()]);
         $inactiveSchedule = $this->schedule(['is_active' => false]);
         foreach ([null, '', 999, $inactiveSchedule->id, ['id' => 1], '1 OR 1=1'] as $value) {
             $this->post('/resident/reservations/schedule', ['schedule_id' => $value])->assertSessionHasErrors('schedule_id');
@@ -148,7 +148,7 @@ class ResidentReservationWizardTest extends TestCase
         $this->post('/resident/reservations/service', ['service_id' => $service->id]);
         $this->get('/resident/reservations/schedule')->assertRedirect(route('resident.reservations.requirements'));
         $this->post('/resident/reservations/schedule', ['schedule_id' => $schedule->id])->assertRedirect(route('resident.reservations.requirements'));
-        $this->post('/resident/reservations/requirements');
+        $this->post('/resident/reservations/requirements', ['requirement_signature' => $this->requirementSignature()]);
         $this->get('/resident/reservations/confirm')->assertRedirect(route('resident.reservations.schedule'));
         $token = $this->completeDraft($service, $schedule);
         $this->post('/resident/reservations/service', ['service_id' => $service->id])
@@ -225,7 +225,7 @@ class ResidentReservationWizardTest extends TestCase
     private function completeDraft(Service $service, Schedule $schedule): string
     {
         $this->post('/resident/reservations/service', ['service_id' => $service->id])->assertRedirect(route('resident.reservations.requirements'));
-        $this->post('/resident/reservations/requirements')->assertRedirect(route('resident.reservations.schedule'));
+        $this->post('/resident/reservations/requirements', ['requirement_signature' => $this->requirementSignature()])->assertRedirect(route('resident.reservations.schedule'));
         $this->post('/resident/reservations/schedule', ['schedule_id' => $schedule->id])->assertRedirect(route('resident.reservations.confirm'));
 
         return session('reservation_wizard.confirmation_token');

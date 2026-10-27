@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Service;
+use App\Models\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -21,13 +22,17 @@ class ServiceDocumentTemplates
         }
         $current = $service->documentTemplate()->first();
         $previous = $current?->stored_path;
+        $audit = app(ConfigurationAudit::class);
+        $old = $current ? $audit->values($current) : [];
         $name = basename(str_replace('\\', '/', $file->getClientOriginalName()));
         $name = preg_replace('/[\x00-\x1F\x7F]/u', '', $name) ?: 'Official template.'.$extension;
-        $service->documentTemplate()->updateOrCreate([], [
+        $saved = $service->documentTemplate()->updateOrCreate([], [
             'original_filename' => mb_substr($name, 0, 240), 'stored_path' => $path,
             'mime_type' => 'application/pdf',
             'file_size' => $file->getSize(), 'uploaded_by' => $adminId, 'uploaded_at' => now(),
         ]);
+
+        $audit->record(User::findOrFail($adminId), $saved, $current ? 'updated' : 'created', $old, $audit->values($saved));
 
         return $previous;
     }

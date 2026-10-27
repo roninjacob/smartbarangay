@@ -3,11 +3,13 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Enums\ReservationStatus;
+use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\FilterReservationsRequest;
 use App\Http\Requests\Admin\UpdateReservationStatusRequest;
 use App\Models\CheckinLog;
 use App\Models\Reservation;
+use App\Services\AccountEligibility;
 use App\Services\CertificatePreparationState;
 use App\Services\CheckInReservations;
 use App\Services\GeneratedReservationDocuments;
@@ -69,6 +71,8 @@ class ReservationController extends Controller
         }
 
         return view('admin.reservations.show', [
+            'residentExplanation' => $reservation->status === ReservationStatus::Rejected
+                ? $reservation->statusHistories()->where('to_status', ReservationStatus::Rejected)->orderByDesc('changed_at')->orderByDesc('id')->value('resident_message') : null,
             'checkin' => $reservation->checkinLogs()->where('verification_result', CheckinLog::ARRIVAL)->with('verifier')->first(),
             'checkinVerified' => app(CheckInReservations::class)->hasEvidence(request()->session()->get(CheckInReservations::SESSION_KEY), request()->user(), $reservation),
             ...$this->shellData('Reservation Details'), 'reservation' => $reservation,
@@ -89,6 +93,7 @@ class ReservationController extends Controller
     {
         $data = $request->validated();
         DB::transaction(function () use ($request, $reservation, $data, $tickets, $documents) {
+            app(AccountEligibility::class)->lock($request->user(), UserRole::Admin);
             $locked = Reservation::lockForUpdate()->findOrFail($reservation->id);
             $next = ReservationStatus::from($data['status']);
             if ($locked->status->value !== $data['expected_status']) {
@@ -118,7 +123,7 @@ class ReservationController extends Controller
             }
             $history = $locked->statusHistories()->create([
                 'from_status' => $previous, 'to_status' => $next, 'changed_by' => $request->user()->id,
-                'notes' => $data['notes'] ?? null, 'changed_at' => $changedAt,
+                'notes' => $data['notes'] ?? null, 'resident_message' => $next === ReservationStatus::Rejected ? $data['resident_message'] : null, 'changed_at' => $changedAt,
             ]);
             app(ReservationNotifications::class)->record($next->value, $locked, $history);
         });

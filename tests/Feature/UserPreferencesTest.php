@@ -159,7 +159,7 @@ class UserPreferencesTest extends TestCase
     {
         $this->get('/')->assertOk()->assertSee('data-bs-theme="light"', false)->assertSee('Request a Document')
             ->assertSee('Sign In')->assertSee('Register')->assertSee('Services will appear here when available.')
-            ->assertSee('Office hours have not been posted yet.')->assertDontSee('Go to Dashboard');
+            ->assertSee('Exact office address, hours, public telephone and email are being confirmed.')->assertDontSee('Go to Dashboard');
         $this->assertFalse(Schema::hasTable('public_site_settings'));
     }
 

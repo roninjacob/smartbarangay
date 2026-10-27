@@ -7,6 +7,7 @@ use App\Models\Reservation;
 use App\Models\Schedule;
 use App\Models\Service;
 use App\Models\User;
+use App\Services\ConfigurationAudit;
 use App\Support\ServiceFee;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
@@ -42,7 +43,7 @@ class ServiceFeesTest extends TestCase
     {
         $this->post('/resident/reservations/service', ['service_id' => $service->id])->assertRedirect();
         $this->get('/resident/reservations/requirements')->assertOk();
-        $this->post('/resident/reservations/requirements')->assertSessionHasNoErrors();
+        $this->post('/resident/reservations/requirements', ['requirement_signature' => $this->requirementSignature()])->assertSessionHasNoErrors();
         $this->post('/resident/reservations/schedule', ['schedule_id' => $schedule->id])->assertSessionHasNoErrors();
         $this->get('/resident/reservations/confirm')->assertOk();
 
@@ -72,7 +73,7 @@ class ServiceFeesTest extends TestCase
         $service = Service::create(['name' => 'Original', 'fee_amount' => '50.00']);
         $this->actingAs($this->user(UserRole::Admin));
         $this->post('/admin/services', ['name' => 'New', 'fee_amount' => $fee])->assertSessionHasErrors('fee_amount');
-        $this->put('/admin/services/'.$service->id, ['name' => 'Original', 'fee_amount' => $fee])->assertSessionHasErrors('fee_amount');
+        $this->put('/admin/services/'.$service->id, ['edit_revision' => app(ConfigurationAudit::class)->revision($service->fresh()), 'name' => 'Original', 'fee_amount' => $fee])->assertSessionHasErrors('fee_amount');
         $this->assertSame('50.00', $service->fresh()->fee_amount);
         $this->assertDatabaseCount('services', 1);
     }
@@ -81,12 +82,12 @@ class ServiceFeesTest extends TestCase
     {
         $service = Service::create(['name' => 'Legacy']);
         $this->actingAs($this->user(UserRole::Admin))->get('/admin/services/'.$service->id.'/edit')->assertSee('Fee setup required')->assertSee('Existing reservations retain their original fee.');
-        $this->put('/admin/services/'.$service->id, ['name' => 'Legacy'])->assertSessionHasErrors('fee_amount');
+        $this->put('/admin/services/'.$service->id, ['edit_revision' => app(ConfigurationAudit::class)->revision($service->fresh()), 'name' => 'Legacy'])->assertSessionHasErrors('fee_amount');
         $this->assertNull($service->fresh()->fee_amount);
-        $this->put('/admin/services/'.$service->id, ['name' => 'Legacy', 'fee_amount' => '0.00'])->assertSessionHasNoErrors();
+        $this->put('/admin/services/'.$service->id, ['edit_revision' => app(ConfigurationAudit::class)->revision($service->fresh()), 'name' => 'Legacy', 'fee_amount' => '0.00'])->assertSessionHasNoErrors();
         $this->actingAs($this->user());
         $this->post('/admin/services', ['name' => 'Injected', 'fee_amount' => '1.00'])->assertForbidden();
-        $this->put('/admin/services/'.$service->id, ['name' => 'Legacy', 'fee_amount' => '999.00'])->assertForbidden();
+        $this->put('/admin/services/'.$service->id, ['edit_revision' => app(ConfigurationAudit::class)->revision($service->fresh()), 'name' => 'Legacy', 'fee_amount' => '999.00'])->assertForbidden();
         $this->assertSame('0.00', $service->fresh()->fee_amount);
     }
 
@@ -104,7 +105,7 @@ class ServiceFeesTest extends TestCase
         $this->assertSame($expected, $reservation->fee_snapshot);
         $this->assertFalse($reservation->isFillable('fee_snapshot'));
         $newFee = $expected === '75.00' ? '80.00' : '75.00';
-        $this->actingAs($this->user(UserRole::Admin))->put('/admin/services/'.$service->id, ['name' => 'Clearance', 'fee_amount' => $newFee])->assertSessionHasNoErrors();
+        $this->actingAs($this->user(UserRole::Admin))->put('/admin/services/'.$service->id, ['edit_revision' => app(ConfigurationAudit::class)->revision($service->fresh()), 'name' => 'Clearance', 'fee_amount' => $newFee])->assertSessionHasNoErrors();
         $this->assertSame($expected, $reservation->fresh()->fee_snapshot);
         $this->get('/admin/reservations/'.$reservation->id)->assertSee(ServiceFee::format($expected));
         $this->actingAs($resident)->get('/resident/reservations/'.$reservation->id)->assertSee(ServiceFee::format($expected));
@@ -137,7 +138,7 @@ class ServiceFeesTest extends TestCase
         }
         $this->assertNull(session('reservation_wizard.confirmation_token'));
         $this->get('/resident/reservations/requirements')->assertSee('₱75.00')->assertSee('service fee changed');
-        $this->post('/resident/reservations/requirements')->assertSessionHasNoErrors();
+        $this->post('/resident/reservations/requirements', ['requirement_signature' => $this->requirementSignature()])->assertSessionHasNoErrors();
         $this->post('/resident/reservations/schedule', ['schedule_id' => $schedule->id]);
         $newToken = session('reservation_wizard.confirmation_token');
         $this->assertNotSame($token, $newToken);
@@ -152,7 +153,7 @@ class ServiceFeesTest extends TestCase
         $this->post('/resident/reservations/service', ['service_id' => $service->id]);
         $this->get('/resident/reservations/requirements')->assertSee('₱50.00');
         $service->update(['fee_amount' => '75.00']);
-        $this->post('/resident/reservations/requirements')->assertSessionHasErrors('reservation');
+        $this->post('/resident/reservations/requirements', ['requirement_signature' => $this->requirementSignature()])->assertSessionHasErrors('reservation');
         $this->assertFalse((bool) session('reservation_wizard.requirements_reviewed'));
     }
 

@@ -8,6 +8,7 @@ use App\Models\Reservation;
 use App\Models\Schedule;
 use App\Models\Service;
 use App\Models\User;
+use App\Services\ConfigurationAudit;
 use App\Services\QrTicketIssuer;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Artisan;
@@ -194,7 +195,7 @@ class ServiceCertificateTest extends TestCase
         $this->get($url)->assertNotFound();
         $this->travelBack();
         $url = $this->assertPrint(route('admin.services.template.print', $service));
-        $this->put(route('admin.services.update', $service), ['fee_amount' => '0.00', 'name' => $service->name,
+        $this->put(route('admin.services.update', $service), ['edit_revision' => app(ConfigurationAudit::class)->revision($service->fresh()), 'fee_amount' => '0.00', 'name' => $service->name,
             'official_template' => UploadedFile::fake()->createWithContent('Replacement.pdf', CertificatePdf::bytes('Replacement'))])->assertSessionHasNoErrors();
         $this->get($url)->assertNotFound();
         $this->get($url.'/pdf')->assertNotFound();
@@ -218,7 +219,7 @@ class ServiceCertificateTest extends TestCase
         };
         $file = $kind === 'oversized' ? UploadedFile::fake()->create('too-large.pdf', 10241, 'application/pdf')
             : UploadedFile::fake()->createWithContent('certificate.'.(in_array($kind, ['fake-pdf', 'truncated', 'no-pages', 'bad-xref']) ? 'pdf' : $kind), $contents);
-        $this->put(route('admin.services.update', $service), ['fee_amount' => '0.00', 'name' => 'Changed', 'official_template' => $file])->assertSessionHasErrors('official_template');
+        $this->put(route('admin.services.update', $service), ['edit_revision' => app(ConfigurationAudit::class)->revision($service->fresh()), 'fee_amount' => '0.00', 'name' => 'Changed', 'official_template' => $file])->assertSessionHasErrors('official_template');
         $this->assertSame($before, $service->fresh()->documentTemplate->getAttributes());
         $this->assertSame(CertificatePdf::bytes(), Storage::disk('local')->get($before['stored_path']));
         $this->assertSame('Barangay Clearance', $service->fresh()->name);
@@ -314,13 +315,13 @@ class ServiceCertificateTest extends TestCase
         try {
             file_put_contents($temporary, $png);
             $file = new UploadedFile($temporary, 'certificate.pdf', 'application/pdf', null, true);
-            $this->put(route('admin.services.update', $service), ['fee_amount' => '0.00', 'name' => $service->name, 'official_template' => $file])->assertSessionHasErrors('official_template');
+            $this->put(route('admin.services.update', $service), ['edit_revision' => app(ConfigurationAudit::class)->revision($service->fresh()), 'fee_amount' => '0.00', 'name' => $service->name, 'official_template' => $file])->assertSessionHasErrors('official_template');
         } finally {
             unlink($temporary);
         }
-        $this->put(route('admin.services.update', $service), ['fee_amount' => '0.00', 'name' => $service->name,
+        $this->put(route('admin.services.update', $service), ['edit_revision' => app(ConfigurationAudit::class)->revision($service->fresh()), 'fee_amount' => '0.00', 'name' => $service->name,
             'official_template' => UploadedFile::fake()->createWithContent('certificate.docx', CertificatePdf::bytes())])->assertSessionHasErrors('official_template');
-        $this->put(route('admin.services.update', $service), ['fee_amount' => '0.00', 'name' => $service->name,
+        $this->put(route('admin.services.update', $service), ['edit_revision' => app(ConfigurationAudit::class)->revision($service->fresh()), 'fee_amount' => '0.00', 'name' => $service->name,
             'official_template' => UploadedFile::fake()->createWithContent('certificate.pdf', preg_replace('/startxref\s+[0-9]+/', "startxref\n1", CertificatePdf::bytes()))])->assertSessionHasErrors('official_template');
         $this->assertSame($original, $service->fresh()->documentTemplate->stored_path);
         $this->assertSame(CertificatePdf::bytes(), Storage::disk('local')->get($original));

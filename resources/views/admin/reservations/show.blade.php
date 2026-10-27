@@ -9,6 +9,21 @@
         @if($reservation->status->canPrepareDocument() || $reservation->document?->mime_type === 'application/pdf')<a href="#certificate-heading">Certificate</a>@endif
         <a href="#processing-heading">Process request</a>
     </nav>
+    <div class="request-next-step mb-4">
+        <strong>Current task</strong>
+        @if($residentExplanation)<p><strong>Explanation shared with the Resident:</strong> {{ $residentExplanation }}</p>@endif
+        <p>{{ match($reservation->status) {
+            \App\Enums\ReservationStatus::Pending => 'Review the submitted requirements, then move this request to Under Review.',
+            \App\Enums\ReservationStatus::UnderReview => 'Check the recorded information and supporting files before approving or rejecting.',
+            \App\Enums\ReservationStatus::Approved => 'Review and finalize the certificate, or record manual preparation before marking Ready for Pickup.',
+            \App\Enums\ReservationStatus::ReadyForPickup => 'Review arrival and payment details, then mark Completed when the transaction is finished.',
+            default => 'This request is closed. Its recorded information remains available below.',
+        } }}</p>
+        @if($reservation->status === \App\Enums\ReservationStatus::Approved)<a class="btn btn-primary" href="#certificate-heading">Prepare certificate</a>
+        @elseif($reservation->status === \App\Enums\ReservationStatus::ReadyForPickup && $completionBlockReason)<a class="btn btn-primary" href="#payment-heading">Review payment</a>
+        @else<a class="btn btn-outline-primary" href="#processing-heading">Review processing actions</a>
+        @endif
+    </div>
     @if($errors->any())<div class="alert alert-danger" role="alert"><strong>Please check your request.</strong><ul class="mb-0">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
     <section class="card dashboard-panel reservation-panel reservation-detail" aria-labelledby="admin-request-heading">
         <div class="reservation-detail-header"><div><span class="reservation-step-label">REQUEST #{{ $reservation->id }}</span><h2 id="admin-request-heading">{{ $reservation->service->name }}</h2></div><x-reservation-status :status="$reservation->status"/></div>
@@ -26,11 +41,10 @@
                 <div><dt>QR ticket issued</dt><dd>{{ $reservation->qrTicket->generated_at->timezone('Asia/Manila')->format('F j, Y, g:i A') }}</dd></div>
             @endif
         </dl>
-        @include('reservations.payment-status', ['admin' => true])
         @include('reservations.appointment-note')
         @include('resident.reservations.historical-requirements')
         @include('resident.reservations.document-information')
-        @if($documentPreviewAvailable)<a class="btn btn-outline-primary mt-3" href="{{ route('admin.reservations.document-preview.show', $reservation) }}">Preview Document</a>@endif
+        @if($documentPreviewAvailable && ! $reservation->status->canPrepareDocument())<a class="btn btn-outline-primary mt-3" href="{{ route('admin.reservations.document-preview.show', $reservation) }}">Preview Document</a>@endif
         @include('resident.reservations.attachments', ['attachmentRoute' => 'admin.reservations.attachments.download'])
     </section>
     @if($reservation->qrTicket)
@@ -49,6 +63,9 @@
     @endif
     @include('admin.reservations.document-preparation')
     @include('admin.reservations.check-in')
+    <section class="card dashboard-panel reservation-panel mt-4" aria-labelledby="payment-heading">
+        @include('reservations.payment-status', ['admin' => true])
+    </section>
     <section class="card dashboard-panel reservation-panel mt-4" aria-labelledby="processing-heading">
         <h2 id="processing-heading">Process this request</h2>
         @if($completionBlockReason)
@@ -75,6 +92,11 @@
                     </div>
                     <noscript><p class="app-note mt-3">Before marking Ready for Pickup, confirm the action below. If no prepared certificate exists, a reason is required.</p><div class="form-check"><input class="form-check-input" type="checkbox" id="confirm-ready-noscript" name="confirm_ready" value="1"><label class="form-check-label" for="confirm-ready-noscript">Mark this request as Ready for Pickup?</label></div></noscript>
                 @endif
+                <div class="mt-3" data-rejection-message>
+                    <label class="form-label" for="resident-message">Resident explanation for rejection</label>
+                    <textarea id="resident-message" name="resident_message" class="form-control" rows="3" maxlength="1000" aria-describedby="resident-message-help">{{ old('resident_message') }}</textarea>
+                    <p id="resident-message-help" class="form-text">Required when rejecting. The Resident can read this explanation. Do not include internal notes or another person's private information.</p>
+                </div>
                 <label class="form-label mt-3" for="processing-notes">Processing note</label>
                 <textarea class="form-control" id="processing-notes" name="notes" rows="3" maxlength="2000" aria-describedby="notes-help" data-reservation-notes>{{ old('notes') }}</textarea>
                 <p id="notes-help" class="form-text">A reason is required for rejection or when marking Ready for Pickup without a prepared certificate. Notes are visible to Admin users.</p>

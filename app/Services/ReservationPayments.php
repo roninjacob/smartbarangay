@@ -47,6 +47,7 @@ class ReservationPayments
         abort_unless($admin->role === UserRole::Admin && $admin->is_active && $admin->hasVerifiedEmail(), 403);
         try {
             return DB::transaction(function () use ($reservation, $admin) {
+                $admin = app(AccountEligibility::class)->lock($admin, UserRole::Admin);
                 $locked = Reservation::lockForUpdate()->findOrFail($reservation->id);
                 $status = $this->status($locked);
                 if ($locked->payment) {

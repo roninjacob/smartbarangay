@@ -5,13 +5,7 @@
         <p class="text-secondary">{{ $documents ? 'Saved personalized PDF finalizations, based on generation time. These counts do not prove printing, release or current file availability.' : 'Explicit Admin-confirmed arrivals, based on check-in time. Ordinary QR verification is excluded. Missing check-ins do not prove a no-show.' }} Philippine time (Asia/Manila).</p>
         <p class="text-secondary">Appointment reporting is not included. Current schedules can change and are not historical appointment snapshots.</p>
         @if($errors->any())<div class="alert alert-danger" role="alert">Please correct the filters. No report totals are shown.<ul class="mb-0">@foreach($errors->all() as $message)<li>{{ $message }}</li>@endforeach</ul></div>@endif
-        <form method="GET" action="{{ route('admin.reports.'.$kind) }}" class="row g-3" data-event-report-filters>
-            <div class="col-12 col-md-6 col-xl-3"><label for="event-period" class="form-label">Reporting period</label><select class="form-select" id="event-period" name="period">@foreach($modes as $value => $label)<option value="{{ $value }}" @selected(old('period', $filters['period']) === $value)>{{ $label }}</option>@endforeach</select></div>
-            <div class="col-12 col-md-6 col-xl-3"><label for="event-date" class="form-label">Specific date</label><input class="form-control" id="event-date" name="date" type="date" value="{{ old('date', $filters['date'] ?? '') }}"><small class="text-secondary">Used with Specific Date.</small></div>
-            <div class="col-12 col-sm-6 col-xl-3"><label for="event-start" class="form-label">Range start</label><input class="form-control" id="event-start" name="start" type="date" value="{{ old('start', $filters['start'] ?? '') }}"></div>
-            <div class="col-12 col-sm-6 col-xl-3"><label for="event-end" class="form-label">Range end (inclusive)</label><input class="form-control" id="event-end" name="end" type="date" value="{{ old('end', $filters['end'] ?? '') }}"></div>
-            <div class="col-12 report-filter-actions"><button class="btn btn-primary" type="submit">Apply filters</button><a class="btn btn-outline-secondary" href="{{ route('admin.reports.'.$kind) }}">Reset to This Month</a><span class="text-secondary">Weeks run Monday&ndash;Sunday. Custom range includes the end date.</span></div>
-        </form>
+        @include('admin.reports.partials.filters', ['reportKind' => $kind, 'filterPrefix' => 'event'])
     </section>
     @if($reportError)<div class="alert alert-warning mt-3" role="alert">{{ $reportError }}</div>@endif
     @if($report)

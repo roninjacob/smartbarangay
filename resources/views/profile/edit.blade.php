@@ -10,6 +10,10 @@
 @if($errors->any())
     <div class="alert alert-danger" role="alert"><strong>Please check your profile.</strong><ul class="mb-0 mt-2">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>
 @endif
+<p class="app-note mb-4">Each section saves separately. Save your changes before moving to another section.</p>
+@if($resumeReservation)
+    <div class="request-next-step mb-4"><strong>Continue your document request</strong><p>Save your profile changes, then return to review the information for your selected service.</p><a class="btn btn-primary" href="{{ route('resident.reservations.requirements') }}">Return to your request</a></div>
+@endif
 <div class="row g-4 profile-settings">
     <div class="col-lg-4">
         <section class="profile-card" aria-labelledby="picture-heading">
@@ -25,7 +29,7 @@
             <form method="POST" action="{{ route($profileRoutePrefix.'.picture.update') }}" enctype="multipart/form-data" data-profile-picture-form data-service-submit>
                 @csrf
                 <label for="profile_picture" class="form-label">Choose a picture</label>
-                <input type="file" id="profile_picture" name="profile_picture" class="form-control @error('profile_picture') is-invalid @enderror" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" required aria-describedby="picture-help picture-feedback @error('profile_picture') picture-error @enderror" @error('profile_picture') aria-invalid="true" @enderror>
+                <input type="file" data-friendly-upload id="profile_picture" name="profile_picture" class="form-control @error('profile_picture') is-invalid @enderror" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" required aria-describedby="picture-help picture-feedback @error('profile_picture') picture-error @enderror" @error('profile_picture') aria-invalid="true" @enderror>
                 @error('profile_picture')<div id="picture-error" class="invalid-feedback">{{ $message }}</div>@enderror
                 <p id="picture-help" class="form-text">JPG, JPEG, PNG or WebP. Up to 2 MB and 4096 × 4096 pixels.</p>
                 <p id="picture-feedback" class="form-text" aria-live="polite" data-picture-feedback></p>
@@ -63,7 +67,7 @@
                     @error('contact_number')<div id="contact-error" class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
                 <div class="mb-4">
-                    <label for="address" class="form-label">Address <span class="text-secondary fw-normal">(optional)</span></label>
+                    <label for="address" class="form-label">Full address for documents <span class="text-secondary fw-normal">(optional)</span></label>
                     <textarea id="address" name="address" class="form-control @error('address') is-invalid @enderror" rows="3" maxlength="1000" autocomplete="street-address" @error('address') aria-invalid="true" aria-describedby="address-error" @enderror>{{ old('address', $user->address) }}</textarea>
                     @error('address')<div id="address-error" class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>

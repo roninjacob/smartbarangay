@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Resident;
 
 use App\Enums\ReservationStatus;
+use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Resident\CancelReservationRequest;
+use App\Services\AccountEligibility;
 use App\Services\ReservationNotifications;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
@@ -15,6 +17,7 @@ class ReservationCancellationController extends Controller
     public function __invoke(CancelReservationRequest $request, string $reservation): RedirectResponse
     {
         DB::transaction(function () use ($request, $reservation) {
+            app(AccountEligibility::class)->lock($request->user(), UserRole::Resident);
             // Same reservation row lock as Admin processing; whichever action wins determines the next allowed action.
             $owned = $request->user()->reservations()->whereKey($reservation)->lockForUpdate()->firstOrFail();
             if (! $owned->status->canBeCancelledByResident()) {

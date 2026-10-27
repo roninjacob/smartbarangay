@@ -120,7 +120,7 @@ class AutomationAuditTest extends TestCase
     {
         $admin = $this->admin();
         $service = Service::create(['name' => 'Clearance', 'description' => 'Original', 'fee_amount' => '10.00', 'is_active' => true]);
-        $this->actingAs($admin)->put(route('admin.services.update', $service), ['name' => 'Updated clearance', 'description' => 'New', 'fee_amount' => '25.50',
+        $this->actingAs($admin)->put(route('admin.services.update', $service), ['edit_revision' => app(ConfigurationAudit::class)->revision($service->fresh()), 'name' => 'Updated clearance', 'description' => 'New', 'fee_amount' => '25.50',
             'old_values' => ['fee_amount' => '999.00'], 'user_id' => 999, 'password' => 'not-audit-data'])->assertRedirect();
         $log = AuditLog::sole();
         $this->assertSame($admin->id, $log->user_id);
@@ -135,7 +135,7 @@ class AutomationAuditTest extends TestCase
     {
         $this->actingAs($this->admin());
         $schedule = Schedule::create(['date' => '2026-12-01', 'start_time' => '09:00:00', 'end_time' => '10:00:00', 'capacity' => 5, 'is_active' => true]);
-        $this->put(route('admin.schedules.update', $schedule), ['date' => '2026-12-01', 'start_time' => '09:00', 'end_time' => '10:00', 'capacity' => 8])->assertRedirect();
+        $this->put(route('admin.schedules.update', $schedule), ['edit_revision' => app(ConfigurationAudit::class)->revision($schedule->fresh()), 'date' => '2026-12-01', 'start_time' => '09:00', 'end_time' => '10:00', 'capacity' => 8])->assertRedirect();
         $log = AuditLog::sole();
         $this->assertSame('updated_schedule', $log->action);
         $this->assertSame(5, $log->old_values['capacity']);
@@ -162,7 +162,7 @@ class AutomationAuditTest extends TestCase
                 throw new RuntimeException('Simulated audit failure');
             }
         });
-        $this->put(route('admin.services.update', $service), ['name' => 'Changed', 'fee_amount' => '20.00'])->assertStatus(500);
+        $this->put(route('admin.services.update', $service), ['edit_revision' => app(ConfigurationAudit::class)->revision($service->fresh()), 'name' => 'Changed', 'fee_amount' => '20.00'])->assertStatus(500);
         $this->assertSame('Clearance', $service->fresh()->name);
         $this->assertSame('10.00', $service->fresh()->fee_amount);
         $this->assertDatabaseCount('audit_logs', 0);
@@ -172,8 +172,8 @@ class AutomationAuditTest extends TestCase
     {
         $this->actingAs($this->admin());
         $service = Service::create(['name' => 'Clearance', 'description' => null, 'fee_amount' => '10.00', 'is_active' => true]);
-        $this->put(route('admin.services.update', $service), ['name' => 'Clearance', 'description' => null, 'fee_amount' => '10.00'])->assertSessionHasNoErrors();
-        $this->put(route('admin.services.update', $service), ['name' => '', 'fee_amount' => '-1'])->assertSessionHasErrors();
+        $this->put(route('admin.services.update', $service), ['edit_revision' => app(ConfigurationAudit::class)->revision($service->fresh()), 'name' => 'Clearance', 'description' => null, 'fee_amount' => '10.00'])->assertSessionHasNoErrors();
+        $this->put(route('admin.services.update', $service), ['edit_revision' => app(ConfigurationAudit::class)->revision($service->fresh()), 'name' => '', 'fee_amount' => '-1'])->assertSessionHasErrors();
         $this->assertDatabaseCount('audit_logs', 0);
     }
 

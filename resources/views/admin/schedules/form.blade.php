@@ -1,13 +1,14 @@
 @extends('layouts.authenticated')
 @section('dashboard')
-<a href="{{ route('admin.schedules.index') }}" class="service-back-link">&larr; Back to schedules</a>
+<a href="{{ route('admin.schedules.index', $returnContext) }}" class="service-back-link">&larr; Back to schedules</a>
 <div class="row g-4">
     <div class="col-xl-8"><section class="dashboard-panel service-form-panel" aria-labelledby="schedule-form-heading">
         <div class="dashboard-panel-heading"><div><h2 id="schedule-form-heading">{{ $schedule->exists ? 'Appointment slot details' : 'Add an appointment slot' }}</h2><p class="panel-description">Set a date, time range and capacity for Barangay Calayo.</p></div></div>
         <form method="POST" action="{{ $schedule->exists ? route('admin.schedules.update', $schedule) : route('admin.schedules.store') }}" class="service-form" data-service-submit>
             @csrf
-            @if($schedule->exists) @method('PUT') @endif
-            @if($errors->any())<div class="alert alert-danger" role="alert">Please correct the highlighted fields and try again.</div>@endif
+            @include('admin.schedules.return-context')
+            @if($schedule->exists) @method('PUT')<input type="hidden" name="edit_revision" value="{{ is_string(old('edit_revision')) ? old('edit_revision') : app(\App\Services\ConfigurationAudit::class)->revision($schedule) }}"> @endif
+            @if($errors->any())<div class="alert alert-danger" role="alert">Please correct the highlighted fields and try again. @error('edit_revision')<p class="mb-2 mt-2">{{ $message }}</p><a class="btn btn-outline-primary" href="{{ route('admin.schedules.edit', ['schedule' => $schedule, 'return_filters' => $returnContext]) }}">Reload current details</a>@enderror</div>@endif
             @if($schedule->reservations_exists ?? false)<p class="alert alert-info">This schedule has linked reservations. Its date and times are locked; capacity and activation remain manageable.</p>@endif
             <div class="mb-4">
                 <label for="schedule-date" class="form-label">Appointment Date <span class="service-required">(required)</span></label>
@@ -26,7 +27,7 @@
                 <div class="form-text" id="schedule-capacity-help">Set the maximum capacity for this slot. Minimum 1.</div>
                 @error('capacity')<div class="invalid-feedback" id="schedule-capacity-error">{{ $message }}</div>@enderror
             </div>
-            <div class="service-form-actions"><button type="submit" class="btn btn-primary" data-saving-label="Saving…">{{ $schedule->exists ? 'Save Changes' : 'Create Schedule' }}</button><a class="btn btn-outline-secondary" href="{{ route('admin.schedules.index') }}">Cancel</a></div>
+            <div class="service-form-actions"><button type="submit" class="btn btn-primary" data-saving-label="Saving…">{{ $schedule->exists ? 'Save Changes' : 'Create Schedule' }}</button><a class="btn btn-outline-secondary" href="{{ route('admin.schedules.index', $returnContext) }}">Cancel</a></div>
         </form>
     </section></div>
     <div class="col-xl-4"><aside class="dashboard-panel service-form-note" aria-labelledby="schedule-note-heading"><span class="service-empty-icon"><x-app-icon name="calendar"/></span><h2 id="schedule-note-heading">Schedule availability</h2><p>{{ $schedule->exists ? 'Activate or deactivate this slot from the schedules list.' : 'New schedules start active. You can deactivate them from the schedules list when needed.' }}</p>@if($schedule->exists)<span @class(['service-status', 'is-active' => $schedule->is_active])>{{ $schedule->is_active ? 'Active' : 'Inactive' }}</span>@endif<p class="mb-0 mt-3">Deactivation preserves existing records. Schedules linked to reservations cannot be deleted.</p></aside></div>

@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\UserRole;
 use App\Models\Reservation;
 use App\Models\ReservationDocument;
 use App\Models\Service;
@@ -40,6 +41,7 @@ class GeneratedReservationDocuments
         $path = null;
         try {
             return DB::transaction(function () use ($reservation, $admin, $previewToken, &$path) {
+                $admin = app(AccountEligibility::class)->lock($admin, UserRole::Admin);
                 $service = Service::lockForUpdate()->findOrFail($reservation->service_id);
                 $record = Reservation::lockForUpdate()->findOrFail($reservation->id);
                 abort_unless($record->status->canPrepareDocument(), 403);

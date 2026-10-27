@@ -8,6 +8,7 @@ use App\Models\Reservation;
 use App\Models\Schedule;
 use App\Models\Service;
 use App\Models\User;
+use App\Services\ConfigurationAudit;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Artisan;
@@ -43,6 +44,8 @@ class ReservationGapClosureTest extends TestCase
         [$user, $service, $schedule, $token] = $this->draft();
         $required = $service->serviceRequirements()->create(['name' => 'Valid ID']);
         $optional = $service->serviceRequirements()->create(['name' => 'Optional form', 'is_required' => false]);
+        // Review the completed fixture checklist before testing upload behavior.
+        $token = $this->prepare($service, $schedule);
         $file = $this->png('Resident-valid-ID-with-a-long-safe-display-name.png');
         $this->get('/resident/reservations/confirm')->assertSee('multipart/form-data', false)->assertSee('Valid ID')->assertSee('Optional');
         $this->post('/resident/reservations', ['confirmation_token' => $token, 'attachments' => [$required->id => $file]])->assertSessionHas('status');
@@ -76,6 +79,8 @@ class ReservationGapClosureTest extends TestCase
     {
         [$user, $service, $schedule, $token] = $this->draft();
         $requirement = $service->serviceRequirements()->create(['name' => 'Required ID']);
+        // Review the completed fixture checklist before testing upload behavior.
+        $token = $this->prepare($service, $schedule);
         $file = match ($kind) {
             'missing' => null,
             'extension' => $this->png('id.exe'),
@@ -109,6 +114,8 @@ class ReservationGapClosureTest extends TestCase
     {
         [$user, $service, $schedule, $token] = $this->draft();
         $requirement = $service->serviceRequirements()->create(['name' => 'ID']);
+        // Review the completed fixture checklist before testing upload behavior.
+        $token = $this->prepare($service, $schedule);
         $this->post('/resident/reservations', ['confirmation_token' => $token, 'attachments' => [$requirement->id => $this->png()]])->assertSessionHas('status');
         $reservation = Reservation::sole();
         $attachment = $reservation->attachments()->sole();
@@ -144,6 +151,8 @@ class ReservationGapClosureTest extends TestCase
     {
         [$user, $service, $schedule, $token] = $this->draft();
         $required = $service->serviceRequirements()->create(['name' => 'Required']);
+        // Review the completed fixture checklist before testing upload behavior.
+        $token = $this->prepare($service, $schedule);
         DB::statement("CREATE TRIGGER fail_write BEFORE INSERT ON $table BEGIN SELECT RAISE(ABORT, 'Simulated failure'); END");
         $this->withoutExceptionHandling();
         try {
@@ -163,6 +172,8 @@ class ReservationGapClosureTest extends TestCase
         [$user, $service, $schedule, $token] = $this->draft();
         $first = $service->serviceRequirements()->create(['name' => 'First']);
         $second = $service->serviceRequirements()->create(['name' => 'Second']);
+        // Review the completed fixture checklist before testing upload behavior.
+        $token = $this->prepare($service, $schedule);
         $disk = Storage::disk('local');
         $diskMock = \Mockery::mock($disk)->makePartial();
         Storage::shouldReceive('disk')->with('local')->andReturn($diskMock);
@@ -229,10 +240,10 @@ class ReservationGapClosureTest extends TestCase
         $this->post('/resident/reservations', ['confirmation_token' => $newToken])->assertSessionHas('status');
         $this->actingAs($this->user(UserRole::Admin));
         $data = ['date' => '2026-11-01', 'start_time' => '09:00', 'end_time' => '10:00', 'capacity' => 1];
-        $this->put(route('admin.schedules.update', $schedule), $data)->assertSessionHasErrors('capacity');
+        $this->put(route('admin.schedules.update', $schedule), ['edit_revision' => app(ConfigurationAudit::class)->revision($schedule->fresh()), ...$data])->assertSessionHasErrors('capacity');
         $this->assertSame(2, $schedule->fresh()->capacity);
         $this->get('/admin/schedules')->assertSee('2 occupied')->assertSee('0 remaining');
-        $this->put(route('admin.schedules.update', $schedule), [...$data, 'capacity' => 2])->assertSessionHas('status');
+        $this->put(route('admin.schedules.update', $schedule), ['edit_revision' => app(ConfigurationAudit::class)->revision($schedule->fresh()), ...$data, 'capacity' => 2])->assertSessionHas('status');
     }
 
     public function test_legacy_reservation_details_are_preserved(): void
@@ -263,7 +274,7 @@ class ReservationGapClosureTest extends TestCase
     private function prepare(Service $service, Schedule $schedule): string
     {
         $this->post('/resident/reservations/service', ['service_id' => $service->id])->assertRedirect();
-        $this->post('/resident/reservations/requirements')->assertRedirect();
+        $this->post('/resident/reservations/requirements', ['requirement_signature' => $this->requirementSignature()])->assertRedirect();
         $this->post('/resident/reservations/schedule', ['schedule_id' => $schedule->id])->assertRedirect(route('resident.reservations.confirm'));
 
         return session('reservation_wizard.confirmation_token');

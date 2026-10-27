@@ -3,8 +3,10 @@
 @include('resident.reservations.requirements-list')
 <p><strong>Service Fee:</strong> {{ \App\Support\ServiceFee::format($service->fee_amount) }}</p>
 <p class="reservation-notice">Upload a file for each required item on the final confirmation page. Optional files may be left empty. Accepted: PDF, JPG/JPEG or PNG, up to 5 MB per file.</p>
-<form method="POST" action="{{ route('resident.reservations.requirements.review') }}" data-service-submit>
+<form method="POST" action="{{ route('resident.reservations.requirements.review') }}" data-service-submit data-unsaved-document-form>
     @csrf
+    <input type="hidden" name="requirement_signature" value="{{ $requirementSignature }}">
+    <p class="form-text">Continue to save your document answers before leaving this step. Unsaved changes will be lost if you open Profile / Account Settings.</p>
     @include('resident.reservations.document-form')
     <div class="reservation-actions"><a href="{{ route('resident.reservations.create') }}" class="btn btn-outline-secondary">Change service</a><button class="btn btn-primary" type="submit" @disabled(!empty($missingProfileFields))>Continue to schedules</button></div>
 </form>

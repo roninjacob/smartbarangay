@@ -182,7 +182,7 @@ class ResidentDemographicProfileTest extends TestCase
         }
         $schedule = Schedule::create(['date' => '2027-01-01', 'start_time' => '09:00:00', 'end_time' => '10:00:00', 'capacity' => 5]);
         $this->post(route('resident.reservations.service'), ['service_id' => $service->id])->assertRedirect();
-        $this->post(route('resident.reservations.requirements'), ['document_signature' => app(ReservationDocumentInformation::class)->signature($template->load('fields'))])->assertRedirect();
+        $this->post(route('resident.reservations.requirements'), ['requirement_signature' => $this->requirementSignature(), 'document_signature' => app(ReservationDocumentInformation::class)->signature($template->load('fields'))])->assertRedirect();
         $this->post(route('resident.reservations.schedule.select'), ['schedule_id' => $schedule->id])->assertRedirect();
         $this->post(route('resident.reservations.store'), ['confirmation_token' => session('reservation_wizard.confirmation_token'), 'resident_civil_status' => 'Spoofed'])->assertRedirect(route('resident.home'));
         $reservation = Reservation::sole();
@@ -228,7 +228,7 @@ class ResidentDemographicProfileTest extends TestCase
             ->assertSee('Missing: Civil status.')->assertSee('type="submit" disabled', false);
         $this->assertSame(['Civil status'], $page->viewData('missingProfileFields'));
         $signature = app(ReservationDocumentInformation::class)->signature($template->load('fields'));
-        $this->from(route('resident.reservations.requirements'))->post(route('resident.reservations.requirements.review'), ['document_signature' => $signature])
+        $this->from(route('resident.reservations.requirements'))->post(route('resident.reservations.requirements.review'), ['requirement_signature' => $this->requirementSignature(), 'document_signature' => $signature])
             ->assertSessionHasErrors('document_answers.'.$field->id);
         $this->assertDatabaseCount('reservations', 0);
         $this->get(route('resident.profile.edit'))->assertOk()->assertSee('Return to document form');
@@ -236,7 +236,7 @@ class ResidentDemographicProfileTest extends TestCase
         $page = $this->get(route('resident.reservations.requirements'))->assertOk()->assertSee('Single')
             ->assertDontSee('Complete the profile information required for this document.');
         $this->assertSame([], $page->viewData('missingProfileFields'));
-        $this->post(route('resident.reservations.requirements.review'), ['document_signature' => $signature])
+        $this->post(route('resident.reservations.requirements.review'), ['requirement_signature' => $this->requirementSignature(), 'document_signature' => $signature])
             ->assertRedirect(route('resident.reservations.schedule'));
         $this->get(route('resident.home'))->assertOk()->assertDontSee('Save resident profile');
     }
@@ -247,7 +247,7 @@ class ResidentDemographicProfileTest extends TestCase
         $this->actingAs($this->resident)->post(route('resident.reservations.service'), ['service_id' => $service->id]);
         $page = $this->get(route('resident.reservations.requirements'))->assertOk();
         $this->assertSame([], $page->viewData('missingProfileFields'));
-        $this->post(route('resident.reservations.requirements.review'), [
+        $this->post(route('resident.reservations.requirements.review'), ['requirement_signature' => $this->requirementSignature(),
             'document_signature' => app(ReservationDocumentInformation::class)->signature($template->load('fields')),
         ])->assertRedirect(route('resident.reservations.schedule'));
     }

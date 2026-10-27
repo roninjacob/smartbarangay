@@ -7,6 +7,8 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\FilterUsersRequest;
 use App\Http\Requests\Admin\UpdateUserStatusRequest;
 use App\Models\User;
+use App\Services\AccountEligibility;
+use App\Services\ConfigurationAudit;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
@@ -47,14 +49,18 @@ class UserController extends Controller
     public function updateStatus(UpdateUserStatusRequest $request, User $user): RedirectResponse
     {
         $data = $request->validated();
-        DB::transaction(function () use ($user, $data) {
+        DB::transaction(function () use ($request, $user, $data) {
+            app(AccountEligibility::class)->lock($request->user(), UserRole::Admin);
             $resident = User::where('role', UserRole::Resident->value)->lockForUpdate()->findOrFail($user->id);
             if ($resident->is_active !== (bool) $data['expected_is_active']) {
                 throw ValidationException::withMessages(['is_active' => 'This account status has changed. Review the current status before updating.']);
             }
             // Authorization fields stay guarded against mass assignment. Only this approved action may change active status.
+            $audit = app(ConfigurationAudit::class);
+            $old = $audit->values($resident);
             $resident->is_active = (bool) $data['is_active'];
             $resident->save();
+            $audit->record($request->user(), $resident, 'updated', $old, $audit->values($resident));
         });
 
         return to_route('admin.users.show', $user)->with('status', $data['is_active'] ? 'Resident account activated.' : 'Resident account deactivated.');

@@ -2,8 +2,10 @@
 
 namespace App\Services;
 
+use App\Enums\UserRole;
 use App\Models\DocumentTemplate;
 use App\Models\Service;
+use App\Models\User;
 use Closure;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -14,6 +16,7 @@ class DocumentTemplateConfiguration
     public function create(Service $service, array $data, int $admin): void
     {
         DB::transaction(function () use ($service, $data, $admin) {
+            app(AccountEligibility::class)->lock($admin, UserRole::Admin);
             $locked = Service::lockForUpdate()->findOrFail($service->id);
             if ($locked->dynamicDocumentTemplate()->exists()) {
                 throw ValidationException::withMessages(['template' => 'A configuration already exists for this service.']);
@@ -27,6 +30,8 @@ class DocumentTemplateConfiguration
             $template->forceFill(['service_id' => $locked->id, 'service_document_template_id' => $pdf->id,
                 'source_revision' => $pdf->revision(), 'source_content_hash' => app(ReservationDocumentSource::class)->current($locked)['hash'], 'source_filename' => $pdf->original_filename,
                 'version' => 1, 'is_active' => $data['is_active'], 'created_by' => $admin])->save();
+            $audit = app(ConfigurationAudit::class);
+            $audit->record(User::findOrFail($admin), $template, 'created', [], $audit->values($template));
         });
     }
 
@@ -49,11 +54,15 @@ class DocumentTemplateConfiguration
     public function mutate(Service $service, int $version, Closure $change): void
     {
         DB::transaction(function () use ($service, $version, $change) {
+            abort_unless(auth()->user(), 403);
+            app(AccountEligibility::class)->lock(auth()->user(), UserRole::Admin);
             Service::lockForUpdate()->findOrFail($service->id);
             $template = $service->dynamicDocumentTemplate()->lockForUpdate()->firstOrFail();
             if ($template->version !== $version) {
                 throw ValidationException::withMessages(['template' => 'This configuration has changed. Reload it before saving.']);
             }
+            $audit = app(ConfigurationAudit::class);
+            $old = $audit->values($template);
             $change($template);
             if ($template->matchesCurrentPdf()) {
                 $source = app(ReservationDocumentSource::class)->current($template->service);
@@ -62,6 +71,8 @@ class DocumentTemplateConfiguration
             }
             $template->version++;
             $template->save();
+            abort_unless(auth()->user() instanceof User, 403);
+            $audit->record(auth()->user(), $template, 'updated', $old, $audit->values($template));
         });
     }
 }

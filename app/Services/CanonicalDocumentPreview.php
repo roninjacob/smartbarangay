@@ -30,6 +30,7 @@ class CanonicalDocumentPreview
         $path = null;
         try {
             return DB::transaction(function () use ($reservation, $user, &$path) {
+                $user = app(AccountEligibility::class)->lock($user, $user->role);
                 Service::lockForUpdate()->findOrFail($reservation->service_id);
                 $record = Reservation::lockForUpdate()->findOrFail($reservation->id);
                 $data = app(ReservationDocumentPreview::class)->data($record);

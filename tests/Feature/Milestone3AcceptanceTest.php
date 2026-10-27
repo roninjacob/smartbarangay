@@ -105,7 +105,7 @@ class Milestone3AcceptanceTest extends TestCase
         $schedule = Schedule::create(['date' => '2026-10-26', 'start_time' => '09:00:00', 'end_time' => '10:00:00', 'capacity' => 5, 'is_active' => true]);
         $this->post(route('resident.reservations.service'), ['service_id' => $service->id])->assertRedirect();
         $this->get(route('resident.reservations.requirements'))->assertOk()->assertSee($occupation);
-        $this->post(route('resident.reservations.requirements.review'), [
+        $this->post(route('resident.reservations.requirements.review'), ['requirement_signature' => $this->requirementSignature(),
             'document_signature' => app(ReservationDocumentInformation::class)->signature($template->load('fields')),
         ])->assertRedirect(route('resident.reservations.schedule'));
         $this->post(route('resident.reservations.schedule.select'), ['schedule_id' => $schedule->id])->assertRedirect();

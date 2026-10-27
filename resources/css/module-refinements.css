@@ -104,3 +104,11 @@
     .civic-ui.civic-refined .app-topbar { gap:8px; }
     .civic-ui.civic-refined .app-page-heading { padding:18px 16px; }
 }
+
+/* Task guidance stays separate from historical detail and business actions. */
+.civic-ui.civic-refined .request-next-step { overflow-wrap:anywhere; padding:22px; border:1px solid var(--border-color); border-left:4px solid var(--civic-blue); border-radius:16px; background:linear-gradient(110deg,var(--sb-soft),var(--surface)); margin-top:22px; }
+.civic-ui.civic-refined .request-next-step>strong { font-size:16px; }
+.civic-ui.civic-refined .request-next-step>p { margin:10px 0 16px; color:var(--muted-text); line-height:1.7; }
+.civic-ui.civic-refined .readiness-label { display:inline-block; padding:7px 11px; border-radius:10px; background:var(--sb-soft); color:var(--main-text); font-size:12px; }
+.civic-ui.civic-refined .request-filters input[type=date] { max-width:100%; min-width:0; }
+@media(max-width:575.98px) { .civic-ui.civic-refined .request-next-step { padding:18px; } .civic-ui.civic-refined .request-filters .btn { min-height:44px; } }

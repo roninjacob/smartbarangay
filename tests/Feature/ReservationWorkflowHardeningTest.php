@@ -8,6 +8,7 @@ use App\Models\Reservation;
 use App\Models\Schedule;
 use App\Models\Service;
 use App\Models\User;
+use App\Services\ConfigurationAudit;
 use App\Services\ReservationFileUploads;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
@@ -52,7 +53,7 @@ class ReservationWorkflowHardeningTest extends TestCase
     private function prepare(): string
     {
         $this->post(route('resident.reservations.service'), ['service_id' => $this->service->id])->assertRedirect();
-        $this->post(route('resident.reservations.requirements'))->assertRedirect();
+        $this->post(route('resident.reservations.requirements'), ['requirement_signature' => $this->requirementSignature()])->assertRedirect();
         $this->post(route('resident.reservations.schedule.select'), ['schedule_id' => $this->schedule->id])->assertRedirect(route('resident.reservations.confirm'));
 
         return session('reservation_wizard.confirmation_token');
@@ -66,7 +67,7 @@ class ReservationWorkflowHardeningTest extends TestCase
         $exact = Schedule::create(['date' => '2026-11-01', 'start_time' => '00:30:00', 'end_time' => '01:30:00', 'capacity' => 5]);
         $future = Schedule::create(['date' => '2026-11-01', 'start_time' => '00:30:01', 'end_time' => '02:00:00', 'capacity' => 5]);
         $this->post(route('resident.reservations.service'), ['service_id' => $this->service->id]);
-        $this->post(route('resident.reservations.requirements'));
+        $this->post(route('resident.reservations.requirements'), ['requirement_signature' => $this->requirementSignature()]);
         $response = $this->get(route('resident.reservations.schedule'))->assertOk();
         $ids = $response->viewData('schedules')->modelKeys();
         $this->assertNotContains($past->id, $ids);
@@ -182,10 +183,10 @@ class ReservationWorkflowHardeningTest extends TestCase
         $this->actingAs($admin);
         $original = ['date' => '2026-11-01', 'start_time' => '09:00', 'end_time' => '10:00', 'capacity' => 10];
         foreach (['date' => '2026-11-02', 'start_time' => '08:30', 'end_time' => '10:30'] as $key => $value) {
-            $this->put(route('admin.schedules.update', $this->schedule), array_replace($original, [$key => $value]))->assertSessionHasErrors('date');
+            $this->put(route('admin.schedules.update', $this->schedule), array_replace($original, [$key => $value, 'edit_revision' => app(ConfigurationAudit::class)->revision($this->schedule->fresh())]))->assertSessionHasErrors('date');
         }
         $this->assertSame('2026-11-01', $this->schedule->fresh()->date->toDateString());
-        $this->put(route('admin.schedules.update', $this->schedule), array_replace($original, ['capacity' => 12]))->assertSessionHasNoErrors();
+        $this->put(route('admin.schedules.update', $this->schedule), array_replace($original, ['capacity' => 12, 'edit_revision' => app(ConfigurationAudit::class)->revision($this->schedule->fresh())]))->assertSessionHasNoErrors();
         $this->assertSame(12, $this->schedule->fresh()->capacity);
         $this->get(route('admin.schedules.edit', $this->schedule))->assertSee('date and times are locked');
     }

@@ -7,6 +7,7 @@ use App\Models\Reservation;
 use App\Models\Schedule;
 use App\Models\Service;
 use App\Models\User;
+use App\Services\ConfigurationAudit;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -110,11 +111,11 @@ class ServiceManagementTest extends TestCase
         Service::create(['name' => 'Certificate']);
         $this->actingAs($this->user())->get('/admin/services/'.$service->id.'/edit')->assertOk()
             ->assertSee('Clearance')->assertSee('Inactive')->assertSee('value="PUT"', false);
-        $this->put('/admin/services/'.$service->id, ['fee_amount' => '0.00', 'name' => 'Clearance', 'description' => null, 'is_active' => true])
+        $this->put('/admin/services/'.$service->id, ['edit_revision' => app(ConfigurationAudit::class)->revision($service->fresh()), 'fee_amount' => '0.00', 'name' => 'Clearance', 'description' => null, 'is_active' => true])
             ->assertRedirect(route('admin.services.index'))->assertSessionHasNoErrors();
         $this->assertFalse($service->fresh()->is_active);
-        $this->put('/admin/services/'.$service->id, ['fee_amount' => '0.00', 'name' => 'Certificate'])->assertSessionHasErrors('name');
-        $this->put('/admin/services/'.$service->id, ['fee_amount' => '0.00', 'name' => 'Updated Clearance', 'description' => 'Updated details'])
+        $this->put('/admin/services/'.$service->id, ['edit_revision' => app(ConfigurationAudit::class)->revision($service->fresh()), 'fee_amount' => '0.00', 'name' => 'Certificate'])->assertSessionHasErrors('name');
+        $this->put('/admin/services/'.$service->id, ['edit_revision' => app(ConfigurationAudit::class)->revision($service->fresh()), 'fee_amount' => '0.00', 'name' => 'Updated Clearance', 'description' => 'Updated details'])
             ->assertRedirect(route('admin.services.index'));
         $this->assertDatabaseHas('services', ['id' => $service->id, 'name' => 'Updated Clearance', 'description' => 'Updated details', 'is_active' => false]);
     }
@@ -170,7 +171,7 @@ class ServiceManagementTest extends TestCase
         $this->actingAs($this->user());
         $this->app['env'] = 'local';
         $this->post('/admin/services', ['fee_amount' => '0.00', 'name' => 'New'])->assertStatus(419);
-        $this->put('/admin/services/'.$service->id, ['fee_amount' => '0.00', 'name' => 'Changed'])->assertStatus(419);
+        $this->put('/admin/services/'.$service->id, ['edit_revision' => app(ConfigurationAudit::class)->revision($service->fresh()), 'fee_amount' => '0.00', 'name' => 'Changed'])->assertStatus(419);
         $this->patch('/admin/services/'.$service->id.'/status', ['is_active' => false])->assertStatus(419);
         $this->assertDatabaseHas('services', ['name' => 'Original', 'is_active' => true]);
         $this->assertDatabaseCount('services', 1);

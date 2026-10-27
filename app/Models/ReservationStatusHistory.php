@@ -14,6 +14,7 @@ class ReservationStatusHistory extends Model
         'to_status',
         'changed_by',
         'notes',
+        'resident_message',
         'changed_at',
     ];
 

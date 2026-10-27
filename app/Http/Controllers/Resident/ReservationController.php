@@ -9,7 +9,8 @@ use App\Http\Requests\Resident\ReservationWizardRequest;
 use App\Models\DocumentTemplate;
 use App\Models\Schedule;
 use App\Models\Service;
-use App\Models\User;
+use App\Services\AccountEligibility;
+use App\Services\RequirementChecklist;
 use App\Services\ReservationDocumentInformation;
 use App\Services\ReservationFileUploads;
 use App\Services\ReservationNotifications;
@@ -62,6 +63,7 @@ class ReservationController extends Controller
 
         return $this->page(2, ['service' => $service, 'draft' => $draft, 'documentTemplate' => $template,
             'documentSignature' => $information->signature($template),
+            'requirementSignature' => app(RequirementChecklist::class)->signature($service->id, $service->serviceRequirements),
             'residentInformation' => $profile,
             'missingProfileFields' => $information->missingRequiredProfileFields($template, $profile)]);
     }
@@ -73,6 +75,7 @@ class ReservationController extends Controller
         if (($draft['offered_fee'] ?? null) !== $service->fee_amount) {
             $this->resetDocumentInformation($request, $draft, 'The service fee changed. Review the updated fee and confirm your request again.');
         }
+        $this->requireReviewedChecklist($request, $draft, $service, $request->input('requirement_signature'));
         $information = app(ReservationDocumentInformation::class);
         $template = $this->currentDocumentConfiguration($request, $draft, $service, $information);
         $signature = $information->signature($template);
@@ -87,6 +90,7 @@ class ReservationController extends Controller
         $draft['document_answers'] = $answers;
         $draft['document_profile'] = $profile;
         $draft['requirements_reviewed'] = true;
+        $draft['requirement_signature'] = $request->input('requirement_signature');
         $draft['reviewed_fee'] = $service->fee_amount;
         $request->session()->put(self::SESSION_KEY, $draft);
 
@@ -95,14 +99,16 @@ class ReservationController extends Controller
 
     public function schedule(Request $request): View
     {
+        $filters = $request->validate(['date' => ['nullable', 'date_format:Y-m-d']]);
         $draft = $this->draft($request, true);
 
         $service = $this->service($request, $draft);
         $this->documentInformation($request, $draft, $service);
 
         return $this->page(3, [
-            'service' => $service, 'draft' => $draft,
-            'schedules' => Schedule::where('is_active', true)->upcoming()->withCount('occupiedReservations')->orderBy('date')->orderBy('start_time')->get(),
+            'service' => $service, 'draft' => $draft, 'scheduleFilters' => $filters,
+            'schedules' => Schedule::where('is_active', true)->upcoming()->when($filters['date'] ?? null, fn ($query, $date) => $query->whereDate('date', $date))
+                ->withCount('occupiedReservations')->orderBy('date')->orderBy('start_time')->orderBy('id')->paginate(12, ['*'], 'slots_page')->withQueryString(),
         ]);
     }
 
@@ -150,8 +156,7 @@ class ReservationController extends Controller
         $storedPaths = [];
         try {
             DB::transaction(function () use ($request, $draft, $uploads, &$storedPaths) {
-                $resident = User::lockForUpdate()->findOrFail($request->user()->id);
-                abort_unless($resident->is_active && $resident->email_verified_at !== null && $resident->role === UserRole::Resident, 403, 'Your account is no longer eligible to submit a reservation.');
+                $resident = app(AccountEligibility::class)->lock($request->user(), UserRole::Resident);
                 // Serialize final checks against Admin edits to these same records.
                 $service = Service::lockForUpdate()->find($draft['service_id']);
                 $schedule = Schedule::lockForUpdate()->find($draft['schedule_id']);
@@ -178,6 +183,8 @@ class ReservationController extends Controller
                     $this->restartAt('schedule', 'This schedule has just reached full capacity. Please choose another available schedule.');
                 }
                 $requirements = $service->serviceRequirements()->lockForUpdate()->get();
+                $service->setRelation('serviceRequirements', $requirements);
+                $this->requireReviewedChecklist($request, $draft, $service, $draft['requirement_signature'] ?? null);
                 $files = $uploads->validate($request, $requirements);
                 $reservation = $request->user()->reservations()->make([
                     'service_id' => $service->id, 'schedule_id' => $schedule->id,
@@ -225,6 +232,7 @@ class ReservationController extends Controller
 
     private function documentInformation(Request $request, array $draft, Service $service): ?DocumentTemplate
     {
+        $this->requireReviewedChecklist($request, $draft, $service, $draft['requirement_signature'] ?? null);
         $this->requireConfiguredFee($request, $service);
         if (($draft['reviewed_fee'] ?? null) !== $service->fee_amount) {
             $this->resetDocumentInformation($request, $draft, 'The service fee changed. Review the updated fee and confirm your request again.');
@@ -246,9 +254,16 @@ class ReservationController extends Controller
         return $template;
     }
 
+    private function requireReviewedChecklist(Request $request, array $draft, Service $service, mixed $signature): void
+    {
+        if (! app(RequirementChecklist::class)->matches($signature, $service->id, $service->serviceRequirements)) {
+            $this->resetDocumentInformation($request, $draft, 'The requirements have changed. Review the current checklist before continuing; prepare your files for the updated requirements.');
+        }
+    }
+
     private function resetDocumentInformation(Request $request, array $draft, string $message): never
     {
-        unset($draft['requirements_reviewed'], $draft['reviewed_fee'], $draft['document_signature'], $draft['document_answers'], $draft['document_profile'], $draft['schedule_id'], $draft['confirmation_token']);
+        unset($draft['requirement_signature'], $draft['requirements_reviewed'], $draft['reviewed_fee'], $draft['document_signature'], $draft['document_answers'], $draft['document_profile'], $draft['schedule_id'], $draft['confirmation_token']);
         $request->session()->put(self::SESSION_KEY, $draft);
         $this->restartAt('requirements', $message);
     }

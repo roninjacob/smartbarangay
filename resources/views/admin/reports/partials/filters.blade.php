@@ -1,0 +1,9 @@
+<form method="GET" action="{{ route('admin.reports.'.$reportKind) }}" class="report-filter-form" @if($reportKind === 'collections') data-collection-filters @elseif(in_array($reportKind, ['checkins', 'documents'], true)) data-event-report-filters @endif>
+    <div class="report-filter-field"><label for="{{ $filterPrefix }}-period" class="form-label">Reporting period</label><select class="form-select" id="{{ $filterPrefix }}-period" name="period">@foreach($modes as $value => $label)<option value="{{ $value }}" @selected(old('period', $filters['period']) === $value)>{{ $label }}</option>@endforeach</select></div>
+    <div class="report-filter-field"><label for="{{ $filterPrefix }}-date" class="form-label">Specific date</label><input class="form-control" id="{{ $filterPrefix }}-date" name="date" type="date" value="{{ old('date', $filters['date'] ?? '') }}"></div>
+    <div class="report-filter-field"><label for="{{ $filterPrefix }}-start" class="form-label">Range start</label><input class="form-control" id="{{ $filterPrefix }}-start" name="start" type="date" value="{{ old('start', $filters['start'] ?? '') }}"></div>
+    <div class="report-filter-field"><label for="{{ $filterPrefix }}-end" class="form-label">Range end (inclusive)</label><input class="form-control" id="{{ $filterPrefix }}-end" name="end" type="date" value="{{ old('end', $filters['end'] ?? '') }}"></div>
+    @if($reportKind === 'collections')<input name="view" type="hidden" value="{{ $filters['view'] }}">@endif
+    <div class="report-filter-actions"><button class="btn btn-primary" type="submit">Apply filters</button><a class="btn btn-outline-secondary" href="{{ route('admin.reports.'.$reportKind) }}">Reset to This Month</a></div>
+    <p class="report-filter-help">Weeks run Monday&ndash;Sunday. Custom ranges include the end date. Choose Specific Date or Custom Date Range to enter dates.</p>
+</form>

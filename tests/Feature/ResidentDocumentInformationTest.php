@@ -74,7 +74,7 @@ class ResidentDocumentInformationTest extends TestCase
 
     private function information(Service $service, DocumentTemplate $template, array $overrides = [])
     {
-        return $this->post('/resident/reservations/requirements', ['document_signature' => app(ReservationDocumentInformation::class)->signature($template->fresh('fields')), 'document_answers' => $this->answers($template, $overrides)]);
+        return $this->post('/resident/reservations/requirements', ['requirement_signature' => $this->requirementSignature(), 'document_signature' => app(ReservationDocumentInformation::class)->signature($template->fresh('fields')), 'document_answers' => $this->answers($template, $overrides)]);
     }
 
     private function draft(Service $service, DocumentTemplate $template, Schedule $schedule): string
@@ -117,7 +117,7 @@ class ResidentDocumentInformationTest extends TestCase
         $absent ? $template->delete() : $template->update(['is_active' => false]);
         $this->start($service);
         $this->get('/resident/reservations/requirements')->assertOk()->assertDontSee('Years of Residency');
-        $this->post('/resident/reservations/requirements')->assertRedirect(route('resident.reservations.schedule'));
+        $this->post('/resident/reservations/requirements', ['requirement_signature' => $this->requirementSignature()])->assertRedirect(route('resident.reservations.schedule'));
         $this->post('/resident/reservations/schedule', ['schedule_id' => $schedule->id]);
         $token = session('reservation_wizard.confirmation_token');
         $this->post('/resident/reservations', ['confirmation_token' => $token])->assertRedirect(route('resident.home'));
@@ -150,7 +150,7 @@ class ResidentDocumentInformationTest extends TestCase
         $answers = $this->answers($template);
         $signature = app(ReservationDocumentInformation::class)->signature($template->fresh('fields'));
         foreach ([9999, $template->fields()->where('source', 'system')->first()->id] as $id) {
-            $this->post('/resident/reservations/requirements', ['document_signature' => $signature, 'document_answers' => array_replace($answers, [$id => 'Spoofed data'])])->assertSessionHasErrors('document_answers');
+            $this->post('/resident/reservations/requirements', ['requirement_signature' => $this->requirementSignature(), 'document_signature' => $signature, 'document_answers' => array_replace($answers, [$id => 'Spoofed data'])])->assertSessionHasErrors('document_answers');
         }
         $this->assertDatabaseCount('reservations', 0);
     }
@@ -211,7 +211,7 @@ class ResidentDocumentInformationTest extends TestCase
         $this->assertDatabaseCount('reservations', 0);
         $template->update(['is_active' => false]);
         $this->start($service);
-        $this->post('/resident/reservations/requirements');
+        $this->post('/resident/reservations/requirements', ['requirement_signature' => $this->requirementSignature()]);
         $this->post('/resident/reservations/schedule', ['schedule_id' => $schedule->id]);
         $template->update(['is_active' => true]);
         $this->get('/resident/reservations/confirm')->assertRedirect(route('resident.reservations.requirements'));
@@ -224,7 +224,7 @@ class ResidentDocumentInformationTest extends TestCase
         $this->start($service);
         $signature = app(ReservationDocumentInformation::class)->signature($template->fresh('fields'));
         $template->increment('version');
-        $this->post('/resident/reservations/requirements', ['document_signature' => $signature, 'document_answers' => $this->answers($template)])->assertRedirect(route('resident.reservations.requirements'));
+        $this->post('/resident/reservations/requirements', ['requirement_signature' => $this->requirementSignature(), 'document_signature' => $signature, 'document_answers' => $this->answers($template)])->assertRedirect(route('resident.reservations.requirements'));
         $token = $this->draft($service, $template, $schedule);
         $resident->update(['address' => 'New Address']);
         $this->post('/resident/reservations', ['confirmation_token' => $token])->assertRedirect(route('resident.reservations.requirements'));
@@ -258,10 +258,12 @@ class ResidentDocumentInformationTest extends TestCase
         $existing->update(['status' => 'completed']);
         $token = $this->draft($service, $template, $schedule);
         $service->serviceRequirements()->create(['name' => 'Valid ID', 'is_required' => true]);
+        $token = $this->draft($service, $template, $schedule);
         $this->post('/resident/reservations', ['confirmation_token' => $token])->assertSessionHasErrors('attachments.1');
         $this->assertDatabaseCount('reservations', 1);
         $this->assertDatabaseCount('reservation_document_answers', 0);
         $service->serviceRequirements()->update(['is_required' => false]);
+        $token = $this->draft($service, $template, $schedule);
         $this->post('/resident/reservations', ['confirmation_token' => $token])->assertRedirect(route('resident.home'));
         $this->assertDatabaseCount('reservation_document_answers', 9);
         $schedule->update(['capacity' => 2]);

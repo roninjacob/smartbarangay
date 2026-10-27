@@ -34,6 +34,7 @@ class CheckInReservations
         abort_unless($admin->role === UserRole::Admin && $admin->is_active && $admin->hasVerifiedEmail(), 403);
         try {
             return DB::transaction(function () use ($reservation, $admin, $evidence) {
+                $admin = app(AccountEligibility::class)->lock($admin, UserRole::Admin);
                 $locked = Reservation::lockForUpdate()->findOrFail($reservation->id);
                 if ($locked->status !== ReservationStatus::ReadyForPickup) {
                     $this->reject('Check-in is available only when this reservation is Ready for Pickup.');

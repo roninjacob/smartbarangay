@@ -2,14 +2,18 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\SaveServiceRequest;
 use App\Http\Requests\Admin\UpdateServiceStatusRequest;
 use App\Models\Service;
+use App\Services\AccountEligibility;
 use App\Services\ConfigurationAudit;
+use App\Services\ReservationDocumentInformation;
 use App\Services\ServiceDocumentTemplates;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use Throwable;
 
@@ -17,9 +21,21 @@ class ServiceController extends Controller
 {
     public function index(): View
     {
+        $services = Service::with('documentTemplate')->orderBy('name')->orderBy('id')->paginate(15);
+        $readiness = [];
+        foreach ($services as $service) {
+            try {
+                $template = app(ReservationDocumentInformation::class)->configuration($service);
+                $readiness[$service->id] = $service->fee_amount === null ? 'Fee setup required'
+                    : ($template ? 'Dynamic printing ready' : 'Manual processing');
+            } catch (ValidationException) {
+                $readiness[$service->id] = 'Setup needs attention';
+            }
+        }
+
         return view('admin.services.index', [
             ...$this->shellData('Services & Documents'),
-            'services' => Service::with('documentTemplate')->orderBy('name')->orderBy('id')->paginate(15),
+            'services' => $services, 'readiness' => $readiness,
         ]);
     }
 
@@ -33,6 +49,7 @@ class ServiceController extends Controller
         $newPaths = [];
         try {
             DB::transaction(function () use ($request, $templates, &$newPaths) {
+                app(AccountEligibility::class)->lock($request->user(), UserRole::Admin);
                 $service = Service::create([...$request->safe()->only(['name', 'description', 'fee_amount']), 'is_active' => true]);
                 if ($request->hasFile('official_template')) {
                     $templates->replace($service, $request->file('official_template'), $request->user()->id, $newPaths);
@@ -59,8 +76,10 @@ class ServiceController extends Controller
         $previous = null;
         try {
             DB::transaction(function () use ($request, $service, $templates, &$newPaths, &$previous) {
+                app(AccountEligibility::class)->lock($request->user(), UserRole::Admin);
                 $locked = Service::lockForUpdate()->findOrFail($service->id);
                 $audit = app(ConfigurationAudit::class);
+                $audit->requireRevision($locked, $request->input('edit_revision'));
                 $old = $audit->values($locked);
                 $locked->update($request->safe()->only(['name', 'description', 'fee_amount']));
                 if ($request->hasFile('official_template')) {
@@ -82,6 +101,7 @@ class ServiceController extends Controller
     public function updateStatus(UpdateServiceStatusRequest $request, Service $service): RedirectResponse
     {
         DB::transaction(function () use ($request, $service) {
+            app(AccountEligibility::class)->lock($request->user(), UserRole::Admin);
             $locked = Service::lockForUpdate()->findOrFail($service->id);
             $audit = app(ConfigurationAudit::class);
             $old = $audit->values($locked);

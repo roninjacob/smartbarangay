@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\SaveServiceRequirementRequest;
 use App\Models\Service;
 use App\Models\ServiceRequirement;
+use App\Services\AccountEligibility;
 use App\Services\ConfigurationAudit;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -36,6 +38,7 @@ class ServiceRequirementController extends Controller
     public function store(SaveServiceRequirementRequest $request, Service $service): RedirectResponse
     {
         DB::transaction(function () use ($request, $service) {
+            app(AccountEligibility::class)->lock($request->user(), UserRole::Admin);
             Service::lockForUpdate()->findOrFail($service->id);
             $requirement = $service->serviceRequirements()->create($request->safe()->only(['name', 'description', 'is_required']));
             $audit = app(ConfigurationAudit::class);
@@ -55,6 +58,7 @@ class ServiceRequirementController extends Controller
     public function update(SaveServiceRequirementRequest $request, Service $service, ServiceRequirement $serviceRequirement): RedirectResponse
     {
         DB::transaction(function () use ($request, $service, $serviceRequirement) {
+            app(AccountEligibility::class)->lock($request->user(), UserRole::Admin);
             Service::lockForUpdate()->findOrFail($service->id);
             $locked = $service->serviceRequirements()->lockForUpdate()->findOrFail($serviceRequirement->id);
             $audit = app(ConfigurationAudit::class);
@@ -69,6 +73,7 @@ class ServiceRequirementController extends Controller
     public function destroy(Request $request, Service $service, ServiceRequirement $serviceRequirement): RedirectResponse
     {
         $deleted = DB::transaction(function () use ($request, $service, $serviceRequirement): bool {
+            app(AccountEligibility::class)->lock($request->user(), UserRole::Admin);
             Service::lockForUpdate()->findOrFail($service->id);
             $requirement = $service->serviceRequirements()->whereKey($serviceRequirement->id)->lockForUpdate()->firstOrFail();
             if ($requirement->attachments()->exists()) {

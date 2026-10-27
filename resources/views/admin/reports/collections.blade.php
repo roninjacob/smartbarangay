@@ -5,14 +5,7 @@
         <h2 class="h5" id="collection-scope">Recorded collections excluding reviewed acceptance fixtures.</h2>
         <p class="text-secondary">Based on recorded payment time, not request or appointment date. Only valid payments contribute to collection totals. Philippine time (Asia/Manila).</p>
         @if($errors->any())<div class="alert alert-danger" role="alert">Please correct the filters. No collection totals are shown.<ul class="mb-0">@foreach($errors->all() as $message)<li>{{ $message }}</li>@endforeach</ul></div>@endif
-        <form method="GET" action="{{ route('admin.reports.collections') }}" class="row g-3" data-collection-filters>
-            <div class="col-12 col-md-6 col-xl-3"><label for="collection-period" class="form-label">Reporting period</label><select class="form-select" id="collection-period" name="period">@foreach($modes as $value => $label)<option value="{{ $value }}" @selected(old('period', $filters['period']) === $value)>{{ $label }}</option>@endforeach</select></div>
-            <div class="col-12 col-md-6 col-xl-3"><label for="collection-date" class="form-label">Specific date</label><input class="form-control" id="collection-date" name="date" type="date" value="{{ old('date', $filters['date'] ?? '') }}"><small class="text-secondary">Used with Specific Date.</small></div>
-            <div class="col-12 col-sm-6 col-xl-3"><label for="collection-start" class="form-label">Range start</label><input class="form-control" id="collection-start" name="start" type="date" value="{{ old('start', $filters['start'] ?? '') }}"></div>
-            <div class="col-12 col-sm-6 col-xl-3"><label for="collection-end" class="form-label">Range end (inclusive)</label><input class="form-control" id="collection-end" name="end" type="date" value="{{ old('end', $filters['end'] ?? '') }}"></div>
-            <input name="view" type="hidden" value="{{ $filters['view'] }}">
-            <div class="col-12 report-filter-actions"><button class="btn btn-primary" type="submit">Apply filters</button><a class="btn btn-outline-secondary" href="{{ route('admin.reports.collections') }}">Reset to This Month</a><span class="text-secondary">Weeks run Monday–Sunday. Custom range includes the end date.</span></div>
-        </form>
+        @include('admin.reports.partials.filters', ['reportKind' => 'collections', 'filterPrefix' => 'collection'])
     </section>
     @if($reportError)<div class="alert alert-warning mt-3" role="alert">{{ $reportError }}</div>@endif
     @if($report)

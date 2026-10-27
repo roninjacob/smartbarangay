@@ -148,7 +148,7 @@ class AdminReservationProcessingTest extends TestCase
                     continue;
                 }
                 $reservation = $this->reservation('Test '.$from->value, 'Resident Example', $from);
-                $this->patch(route('admin.reservations.status', $reservation), ['status' => $to->value, 'expected_status' => $from->value, 'notes' => 'Test reason', 'confirm_ready' => $to === Status::ReadyForPickup ? 1 : null])->assertSessionHasErrors('status');
+                $this->patch(route('admin.reservations.status', $reservation), ['status' => $to->value, 'expected_status' => $from->value, 'resident_message' => $to === Status::Rejected ? 'Please contact the office.' : null, 'notes' => 'Test reason', 'confirm_ready' => $to === Status::ReadyForPickup ? 1 : null])->assertSessionHasErrors('status');
                 $this->assertSame($from, $reservation->fresh()->status);
             }
         }
@@ -162,7 +162,7 @@ class AdminReservationProcessingTest extends TestCase
             $reservation = $this->reservation('Rejectable', 'Resident Example', $from);
             $this->patch(route('admin.reservations.status', $reservation), ['status' => 'rejected', 'expected_status' => $from->value, 'notes' => '  '])->assertSessionHasErrors('notes');
             $this->assertSame($from, $reservation->fresh()->status);
-            $this->patch(route('admin.reservations.status', $reservation), ['status' => 'rejected', 'expected_status' => $from->value, 'notes' => 'Missing information'])->assertSessionHas('status');
+            $this->patch(route('admin.reservations.status', $reservation), ['status' => 'rejected', 'expected_status' => $from->value, 'resident_message' => 'Please submit the missing information.', 'notes' => 'Missing information'])->assertSessionHas('status');
             $this->assertSame(Status::Rejected, $reservation->fresh()->status);
             $this->assertSame('Missing information', $reservation->statusHistories()->sole()->notes);
         }

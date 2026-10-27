@@ -24,6 +24,8 @@ class ProfileController extends Controller
 
         return view('profile.edit', [
             'residentProfile' => $role === UserRole::Resident ? $request->user()->profile()->first() : null,
+            'resumeReservation' => $role === UserRole::Resident && $request->session()->get('reservation_wizard.resident_id') === $request->user()->id
+                && $request->session()->has('reservation_wizard.service_id'),
             'user' => $request->user(), 'roleLabel' => $role === UserRole::Admin ? 'Admin' : 'Resident',
             'navigation' => config('navigation.'.$role->value), 'profileRoutePrefix' => $role->value.'.profile',
             'dashboardDate' => now('Asia/Manila'), 'pageTitle' => 'Profile / Account Settings',

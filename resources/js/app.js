@@ -14,3 +14,7 @@ import './document-builder';
 
 import './document-designer';
 import './civic-interface';
+
+import './civic-interactions';
+
+import './report-interactions';

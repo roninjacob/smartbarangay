@@ -211,7 +211,7 @@ class DocumentAutomationHardeningTest extends TestCase
         $information = app(ReservationDocumentInformation::class);
         $this->actingAs($resident);
         $this->post('/resident/reservations/service', ['service_id' => $service->id])->assertRedirect();
-        $this->post('/resident/reservations/requirements', ['document_signature' => $information->signature($template->fresh('fields'))])->assertRedirect();
+        $this->post('/resident/reservations/requirements', ['requirement_signature' => $this->requirementSignature(), 'document_signature' => $information->signature($template->fresh('fields'))])->assertRedirect();
         $this->post('/resident/reservations/schedule', ['schedule_id' => $reservation->schedule_id])->assertRedirect();
         $token = session('reservation_wizard.confirmation_token');
         $disk = Storage::disk('local');
@@ -225,6 +225,7 @@ class DocumentAutomationHardeningTest extends TestCase
         $this->get('/resident/reservations/requirements')->assertRedirect();
         $this->actingAs($admin);
         $this->get('/admin/services/'.$service->id.'/document-configuration')->assertSee('Needs reconfiguration')->assertSee('Reconfigure for Current Master');
+        $this->actingAs($admin);
         app(DocumentTemplateConfiguration::class)->reconfigure($service->fresh(), ['version' => $template->version,
             'pdf_id' => $master->id, 'pdf_revision' => $master->revision()]);
         $this->assertDatabaseCount('document_field_positions', 0);

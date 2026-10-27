@@ -23,6 +23,7 @@
                                     <div><dt>Official File</dt><dd>{{ $service->documentTemplate?->format() ?? 'Not uploaded' }}
                                         @if($service->documentTemplate)<span class="service-card-filename">{{ $service->documentTemplate->original_filename }}</span>@endif
                                     </dd></div>
+                                    <div><dt>Document workflow</dt><dd><span class="readiness-label">{{ $readiness[$service->id] }}</span></dd></div>
                                     <div><dt>Status</dt><dd><span @class(['service-status', 'is-active' => $service->is_active])>{{ $service->is_active ? 'Active' : 'Inactive' }}</span></dd></div>
                                 </dl>
                             </div>
@@ -52,5 +53,5 @@
         <div class="service-pagination"><span class="app-note">Showing {{ $services->firstItem() }}–{{ $services->lastItem() }} of {{ $services->total() }} services</span>{{ $services->links('pagination.civic') }}</div>
     @endif
 </section>
-<p class="app-note mt-3">Deactivate a service to mark it unavailable. Existing reservations and history are preserved.</p>
+<p class="app-note mt-3">Manual processing means dynamic personalization is not enabled. Review setup issues before accepting dynamic requests. Deactivate a service to mark it unavailable. Existing reservations and history are preserved.</p>
 @endsection

@@ -47,6 +47,13 @@ class SaveScheduleRequest extends FormRequest
 
                 return;
             }
+            $schedule = $this->route('schedule');
+            $data = ['date' => $this->input('date'), 'start_time' => $this->input('start_time').':00', 'end_time' => $this->input('end_time').':00'];
+            $timeChanged = ! $schedule || $data['date'] !== $schedule->date->toDateString()
+                || $data['start_time'] !== $schedule->start_time || $data['end_time'] !== $schedule->end_time;
+            if ($timeChanged && ! (new Schedule($data))->startsInFuture()) {
+                $validator->errors()->add('date', 'Choose a future start time in Philippine time.');
+            }
             $query = Schedule::whereDate('date', $this->input('date'))
                 ->where('start_time', $this->input('start_time').':00')
                 ->where('end_time', $this->input('end_time').':00');

@@ -1,3 +1,5 @@
+import { protectUnsavedDocument } from './unsaved-document-guard';
+
 // Presentation-only enhancements. Only the explicitly marked GET filter form is submitted.
 const summary = document.querySelector('[data-validation-summary]');
 if (summary) summary.focus({ preventScroll: false });
@@ -33,3 +35,21 @@ document.querySelectorAll('.report-controls form').forEach((form) => {
     period.addEventListener('change', update);
     update();
 });
+
+// Rejection has a separate public explanation; internal notes never become public.
+const statusInput = document.querySelector('[data-reservation-status]');
+const rejectionPanel = document.querySelector('[data-rejection-message]');
+if (statusInput && rejectionPanel) {
+    const input = rejectionPanel.querySelector('textarea');
+    const update = () => {
+        const rejecting = statusInput.value === 'rejected';
+        rejectionPanel.hidden = !rejecting;
+        input.required = rejecting;
+        input.disabled = !rejecting;
+    };
+    statusInput.addEventListener('change', update);
+    update();
+}
+
+// Protect custom answers when navigating to Profile or another page before Continue.
+document.querySelectorAll('[data-unsaved-document-form]').forEach((form) => protectUnsavedDocument(form));

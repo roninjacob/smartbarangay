@@ -59,7 +59,7 @@ class ReservationNotificationsTest extends TestCase
     {
         $this->actingAs($fixture->user);
         $this->post('/resident/reservations/service', ['service_id' => $fixture->service_id])->assertRedirect();
-        $this->post('/resident/reservations/requirements')->assertRedirect();
+        $this->post('/resident/reservations/requirements', ['requirement_signature' => $this->requirementSignature()])->assertRedirect();
         $this->post('/resident/reservations/schedule', ['schedule_id' => $fixture->schedule_id])->assertRedirect();
         $this->post('/resident/reservations', ['confirmation_token' => session('reservation_wizard.confirmation_token'),
             'recipient_id' => 9999, 'notification_type' => 'admin.new_reservation'])->assertRedirect(route('resident.home'))->assertSessionHasNoErrors();
@@ -117,7 +117,7 @@ class ReservationNotificationsTest extends TestCase
             app(QrTicketIssuer::class)->issue($r);
         }
         $this->actingAs($admin);
-        $payload = ['expected_status' => $from, 'status' => $to, 'notes' => 'INTERNAL SECRET NOTE', 'confirm_ready' => '1'];
+        $payload = ['resident_message' => $to === 'rejected' ? 'Please submit a readable ID.' : null, 'expected_status' => $from, 'status' => $to, 'notes' => 'INTERNAL SECRET NOTE', 'confirm_ready' => '1'];
         $this->patch(route('admin.reservations.status', $r), $payload)->assertSessionHasNoErrors();
         $notification = $r->user->notifications()->sole();
         $this->assertSame($title, $notification->data['title']);
@@ -299,7 +299,7 @@ class ReservationNotificationsTest extends TestCase
         $r = $this->fixture($failure === 'duplicate' ? 'pending' : 'completed');
         $this->actingAs($r->user);
         $this->post('/resident/reservations/service', ['service_id' => $r->service_id]);
-        $this->post('/resident/reservations/requirements');
+        $this->post('/resident/reservations/requirements', ['requirement_signature' => $this->requirementSignature()]);
         $this->post('/resident/reservations/schedule', ['schedule_id' => $r->schedule_id]);
         if ($failure === 'capacity') {
             $r->schedule->update(['capacity' => 1]);

@@ -2,10 +2,13 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
 use App\Models\Service;
 use App\Rules\OfficialDocumentTemplate;
+use App\Services\AccountEligibility;
 use App\Services\CertificatePrintRenderer;
+use App\Services\ConfigurationAudit;
 use App\Services\ServiceDocumentTemplates;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -58,13 +61,17 @@ class ServiceDocumentTemplateController extends Controller
         // Explicit confirmation is enforced server-side as well as in the form.
         $request->validate(['confirm_removal' => ['required', 'accepted'], 'template_id' => ['required', 'integer'], 'template_revision' => ['required', 'string', 'size:64']]);
         $path = DB::transaction(function () use ($request, $service): string {
+            app(AccountEligibility::class)->lock($request->user(), UserRole::Admin);
             $locked = Service::lockForUpdate()->findOrFail($service->id);
             $template = $locked->documentTemplate()->lockForUpdate()->firstOrFail();
             if ($template->id !== $request->integer('template_id') || ! hash_equals($template->revision(), $request->input('template_revision'))) {
                 throw ValidationException::withMessages(['template_id' => 'The template has changed. Review the current template before confirming removal.']);
             }
             $path = $template->stored_path;
+            $audit = app(ConfigurationAudit::class);
+            $old = $audit->values($template);
             $template->delete();
+            $audit->record($request->user(), $template, 'deleted', $old, []);
 
             return $path;
         });

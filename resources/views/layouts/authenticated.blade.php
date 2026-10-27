@@ -36,7 +36,7 @@
                 <div><span class="app-eyebrow">{{ $roleLabel }} / {{ $pageSection ?? 'Overview' }}</span><h1>{{ $pageHeading ?? 'Dashboard' }}</h1></div>
                 <time datetime="{{ $dashboardDate->toDateString() }}" class="app-date"><x-app-icon name="calendar"/>{{ $dashboardDate->format('D, M j, Y') }}</time>
             </div>
-            @if(session('status'))<div class="alert alert-success civic-feedback" role="status"><x-app-icon name="check"/><span>{{ session('status') }}</span></div>@endif
+            @if(session('status'))<div class="alert alert-success civic-feedback" role="status" @if(request()->routeIs('*.profile.*', '*.settings.*')) data-routine-toast @endif><x-app-icon name="check"/><span>{{ session('status') }}</span></div>@endif
             @yield('dashboard')
             <footer class="app-footer"><span>SmartBarangay</span><span>Barangay Calayo · Nasugbu, Batangas</span></footer>
         </main>

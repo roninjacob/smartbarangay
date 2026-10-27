@@ -69,9 +69,7 @@ private-file cleanup on failed service updates remains in place.
 The model rejects audit edits/deletion. Privileged raw SQL bypasses Eloquent
 guards and remains a database administration responsibility. No public audit
 endpoint or UI is introduced. Credentials, file paths and arbitrary request
-payloads are not projected. Document-master/layout changes, personal theme
-preferences, reservation statuses and payments retain their existing workflows;
-this audit set does not claim to cover those separate modules.
+payloads are not projected. The October 27 refinement extends this audit to Resident activation/deactivation, official master upload/replacement/removal, and dynamic configuration, field and placement changes. Account logs contain only active-state changes. Master logs contain service ID, MIME, size and a revision hash, never private paths. Configuration logs contain allowlisted field/placement definitions and source hashes. Audit writes share the mutation transaction. Personal theme preferences remain outside this audit; reservation status and payment history keep their own authoritative records.
 
 ## Local rollout
 

@@ -7,6 +7,8 @@ use App\Models\Reservation;
 use App\Models\Schedule;
 use App\Models\Service;
 use App\Models\User;
+use App\Services\ConfigurationAudit;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -25,6 +27,7 @@ class ScheduleManagementTest extends TestCase
         DB::purge('sqlite');
         Artisan::call('migrate', ['--database' => 'sqlite', '--force' => true]);
         $this->withoutVite();
+        $this->travelTo(Carbon::parse('2026-10-19 08:00:00', 'Asia/Manila'));
     }
 
     protected function tearDown(): void
@@ -65,7 +68,7 @@ class ScheduleManagementTest extends TestCase
 
     public function test_verified_admin_can_view_empty_list_create_schedule_and_see_navigation(): void
     {
-        $this->actingAs($this->user())->get('/admin/schedules')->assertOk()->assertSee('No schedules yet');
+        $this->actingAs($this->user())->get('/admin/schedules')->assertOk()->assertSee('No upcoming schedules found');
         $this->get('/admin/schedules/create')->assertOk()->assertSee('Appointment Date')->assertSee('name="_token"', false);
         $this->post('/admin/schedules', [...$this->data(), 'id' => 999, 'is_active' => false])->assertRedirect('/admin/schedules')->assertSessionHas('status');
         $this->assertDatabaseHas('schedules', ['start_time' => '08:00:00', 'end_time' => '09:00:00', 'capacity' => 10, 'is_active' => true]);
@@ -86,7 +89,7 @@ class ScheduleManagementTest extends TestCase
             $this->assertSame(10, $schedule->fresh()->capacity);
         }
         $this->get('/admin/schedules')->assertOk()->assertSee('Inactive')->assertSee('Activate schedule 1');
-        $this->put('/admin/schedules/1', ['date' => '2026-10-21', 'start_time' => '13:00', 'end_time' => '14:30', 'capacity' => 20, 'is_active' => true])
+        $this->put('/admin/schedules/1', ['edit_revision' => app(ConfigurationAudit::class)->revision(Schedule::findOrFail(1)), 'date' => '2026-10-21', 'start_time' => '13:00', 'end_time' => '14:30', 'capacity' => 20, 'is_active' => true])
             ->assertRedirect('/admin/schedules');
         $this->assertDatabaseHas('schedules', ['id' => 1, 'start_time' => '13:00:00', 'end_time' => '14:30:00', 'capacity' => 20, 'is_active' => false]);
         $this->assertSame('2026-10-21', $schedule->fresh()->date->toDateString());
@@ -111,7 +114,7 @@ class ScheduleManagementTest extends TestCase
         $this->assertDatabaseCount('schedules', 0);
         $schedule = $this->schedule();
         $before = $schedule->fresh()->getRawOriginal();
-        $this->put('/admin/schedules/1', [...$this->data(), 'end_time' => '08:00'])->assertSessionHasErrors('end_time');
+        $this->put('/admin/schedules/1', ['edit_revision' => app(ConfigurationAudit::class)->revision(Schedule::findOrFail(1)), ...$this->data(), 'end_time' => '08:00'])->assertSessionHasErrors('end_time');
         $this->assertSame($before, $schedule->fresh()->getRawOriginal());
     }
 
@@ -119,7 +122,7 @@ class ScheduleManagementTest extends TestCase
     {
         $this->schedule();
         $this->actingAs($this->user())->post('/admin/schedules', $this->data())->assertSessionHasErrors('date');
-        $this->put('/admin/schedules/1', $this->data())->assertRedirect('/admin/schedules')->assertSessionHasNoErrors();
+        $this->put('/admin/schedules/1', ['edit_revision' => app(ConfigurationAudit::class)->revision(Schedule::findOrFail(1)), ...$this->data()])->assertRedirect('/admin/schedules')->assertSessionHasNoErrors();
         $this->post('/admin/schedules', [...$this->data(), 'start_time' => '09:00', 'end_time' => '10:00'])->assertRedirect('/admin/schedules');
         $this->put('/admin/schedules/2', $this->data())->assertSessionHasErrors('date');
         $this->assertDatabaseHas('schedules', ['id' => 2, 'start_time' => '09:00:00']);
@@ -135,7 +138,7 @@ class ScheduleManagementTest extends TestCase
         $schedule = $this->schedule();
         $reservation = Reservation::create(['user_id' => $this->user(UserRole::Resident)->id, 'service_id' => $service->id, 'schedule_id' => $schedule->id]);
         $before = $reservation->fresh()->getRawOriginal();
-        $this->actingAs($this->user())->get('/admin/schedules')->assertOk()->assertSee('In use')
+        $this->actingAs($this->user())->get('/admin/schedules')->assertOk()->assertSee('Has reservation history')
             ->assertDontSee('data-bs-target="#delete-schedule-1"', false);
         $this->delete('/admin/schedules/1')->assertRedirect('/admin/schedules')->assertSessionHasErrors('schedule');
         $this->patch('/admin/schedules/1/status', ['is_active' => false])->assertRedirect('/admin/schedules');
@@ -184,10 +187,56 @@ class ScheduleManagementTest extends TestCase
         $this->actingAs($this->user());
         $this->app['env'] = 'local';
         $this->post('/admin/schedules', $this->data())->assertStatus(419);
-        $this->put('/admin/schedules/1', $this->data())->assertStatus(419);
+        $this->put('/admin/schedules/1', ['edit_revision' => app(ConfigurationAudit::class)->revision(Schedule::findOrFail(1)), ...$this->data()])->assertStatus(419);
         $this->patch('/admin/schedules/1/status', ['is_active' => false])->assertStatus(419);
         $this->delete('/admin/schedules/1')->assertStatus(419);
         $this->assertDatabaseHas('schedules', ['id' => 1, 'capacity' => 10, 'is_active' => true]);
+    }
+
+    public function test_views_partition_at_exact_manila_start_time_without_mutating_history(): void
+    {
+        $this->travelTo(Carbon::parse('2026-10-20 08:00:00', 'Asia/Manila'));
+        $past = $this->schedule(['is_active' => false]);
+        $future = $this->schedule(['start_time' => '08:00:01']);
+        $before = $past->fresh()->getRawOriginal();
+        $this->actingAs($this->user())->get('/admin/schedules')->assertOk()
+            ->assertViewHas('schedules', fn ($rows) => $rows->pluck('id')->all() === [$future->id]);
+        $this->get('/admin/schedules?view=past')->assertOk()->assertSee('Past appointments, preserved')
+            ->assertSee('booking closed')->assertDontSee('Activate schedule 1')
+            ->assertViewHas('schedules', fn ($rows) => $rows->pluck('id')->all() === [$past->id]);
+        $this->patch('/admin/schedules/1/status', ['is_active' => true])->assertSessionHasErrors('is_active');
+        $this->assertSame($before, $past->fresh()->getRawOriginal());
+    }
+
+    public function test_date_status_filters_and_pagination_are_consistent(): void
+    {
+        for ($day = 1; $day <= 17; $day++) {
+            $this->schedule(['date' => sprintf('2026-11-%02d', $day), 'is_active' => false]);
+        }
+        $this->schedule(['date' => '2026-11-18', 'is_active' => true]);
+        $this->actingAs($this->user())->get('/admin/schedules?view=upcoming&status=inactive&from=2026-11-01&to=2026-11-17')
+            ->assertOk()->assertViewHas('schedules', fn ($rows) => $rows->total() === 17 && $rows->count() === 15)
+            ->assertSee('status=inactive', false)->assertSee('from=2026-11-01', false);
+        $this->get('/admin/schedules?view=upcoming&status=inactive&from=2026-11-01&to=2026-11-17&page=2')
+            ->assertOk()->assertViewHas('schedules', fn ($rows) => $rows->count() === 2);
+        $this->get('/admin/schedules?to=2026-11-01')->assertOk()
+            ->assertViewHas('schedules', fn ($rows) => $rows->total() === 1);
+        foreach (['view=unknown', 'status=bad', 'from=2026-02-30', 'from=2026-11-17&to=2026-11-01'] as $query) {
+            $this->getJson('/admin/schedules?'.$query)->assertUnprocessable();
+        }
+        $this->assertDatabaseCount('schedules', 18);
+    }
+
+    public function test_past_view_sorts_newest_first_and_keeps_active_state_independent(): void
+    {
+        $this->schedule(['date' => '2026-10-17', 'is_active' => true]);
+        $newer = $this->schedule(['date' => '2026-10-18', 'is_active' => false]);
+        $this->actingAs($this->user())->get('/admin/schedules?view=past')->assertOk()
+            ->assertViewHas('schedules', fn ($rows) => $rows->first()->id === $newer->id);
+        $this->get('/admin/schedules?view=past&status=active')->assertOk()
+            ->assertViewHas('schedules', fn ($rows) => $rows->total() === 1);
+        $this->patch('/admin/schedules/1/status', ['is_active' => false])->assertSessionHasNoErrors();
+        $this->assertDatabaseCount('schedules', 2);
     }
 
     private function data(): array
