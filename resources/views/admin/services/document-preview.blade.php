@@ -3,6 +3,7 @@
     @if($preview['kind'] === 'pdf')
         <div class="document-preview-frame" data-pdf-preview data-preview-url="{{ $preview['url'] }}" @if($printDocument ?? false) data-print-document @endif>
             <p class="app-note p-3" data-pdf-status role="status">Loading document preview…</p>
+            <p class="app-note px-3 pt-3 mb-1" data-pdf-paper aria-live="polite"></p>
             <div class="pdf-preview-controls p-2 d-flex flex-wrap gap-2 align-items-center" hidden data-pdf-controls><button class="btn btn-sm btn-outline-secondary" type="button" data-pdf-previous aria-label="Previous preview page">Previous</button><span data-pdf-page class="app-note"></span><button class="btn btn-sm btn-outline-secondary" type="button" data-pdf-next aria-label="Next preview page">Next</button></div>
             <div class="pdf-preview-sheet"><canvas data-pdf-canvas role="img" aria-label="Official certificate PDF preview" hidden></canvas></div>
             <noscript><p class="app-note">Open the protected PDF preview below to view the full document.</p></noscript>

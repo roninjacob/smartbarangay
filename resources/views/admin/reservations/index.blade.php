@@ -8,7 +8,13 @@
 <section class="dashboard-panel admin-reservation-catalog reservation-worklist" aria-labelledby="admin-reservations-heading">
     <div class="worklist-heading"><h2 id="admin-reservations-heading">Resident requests</h2><p>Live overview above · Filtered requests below</p></div>
     @if($errors->any())<div class="alert alert-danger mx-3" role="alert">{{ $errors->first() }}</div>@endif
+    <nav class="d-flex flex-wrap gap-2 px-3 pb-3" aria-label="Reservation follow-up filters">
+        @foreach(['' => 'All follow-ups', 'cancellation' => 'Cancellation requests', 'past_appointment' => 'Past appointment / no arrival', 'missed' => 'Recorded missed appointments'] as $value => $label)
+            <a class="btn btn-sm {{ ($filters['followup'] ?? '') === $value ? 'btn-primary' : 'btn-outline-secondary' }}" href="{{ route('admin.reservations.index', [...$filters, 'followup' => $value]) }}" @if(($filters['followup'] ?? '') === $value) aria-current="page" @endif>{{ $label }}</a>
+        @endforeach
+    </nav>
     <form method="GET" action="{{ route('admin.reservations.index') }}" class="worklist-filters" data-worklist-filters>
+        @if(!empty($filters['followup']))<input type="hidden" name="followup" value="{{ $filters['followup'] }}">@endif
         <div class="worklist-search"><label class="visually-hidden" for="search">Search resident or service</label><button type="submit" class="worklist-search-button" aria-label="Apply filters"><x-app-icon name="search"/></button><input class="form-control" id="search" name="search" type="search" maxlength="255" value="{{ $filters['search'] ?? '' }}" placeholder="Search resident or service…" aria-describedby="worklist-filter-help"></div>
         <div class="worklist-status"><label class="visually-hidden" for="status">Status</label><select class="form-select" id="status" name="status" data-worklist-status><option value="">All statuses</option>@foreach($statuses as $status)<option value="{{ $status->value }}" @selected(($filters['status'] ?? '') === $status->value)>{{ $status->label() }}</option>@endforeach</select></div>
         <a href="{{ route('admin.reservations.index') }}" class="btn btn-outline-primary worklist-clear">Clear filters</a>
@@ -16,7 +22,7 @@
         <p id="worklist-filter-help" class="visually-hidden">Press Enter or use the search button to apply your search. Selecting a status applies the filters automatically when JavaScript is available.</p>
     </form>
     @if($reservations->isEmpty())
-        <div class="service-empty"><span class="service-empty-icon"><x-app-icon name="document"/></span><h3>{{ ($filters['search'] ?? '') === '' && empty($filters['status']) && $reservations->total() === 0 ? 'No reservations yet' : 'No matching reservations on this page' }}</h3><p>Try another search or status, or return to the full reservation list.</p><a href="{{ route('admin.reservations.index') }}" class="btn btn-outline-primary">View all reservations</a></div>
+        <div class="service-empty"><span class="service-empty-icon"><x-app-icon name="document"/></span><h3>{{ ($filters['search'] ?? '') === '' && empty($filters['status']) && empty($filters['followup']) && $reservations->total() === 0 ? 'No reservations yet' : 'No matching reservations on this page' }}</h3><p>Try another search or status, or return to the full reservation list.</p><a href="{{ route('admin.reservations.index') }}" class="btn btn-outline-primary">View all reservations</a></div>
     @else
         <div class="table-responsive" tabindex="0" role="region" aria-label="Reservation requests table">
             <table class="table dashboard-table reservation-worklist-table align-middle mb-0">

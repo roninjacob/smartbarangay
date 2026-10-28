@@ -33,6 +33,7 @@
         {{ $histories->links('pagination.civic', ['showSummary' => true]) }}
     </section>
     @include('resident.reservations.cancellation-form')
+    @include('reservations.followups')
     <p class="reservation-help">For assistance, contact the Barangay Calayo office in Nasugbu, Batangas.</p>
 </div>
 @endsection

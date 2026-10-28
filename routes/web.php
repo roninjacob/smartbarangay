@@ -32,6 +32,7 @@ use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReservationAttachmentController;
 use App\Http\Controllers\ReservationDocumentPreviewController;
+use App\Http\Controllers\ReservationFollowupController;
 use App\Http\Controllers\Resident\QrTicketController;
 use App\Http\Controllers\Resident\RequestStatusController;
 use App\Http\Controllers\Resident\ReservationCancellationController;
@@ -113,6 +114,7 @@ Route::middleware('auth')->group(function () {
             Route::get('/{reservation}/document-preview/pdf', [ReservationDocumentPreviewController::class, 'pdf'])->whereNumber('reservation')->name('document-preview.pdf');
             Route::get('/{reservation}', [ReservationViewController::class, 'show'])->whereNumber('reservation')->name('show');
             Route::post('/{reservation}/cancel', ReservationCancellationController::class)->whereNumber('reservation')->block(10, 10)->name('cancel');
+            Route::post('/{reservation}/cancellation-requests', [ReservationFollowupController::class, 'requestCancellation'])->whereNumber('reservation')->middleware('throttle:6,1')->block(10, 10)->name('cancellation-requests.store');
         });
     Route::prefix('resident/qr-tickets')->name('resident.qr-tickets.')
         ->middleware(['role:'.UserRole::Resident->value, 'verified'])->group(function () {
@@ -153,6 +155,8 @@ Route::middleware('auth')->group(function () {
         Route::get('/reservation-logs', [ReservationLogController::class, 'index'])->name('reservation-logs.index');
         Route::post('/reservations/{reservation}/payment', [ReservationPaymentController::class, 'store'])->whereNumber('reservation')->name('reservations.payment.store');
         Route::post('/reservations/{reservation}/check-in', [ReservationCheckInController::class, 'store'])->whereNumber('reservation')->name('reservations.check-in.store');
+        Route::post('/reservations/{reservation}/cancellation-requests/{cancellation}/review', [ReservationFollowupController::class, 'reviewCancellation'])->whereNumber(['reservation', 'cancellation'])->middleware('throttle:10,1')->name('reservations.cancellation-requests.review');
+        Route::post('/reservations/{reservation}/missed-appointment', [ReservationFollowupController::class, 'missed'])->whereNumber('reservation')->middleware('throttle:10,1')->name('reservations.missed.store');
         Route::get('/reservations/{reservation}/certificate/print', [ReservationDocumentController::class, 'print'])->whereNumber('reservation')->name('reservations.document.print');
         Route::get('/certificates/print/{token}', [CertificatePrintController::class, 'show'])->where('token', '[A-Za-z0-9]{40}')->name('certificates.print.show');
         Route::get('/certificates/print/{token}/pdf', [CertificatePrintController::class, 'pdf'])->where('token', '[A-Za-z0-9]{40}')->name('certificates.print.pdf');

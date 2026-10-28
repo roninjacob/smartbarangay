@@ -9,7 +9,10 @@
             <button type="button" class="btn-close d-lg-none" data-bs-dismiss="offcanvas" data-bs-target="#app-sidebar" aria-label="Close navigation"></button>
         </div>
         <div class="app-sidebar-body">
-            <h2 id="app-sidebar-heading" class="app-role-tag">{{ $roleLabel }} Area</h2>
+            <div class="app-sidebar-intro">
+                <h2 id="app-sidebar-heading" class="app-role-tag">{{ $roleLabel }} Area</h2>
+                <p>{{ auth()->user()->role === \App\Enums\UserRole::Admin ? 'Your community operations workspace.' : 'Your barangay services, together.' }}</p>
+            </div>
             <x-app-navigation :groups="$navigation" :role-label="$roleLabel"/>
             <div class="app-sidebar-note"><span class="app-office-dot" aria-hidden="true"></span><span>Serving Barangay Calayo<br><small>Nasugbu, Batangas</small></span></div>
         </div>

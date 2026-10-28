@@ -63,6 +63,7 @@
     @endif
     @include('admin.reservations.document-preparation')
     @include('admin.reservations.check-in')
+    @include('reservations.followups')
     <section class="card dashboard-panel reservation-panel mt-4" aria-labelledby="payment-heading">
         @include('reservations.payment-status', ['admin' => true])
     </section>

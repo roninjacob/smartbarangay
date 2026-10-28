@@ -99,6 +99,16 @@ class Reservation extends Model
         return $this->hasOne(ReservationPayment::class);
     }
 
+    public function cancellationRequests(): HasMany
+    {
+        return $this->hasMany(ReservationCancellationRequest::class)->orderByDesc('id');
+    }
+
+    public function attendanceReview(): HasOne
+    {
+        return $this->hasOne(ReservationAttendanceReview::class);
+    }
+
     public function checkinLogs(): HasMany
     {
         return $this->hasMany(CheckinLog::class);

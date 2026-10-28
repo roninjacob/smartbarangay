@@ -38,6 +38,7 @@
         @include('resident.reservations.attachments', ['attachmentRoute' => 'resident.reservations.attachments.download'])
     </section>
     @include('resident.reservations.cancellation-form')
+    @include('reservations.followups')
     <p class="reservation-help">For assistance with your request, contact the Barangay Calayo office in Nasugbu, Batangas.</p>
 </div>
 @endsection

@@ -90,3 +90,71 @@ Validation: 220 report/export PHP tests / 2,070 assertions; 30 JS tests; build, 
 
 
 Landing visibility adjustment: larger floating document/check icons (46px desktop, 38px phone), more visible drift/light nodes, shorter continuous cycles and larger travel distance. Scene spacing reserves room for the moving decoration; text/CTAs stay stationary. Production build, four motion-helper JS tests and diff check passed. Actual localhost checks at 1440/768/390/320 had no overflow; transforms changed over time and Pause/Resume worked. The actual landing page was opened for the owner. No backend or database changes.
+# October 28, 2026 — Shared workspace refinement
+
+This pass supersedes the earlier opt-in chart explorer presentation.
+
+- Login, registration and password recovery share the landing page's community
+  drawing and continuous decorative motion. The larger sign-in scene includes
+  Pause/Resume, reduced-motion support and hidden-tab suspension.
+- Both authenticated roles use a blue header with contrasting account controls.
+  Contextual navigation actions use button surfaces; links retain their correct
+  navigation semantics rather than becoming form submissions.
+- Report charts retain the original coordinates, values, buckets and labels.
+  A shaded area, grid and data markers provide visual context. The keyboard/touch
+  date slider is visible immediately. No Replay control is added. Mobile charts
+  fit their container instead of cutting off labels in a horizontal viewport.
+- Detail reports use labelled record cards on phones and semantic tables on
+  larger screens. Explicit table/row/cell roles preserve their accessible
+  structure when CSS uses a grid. Without JavaScript the original scrollable
+  table remains available. Request reports reuse the existing status badge.
+- Schedule rows have separated surfaces and an upcoming-only occupancy meter
+  based on existing counts. No historical occupancy is inferred.
+- Activity logs use distinct record surfaces and contextual action buttons.
+  In-page shortcuts skip individual articles to avoid duplicating every card.
+
+No controllers, routes, database schema, real business records, payment/QR rules,
+report populations, CSV exports or official PDF rendering were changed.
+Browser QA uses the existing isolated SQLite fixture environment, not live data.
+Validation for this pass:
+- Full isolated PHP suite: 1,100 tests / 11,115 assertions passed.
+- Latest schedule view check: 18 tests / 338 assertions passed.
+- All JavaScript tests: 30 passed. Production Vite build and targeted Pint passed.
+- 128 settled-viewport checks across Admin/Resident navigation, service forms,
+  designer and guest pages at 1440/768/390/320px: no page-level overflow.
+- Actual desktop/phone screenshots inspected; dark chart contrast, date-slider
+  keyboard interaction, report-card table roles, mobile navigation and landing
+  Back to top were checked. Login motion Pause/Resume was verified.
+- OS reduced-motion setting and physical printing were not exercised; existing
+  helper tests cover reduced motion. No physical camera scan was performed.
+- Changes remain uncommitted; no migration, commit or push was performed.
+## Deep-blue sidebar refresh — October 28
+
+Admin and Resident now share a deep-blue navigation rail with tinted icon tiles,
+contrasting selected states, clearer group dividers, a role introduction and a
+rounded inset mobile drawer. Menu labels, destinations, authorization, CSRF
+logout, Bootstrap offcanvas behavior and Resident bottom navigation are retained.
+No counters or office-online claims were added.
+
+Validation: 41 dashboard/preferences PHP tests / 295 assertions, production build,
+targeted Pint and diff checks passed. Both roles were checked at actual widths
+1440/768/390/320px: no clipped labels or page overflow. Mobile open/close, Escape,
+navigation selection and both role dark appearances were inspected in isolated QA.
+The earlier full PHP/JS totals above precede this narrow sidebar-only change.
+The subsequent approved header adjustment uses soft ice blue (#EDF4FC), navy text
+and tinted controls alongside the deep-blue sidebar. Dark mode uses slate blue
+(#1B2D43) with light contrasting text. This supersedes the earlier blue topbar.
+CSS-only change: build/diff checks and 16 Admin/Resident light/dark responsive
+browser checks passed at 1440/768/390/320px; no page overflow or console errors.
+No settings were saved during this header QA and no business data was modified.
+## Detail-page heading and section navigation refinement
+
+Replaced the oversized detail heading surface and long uneven shortcut pills with
+an aligned 900px detail column, concise section names and consistent link heights.
+The return action sits beside the title. Mobile shortcuts use a two-column grid.
+Full section names remain in accessible labels; anchor destinations are unchanged.
+Duplicate static shortcuts are hidden only when the enhanced navigation is ready,
+so the original links still work without JavaScript. Dashboard shortcut clutter
+is removed. Browser checks at 1440/768/390/320px found no clipped labels or page/nav
+overflow; section navigation worked. Build, 32 JS tests and diff checks passed.
+No backend, migration or real business-data changes were made in this UI pass.

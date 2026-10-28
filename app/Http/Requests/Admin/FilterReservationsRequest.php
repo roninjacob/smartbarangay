@@ -18,6 +18,7 @@ class FilterReservationsRequest extends FormRequest
 
     public function rules(): array
     {
-        return ['search' => ['nullable', 'string', 'max:255'], 'status' => ['nullable', Rule::enum(ReservationStatus::class)]];
+        return ['search' => ['nullable', 'string', 'max:255'], 'status' => ['nullable', Rule::enum(ReservationStatus::class)],
+            'followup' => ['nullable', Rule::in(['cancellation', 'past_appointment', 'missed'])]];
     }
 }

@@ -4,8 +4,30 @@ import { filePresentation, landingMotion } from './civic-interaction-helpers';
 // Presentation enhancements never run inside the dedicated official print view.
 if (!document.querySelector('[data-print-document]')) {
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
-    const hero = document.querySelector('[data-landing-motion]');
-    if (hero) landingMotion(hero, hero.querySelector('[data-motion-control]'), reducedMotion, document);
+    document.querySelectorAll('[data-landing-motion]').forEach((hero) => {
+        const control = hero.querySelector('[data-motion-control]');
+        if (control) landingMotion(hero, control, reducedMotion, document);
+    });
+
+    // Report detail rows become labelled records on phones; headers and values stay authoritative.
+    document.querySelectorAll('.report-table table,.collection-table table').forEach((table) => {
+        const headers = [...table.querySelectorAll('thead th')].map((cell) => cell.textContent.trim());
+        const rows = [...table.querySelectorAll('tbody tr')];
+        if (!headers.length || rows.some((row) => row.children.length !== headers.length)) return;
+        // Explicit roles preserve table semantics when CSS lays out records as a grid.
+        table.setAttribute('role', 'table');
+        table.querySelectorAll('thead,tbody').forEach((group) => group.setAttribute('role', 'rowgroup'));
+        table.querySelectorAll('thead tr').forEach((row) => row.setAttribute('role', 'row'));
+        table.querySelectorAll('thead th').forEach((cell) => cell.setAttribute('role', 'columnheader'));
+        rows.forEach((row) => {
+            row.setAttribute('role', 'row');
+            [...row.children].forEach((cell, index) => {
+                cell.dataset.label = headers[index];
+                cell.setAttribute('role', cell.tagName === 'TH' ? 'rowheader' : 'cell');
+            });
+        });
+        table.classList.add('friendly-records');
+    });
 
     // Content stays visible without JS and when IntersectionObserver is unavailable.
     if ('IntersectionObserver' in window && !reducedMotion.matches) {

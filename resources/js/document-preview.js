@@ -1,3 +1,5 @@
+import { paperSize, paperSummary } from './paper-size';
+
 const frames = document.querySelectorAll('[data-pdf-preview]');
 if (frames.length) {
     Promise.all([import('pdfjs-dist'), import('pdfjs-dist/build/pdf.worker.min.mjs?url')]).then(([pdfjs, worker]) => {
@@ -23,6 +25,8 @@ if (frames.length) {
                     try {
                         const page = await document.getPage(pageNumber);
                         const base = page.getViewport({ scale: 1 });
+                        const paper = frame.querySelector('[data-pdf-paper]');
+                        if (paper) paper.textContent = paperSize(base.width, base.height).label;
                         const availableWidth = Math.max(1, Math.min(820, frame.querySelector('.pdf-preview-sheet').clientWidth));
                         const outputScale = Math.min(window.devicePixelRatio || 1, 2);
                         const viewport = page.getViewport({ scale: availableWidth / base.width * outputScale });
@@ -58,9 +62,11 @@ if (frames.length) {
                     const printPages = window.document.createElement('div');
                     printPages.className = 'certificate-print-pages';
                     const pageStyles = window.document.createElement('style');
+                    const papers = [];
                     for (let number = 1; number <= document.numPages; number++) {
                         const page = await document.getPage(number);
                         const size = page.getViewport({ scale: 1 });
+                        papers.push(paperSize(size.width, size.height));
                         const viewport = page.getViewport({ scale: 2 });
                         const sheet = window.document.createElement('section');
                         sheet.className = 'certificate-print-sheet';
@@ -77,6 +83,8 @@ if (frames.length) {
                     }
                     window.document.head.append(pageStyles);
                     frame.append(printPages);
+                    const paperNotice = window.document.querySelector('[data-print-paper-summary]');
+                    if (paperNotice) paperNotice.textContent = paperSummary(papers);
                     const print = window.document.querySelector('[data-certificate-browser-print]');
                     print.disabled = false;
                     print.addEventListener('click', () => window.print());

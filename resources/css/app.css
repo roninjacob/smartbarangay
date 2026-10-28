@@ -20,6 +20,8 @@
 @import './module-refinements.css';
 @import './schedules.css';
 @import './civic-interactions.css';
+@import './civic-workspaces.css';
+@import './civic-sidebar.css';
 
 /* SmartBarangay civic identity, shared by authentication and the application shell. */
 :root {

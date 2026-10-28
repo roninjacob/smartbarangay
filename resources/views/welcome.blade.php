@@ -36,11 +36,7 @@
                 </div>
                 <div class="col-lg-5"><div class="public-journey p-4 p-xl-5 rounded-5 shadow-sm"><div class="d-flex align-items-center gap-3 mb-4"><span class="public-icon"><x-app-icon name="document"/></span><div><span class="public-eyebrow">A CLEARER WAY FORWARD</span><h2 class="h4 mt-1 mb-0">Your next visit starts here.</h2></div></div>
                     <ol class="public-journey-steps list-unstyled mb-0"><li><span>01</span><div><h3 class="h6">Make your request</h3><p>Choose a service and send the required information.</p></div></li><li><span>02</span><div><h3 class="h6">Stay in the loop</h3><p>See updates and know when your request is ready.</p></div></li><li><span>03</span><div><h3 class="h6">Visit with confidence</h3><p>Bring your QR ticket when your request is Ready for Pickup.</p></div></li></ol>
-                    <div class="community-scene" aria-hidden="true">
-                        <span class="community-float community-float-document"><x-app-icon name="document"/></span>
-                        <span class="community-float community-float-check"><x-app-icon name="check"/></span>
-                        <svg viewBox="0 0 420 86" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 74H408" stroke="currentColor" opacity=".25"/><g class="community-houses" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M34 73V42L65 18L96 42V73M46 39V22H57M57 73V52H73V73M135 73V40L179 14L223 40V73M127 40H231M147 73H211M153 48V65M179 48V65M205 48V65M269 73V44L301 20L333 44V73M280 51H291V62H280ZM309 51H320V62H309Z"/><path class="community-flag" d="M179 14V3H199V12H179"/><path d="M362 73V52M353 52C344 45 356 30 362 26C370 34 381 47 372 52Z"/></g><circle class="community-spark" cx="110" cy="22" r="4" fill="currentColor"/><circle class="community-spark" cx="249" cy="12" r="3" fill="currentColor"/></svg>
-                    </div>
+                    @include('partials.community-scene')
                     <div class="public-community-note mt-4"><span class="public-dot" aria-hidden="true"></span> One barangay. A more connected community.</div>
                 </div></div>
             </div></div>
@@ -59,6 +55,6 @@
             <div class="col-md-6"><dt>Request updates</dt><dd>Sign in to follow your request. Wait for Ready for Pickup before collecting your document.</dd></div><div class="col-md-6"><dt>Account assistance</dt><dd>Ask the barangay office for help if you cannot access your account.</dd></div>
         </dl><p class="small mt-3 mb-0">Exact office address, hours, public telephone and email are being confirmed.</p></div></div></div></section>
     </main>
-    <footer class="public-footer py-4"><div class="container d-flex flex-wrap justify-content-between gap-3"><div><strong>SmartBarangay</strong><p class="small mb-0">Barangay Calayo &middot; Nasugbu, Batangas</p></div><a href="#hero-title">Back to top &uarr;</a></div></footer>
+    <footer class="public-footer py-4"><div class="container d-flex flex-wrap justify-content-between gap-3"><div><strong>SmartBarangay</strong><p class="small mb-0">Barangay Calayo &middot; Nasugbu, Batangas</p></div><a class="public-top-action" href="#hero-title"><span>Back to top</span><span class="public-top-icon" aria-hidden="true">&uarr;</span></a></div></footer>
 </div>
 @endsection

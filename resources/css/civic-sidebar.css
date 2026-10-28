@@ -1,0 +1,78 @@
+/* A shared deep-blue navigation rail. Role authorization and routes are unchanged. */
+.civic-ui.civic-refined .app-shell { --sidebar-width:276px; }
+.civic-ui.civic-refined .app-sidebar {
+    background:#12376b!important;
+    background-image:radial-gradient(ellipse at 0 0,#2a61a966,transparent 65%),linear-gradient(175deg,#143e76,#102e56)!important;
+    color:#e6eeff; border-right:1px solid #ffffff14;
+}
+.civic-ui.civic-refined .app-sidebar-brand {
+    padding:26px 20px 24px; background:#ffffff05; border-bottom:1px solid #ffffff16;
+    flex-shrink:0; min-height:100px;
+}
+.civic-ui.civic-refined .app-sidebar .brand-lockup { gap:11px; }
+.civic-ui.civic-refined .app-sidebar .brand-name { color:#fff; font-size:19px; letter-spacing:-.6px; }
+.civic-ui.civic-refined .app-sidebar .brand-location { color:#bed2f1; font-size:10px; line-height:1.65; max-width:174px; }
+.civic-ui.civic-refined .app-sidebar .sb-brand-mark { width:42px; height:42px; flex-basis:42px; border:1px solid #ffffff30; border-radius:13px; box-shadow:0 4px 12px #071d4326; }
+.civic-ui.civic-refined .app-sidebar-body {
+    padding:18px 14px 20px; scrollbar-width:thin; scrollbar-color:#6a8ab766 transparent;
+    scrollbar-gutter:stable; overscroll-behavior:contain;
+}
+.civic-ui.civic-refined .app-sidebar-body::-webkit-scrollbar { width:4px; }
+.civic-ui.civic-refined .app-sidebar-body::-webkit-scrollbar-thumb { background:#6a8ab766; border-radius:8px; }
+.civic-ui.civic-refined .app-sidebar-intro { padding:13px 14px; margin:0 4px 24px; border:1px solid #ffffff19; border-radius:13px; background:#ffffff07; }
+.civic-ui.civic-refined .app-sidebar .app-role-tag { margin:0 0 5px; padding:0; border:0; background:none; color:#fff; font-size:11px; letter-spacing:.075em; font-weight:700; }
+.app-sidebar-intro p { margin:0; color:#bed2f1; font-size:11px; line-height:1.6; }
+.civic-ui.civic-refined .app-sidebar .app-nav-group { margin-bottom:23px; }
+.civic-ui.civic-refined .app-sidebar .app-nav-heading {
+    display:flex; align-items:center; gap:10px; color:#a9c3e9; font-size:9px;
+    font-weight:650; letter-spacing:.11em; margin:0 0 9px; padding:0 13px;
+}
+.civic-ui.civic-refined .app-sidebar .app-nav-heading::after { content:""; height:1px; background:#ffffff13; flex:1; }
+.civic-ui.civic-refined .app-sidebar .app-nav-link {
+    position:relative; display:flex; gap:11px; align-items:center; min-height:48px;
+    margin:4px 0; padding:8px 11px; color:#d4e2f9; font-size:12.5px; font-weight:500;
+    line-height:1.5; border:1px solid transparent; border-radius:12px; box-shadow:none;
+    text-decoration:none;
+}
+.civic-ui.civic-refined .app-sidebar .app-nav-link>.app-nav-icon {
+    display:grid; place-items:center; width:31px; height:33px; flex:0 0 31px;
+    background:#ffffff08; border:1px solid #ffffff0a; border-radius:9px; color:#b7d2fb;
+}
+.civic-ui.civic-refined .app-sidebar .app-nav-link .app-icon { width:18px; height:18px; flex-basis:18px; }
+.civic-ui.civic-refined .app-sidebar .app-nav-label { min-width:0; overflow-wrap:anywhere; }
+.civic-ui.civic-refined .app-sidebar .app-nav-link:not(.app-nav-unavailable):hover { background:#ffffff0d; border-color:#ffffff1a; color:#fff; }
+.civic-ui.civic-refined .app-sidebar .app-nav-link:not(.app-nav-unavailable):hover .app-nav-icon { background:#ffffff14; color:#fff; }
+.civic-ui.civic-refined .app-sidebar .app-nav-link.is-current,
+.civic-ui.civic-refined .app-sidebar .app-nav-link.is-current:hover {
+    background:linear-gradient(115deg,#2f69cf,#2458ac); border-color:#86b4ff5c;
+    color:#fff; font-weight:650; box-shadow:0 5px 15px #071b3b30;
+}
+.civic-ui.civic-refined .app-sidebar .app-nav-link.is-current>.app-nav-icon { background:#ffffff1c; border-color:#ffffff19; color:#fff; }
+.civic-ui.civic-refined .app-sidebar .app-nav-link.is-current::after { content:""; width:5px; height:5px; flex:0 0 5px; border-radius:50%; background:#d7eaff; }
+.civic-ui.civic-refined .app-sidebar .app-nav-link:focus-visible { outline:2px solid #bdd9ff; outline-offset:2px; }
+.civic-ui.civic-refined .app-sidebar .app-nav-account { padding-top:18px; border-top:1px solid #ffffff18; margin-bottom:16px; }
+.civic-ui.civic-refined .app-sidebar .app-logout { color:#e6c9d1; }
+.civic-ui.civic-refined .app-sidebar .app-logout:hover { color:#ffe3e8; background:#e06e8418; border-color:#e69cad30; }
+.civic-ui.civic-refined .app-sidebar-note { margin:8px 4px 0; padding:14px 12px; color:#d6e6ff; background:#ffffff07; border:1px solid #ffffff13; border-radius:12px; font-size:11px; }
+.civic-ui.civic-refined .app-sidebar-note small { color:#a9c3e9; font-size:10px; }
+.civic-ui.civic-refined .app-sidebar .app-office-dot { background:#8dc7ef; }
+.civic-ui.civic-refined .app-sidebar .app-nav-unavailable { color:#9fb6d6; }
+.civic-ui.civic-refined .app-sidebar .app-nav-unavailable small { background:#ffffff08; color:#bed2f1; border-color:#ffffff20; }
+[data-bs-theme="dark"] .civic-ui.civic-refined .app-sidebar { background-image:radial-gradient(ellipse at 0 0,#234b7c66,transparent 65%),linear-gradient(175deg,#132f52,#0e233e)!important; }
+@media (prefers-reduced-motion:no-preference) {
+    .civic-ui.civic-refined .app-sidebar .app-nav-link { transition:background-color 160ms ease,border-color 160ms ease; }
+}
+@media (max-width:991.98px) {
+    .civic-ui.civic-refined .app-sidebar {
+        --bs-offcanvas-width:316px; width:min(316px,calc(100vw - 24px)); max-width:none;
+        top:12px; bottom:12px; left:12px; height:calc(100dvh - 24px);
+        border:1px solid #ffffff25; border-radius:20px; overflow:hidden;
+        box-shadow:0 18px 60px #071b4659;
+    }
+    .civic-ui.civic-refined .app-sidebar-brand { padding:20px 16px; gap:8px; min-height:94px; }
+    .civic-ui.civic-refined .app-sidebar .brand-name { font-size:18px; }
+    .civic-ui.civic-refined .app-sidebar .brand-location { max-width:155px; font-size:9px; }
+    .civic-ui.civic-refined .app-sidebar .sb-brand-mark { width:36px; height:36px; flex-basis:36px; }
+    .civic-ui.civic-refined .app-sidebar .btn-close { filter:invert(1) grayscale(1) brightness(2); opacity:.9; min-width:36px; min-height:44px; margin:0; padding:8px; }
+    .civic-ui.civic-refined .app-sidebar-body { padding:16px 12px; }
+}

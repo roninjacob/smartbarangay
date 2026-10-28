@@ -3,7 +3,7 @@
 @section('content')
 <main id="main-content" class="auth-page container-fluid">
     <div class="auth-shell auth-shell-modern row g-0 @yield('shell-class')">
-        <section class="brand-panel col-lg-5" aria-label="About SmartBarangay">
+        <section class="brand-panel col-lg-5" data-landing-motion aria-label="About SmartBarangay">
             <div class="brand-story">
             <header>@include('partials.brand')</header>
             <div class="brand-message">
@@ -43,19 +43,8 @@
                 </section>
             </div>
             <div class="brand-conclusion">
-                <div class="civic-illustration" aria-hidden="true">
-                    <svg viewBox="0 0 360 190" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M18 168H342" stroke="currentColor" stroke-opacity=".3"/>
-                        <path d="M46 168V95L88 60L130 95V168M60 86V62H77V72M78 168V128H98V168" stroke="currentColor" stroke-width="2"/>
-                        <path d="M228 168V104L275 64L322 104V168M249 124H263V138H249ZM287 124H301V138H287Z" stroke="currentColor" stroke-width="2"/>
-                        <path d="M126 168V77L180 43L234 77V168M116 77H244M143 98H217M144 112V149M168 112V149M192 112V149M216 112V149M139 153H221M132 162H228" stroke="currentColor" stroke-width="2"/>
-                        <path d="M180 43V17M180 17H205V32H180" stroke="#F2B84B" stroke-width="2"/>
-                        <circle cx="41" cy="43" r="5" fill="#F2B84B"/>
-                        <circle cx="316" cy="41" r="3" fill="currentColor" fill-opacity=".5"/>
-                        <path d="M25 168V141M12 134C12 125 25 115 25 115S38 125 38 134C38 142 12 142 12 134Z" stroke="currentColor" stroke-width="2"/>
-                        <path d="M337 168V152M327 146C327 139 337 132 337 132S347 139 347 146C347 152 327 152 327 146Z" stroke="currentColor" stroke-width="2"/>
-                    </svg>
-                </div>
+                @include('partials.community-scene')
+                <button type="button" class="landing-motion-control auth-motion-control" data-motion-control hidden aria-pressed="false">Pause page animation</button>
             <p class="brand-footer mb-0"><strong>Designed for Barangay Calayo residents.</strong><br>A simpler way to access barangay document services.</p>
             </div>
             </div>

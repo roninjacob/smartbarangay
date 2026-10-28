@@ -16,6 +16,7 @@ use App\Services\GeneratedReservationDocuments;
 use App\Services\QrTicketIssuer;
 use App\Services\ReservationActivityTimeline;
 use App\Services\ReservationDocumentPreview;
+use App\Services\ReservationFollowups;
 use App\Services\ReservationNotifications;
 use App\Services\ReservationPayments;
 use Illuminate\Database\Eloquent\Builder;
@@ -53,6 +54,9 @@ class ReservationController extends Controller
                 });
             })
             ->when($filters['status'] ?? null, fn (Builder $query, string $status) => $query->where('status', $status))
+            ->when($filters['followup'] ?? null, function (Builder $query, string $filter) {
+                app(ReservationFollowups::class)->filter($query, $filter);
+            })
             ->latest()->orderByDesc('id')->paginate(10)->appends($filters);
 
         return view('admin.reservations.index', [...$this->shellData('Reservation Management'),

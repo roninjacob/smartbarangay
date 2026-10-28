@@ -43,6 +43,9 @@
                                     {{ $schedule->occupied_reservations_count }} occupied &middot; {{ $schedule->remainingSlots() }} remaining
                                 @endif
                             </span>
+                            @if($view !== 'past')
+                                <div class="schedule-capacity-meter" role="progressbar" aria-label="Occupied appointment slots" aria-valuenow="{{ $schedule->occupied_reservations_count }}" aria-valuemin="0" aria-valuemax="{{ $schedule->capacity }}" aria-valuetext="{{ $schedule->occupied_reservations_count }} occupied, {{ $schedule->remainingSlots() }} remaining"><span style="width: {{ min(100, max(0, $schedule->occupied_reservations_count * 100 / max(1, $schedule->capacity))) }}%"></span></div>
+                            @endif
                         </td>
                         <td data-label="Booking status"><span @class(['service-status', 'is-active' => $schedule->is_active])>{{ $schedule->is_active ? 'Active' : 'Inactive' }}</span>@if($view === 'past')<span class="schedule-past-label">Past &middot; booking closed</span>@endif</td>
                         <td data-label="Manage slot"><div class="schedule-row-actions">

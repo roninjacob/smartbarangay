@@ -9,6 +9,9 @@
     @elseif($reservation->status !== \App\Enums\ReservationStatus::ReadyForPickup)
         <p class="mb-0 text-secondary">{{ $reservation->status === \App\Enums\ReservationStatus::Completed ? 'Transaction already completed.' : 'Check-in unavailable. This reservation must be Ready for Pickup.' }}</p>
     @elseif($checkinVerified)
+        @if($reservation->hasAppointmentSnapshot() && app(\App\Services\ReservationFollowups::class)->appointmentEnd($reservation)->isPast())
+            <div class="alert alert-info">This is a late visit. Confirm that the office is accepting this arrival before recording check-in. A previous missed-appointment review remains in history.</div>
+        @endif
         <p>QR verified. Confirm that this Resident has physically arrived for this reservation.</p>
         <p class="app-note">Check-in records arrival only. Payment and completion remain separate actions.</p>
         <form method="POST" action="{{ route('admin.reservations.check-in.store', $reservation) }}" data-service-submit>

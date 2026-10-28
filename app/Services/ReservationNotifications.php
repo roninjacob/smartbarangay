@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Enums\UserRole;
 use App\Models\Reservation;
+use App\Models\ReservationCancellationRequest;
 use App\Models\ReservationPayment;
 use App\Models\ReservationStatusHistory;
 use App\Models\User;
@@ -29,8 +30,8 @@ class ReservationNotifications
     public static function typesFor(User $user): array
     {
         return $user->role === UserRole::Admin
-            ? ['admin.new_reservation', 'admin.resident_cancelled']
-            : array_map(fn ($definition) => 'resident.'.$definition[0], array_values(self::TYPES));
+            ? ['admin.new_reservation', 'admin.resident_cancelled', 'admin.cancellation_requested']
+            : [...array_map(fn ($definition) => 'resident.'.$definition[0], array_values(self::TYPES)), 'resident.cancellation_review'];
     }
 
     public function record(string $event, Reservation $reservation, ?Model $source = null): void
@@ -85,6 +86,27 @@ class ReservationNotifications
                     }
                 });
         }
+    }
+
+    public function cancellationReview(Reservation $reservation, ReservationCancellationRequest $request): void
+    {
+        if (DB::transactionLevel() < 1 || $request->reservation_id !== $reservation->id) {
+            throw new LogicException('Cancellation notifications require their authoritative transaction.');
+        }
+        $context = ['reservation_id' => $reservation->id, 'service_label' => $reservation->service->name];
+        $key = 'cancellation:'.$request->id.':'.$request->status;
+        if ($request->status === 'pending') {
+            User::where('role', UserRole::Admin->value)->where('is_active', true)->whereNotNull('email_verified_at')
+                ->chunkById(100, function ($admins) use ($key, $context, $reservation) {
+                    foreach ($admins as $admin) {
+                        $this->persist($admin, $key, 'admin.cancellation_requested', 'action_required', 'Cancellation Requested',
+                            'A Resident requested cancellation of request #'.$reservation->id.'. Review its current preparation, payment and arrival details.', $context);
+                    }
+                });
+        }
+        $message = $request->status === 'pending' ? 'Your cancellation request is awaiting office review. The reservation is not cancelled yet.'
+            : 'The office '.$request->status.' your cancellation request. Open Reservation Details for the explanation.';
+        $this->persist($reservation->user, $key, 'resident.cancellation_review', 'status_update', 'Cancellation Review', $message, $context);
     }
 
     private function persist(User $recipient, string $key, string $type, string $category, string $title, string $message, array $context): void

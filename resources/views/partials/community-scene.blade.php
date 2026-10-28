@@ -1,0 +1,5 @@
+<div class="community-scene" aria-hidden="true">
+                        <span class="community-float community-float-document"><x-app-icon name="document"/></span>
+                        <span class="community-float community-float-check"><x-app-icon name="check"/></span>
+                        <svg viewBox="0 0 420 86" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 74H408" stroke="currentColor" opacity=".25"/><g class="community-houses" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M34 73V42L65 18L96 42V73M46 39V22H57M57 73V52H73V73M135 73V40L179 14L223 40V73M127 40H231M147 73H211M153 48V65M179 48V65M205 48V65M269 73V44L301 20L333 44V73M280 51H291V62H280ZM309 51H320V62H309Z"/><path class="community-flag" d="M179 14V3H199V12H179"/><path d="M362 73V52M353 52C344 45 356 30 362 26C370 34 381 47 372 52Z"/></g><circle class="community-spark" cx="110" cy="22" r="4" fill="currentColor"/><circle class="community-spark" cx="249" cy="12" r="3" fill="currentColor"/></svg>
+                    </div>
