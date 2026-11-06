@@ -1,0 +1,140 @@
+{
+  "description": "QR-06 non-secret code/config checksum evidence; no recovery payload or secret hash",
+  "camera_init_sha256": "851c1a0f1bae0cf82f099ced5bfaa17b5d9b053a7f1378447b34655708157d0c",
+  "library_files": [
+    {
+      "path": "lib/README",
+      "sha256": "9e753e4bef2bb4c7a3784561f50d0c42ceb7bd0c65f183e73209e86ec9892192"
+    },
+    {
+      "path": "lib/quirc/.gitignore",
+      "sha256": "d584e4d01aafe1e50f4e31047d22665abbde6d474d86ee02ad60e8670335dab4"
+    },
+    {
+      "path": "lib/quirc/library.json",
+      "sha256": "569a2f328df3d69bb2e1cf2265303c342a781c5b367ea15deee4191ecc36b357"
+    },
+    {
+      "path": "lib/quirc/LICENSE",
+      "sha256": "f29e3d3f863215a4d52d12994183f23d2c34f7b82036dc326ced4ef9cf1b8bbe"
+    },
+    {
+      "path": "lib/quirc/LOCAL-NOTES.md",
+      "sha256": "238f75b5c4fff4ca64278ad5dae59c7535feb68764091ec58a5545b4961ffc6b"
+    },
+    {
+      "path": "lib/quirc/Makefile",
+      "sha256": "2d859c1710dcbf3c9668e5545c266666e7ff4ef6975c3225b26e50e3f2dd7d24"
+    },
+    {
+      "path": "lib/quirc/README.md",
+      "sha256": "136034822f98b74f79ef77bf190f39773de92ca7934cf100f4cac1b5878edb6e"
+    },
+    {
+      "path": "lib/quirc/demo/camera.c",
+      "sha256": "9812c87a9112f3a832d129cb3f6895d85c693163c80f61e1bfa18cbe2294236f"
+    },
+    {
+      "path": "lib/quirc/demo/camera.h",
+      "sha256": "2c7812b4475ac436f46077deeb90f897df61b741abed91477fa281140b077dbb"
+    },
+    {
+      "path": "lib/quirc/demo/convert.c",
+      "sha256": "d81a554a06cd65857ee56e3073978e388251b141c0dfa15292044d47aad27c85"
+    },
+    {
+      "path": "lib/quirc/demo/convert.h",
+      "sha256": "7b2d7984b28efffe23a2ffd3c7b1d8248715ea604da82f5ad7d7a34ed8a52371"
+    },
+    {
+      "path": "lib/quirc/demo/demo.c",
+      "sha256": "8a4a4a8a2eca2baa2605ee4291d572bc045975a302e22dc2fd321d9d5ba48ae4"
+    },
+    {
+      "path": "lib/quirc/demo/demoutil.c",
+      "sha256": "e820af4386878a4e57864b2ba3e0cab93ae1408390a54134a38f47a57bd134f7"
+    },
+    {
+      "path": "lib/quirc/demo/demoutil.h",
+      "sha256": "7555f5e8ac74021b86e525d089ef26c90bd43e664a4255c48a49163e7c90b65c"
+    },
+    {
+      "path": "lib/quirc/demo/demo_opencv.cxx",
+      "sha256": "7afb234d079fa81cb5264522bed9c793cc79e6d5cb05b5a30f6a4d1354ace3ad"
+    },
+    {
+      "path": "lib/quirc/demo/dthash.c",
+      "sha256": "e78d16ec449b2a69dbd6c8b082d68f4b910a7ec8a54366154d558d52320ab19b"
+    },
+    {
+      "path": "lib/quirc/demo/dthash.h",
+      "sha256": "7569afa037e4b9d511538f6efd85cf3726a7e441b12bb404476b21d582953416"
+    },
+    {
+      "path": "lib/quirc/demo/mjpeg.c",
+      "sha256": "0972a9c9de5917c5549e02440cfb52578b1ea196a1b03bb28e68c0cff574f4e5"
+    },
+    {
+      "path": "lib/quirc/demo/mjpeg.h",
+      "sha256": "a3b6bd2898e9b835c0ee115e9856e3bf1ba6fbdeace97b58bc2b31cb3a91c7b0"
+    },
+    {
+      "path": "lib/quirc/demo/scanner.c",
+      "sha256": "500febfe61721c0df0cf0dd7f56e890362d66a3d1ba41fc53726ccb934228e53"
+    },
+    {
+      "path": "lib/quirc/lib/decode.c",
+      "sha256": "1ce6ebaad8f9ee70653376c52d57b3e036cb7a6fde8c03e3d937e5ed3ab484f4"
+    },
+    {
+      "path": "lib/quirc/lib/identify.c",
+      "sha256": "fb35a6e9d6867ab42a04972e2bb9254e058c3366433e3e0f83072e9690a9f0b5"
+    },
+    {
+      "path": "lib/quirc/lib/quirc.c",
+      "sha256": "142305ac6e61f948c7f17aaac2cfc3349796d3f71ec0254496a7f1f9fea14e0b"
+    },
+    {
+      "path": "lib/quirc/lib/quirc.h",
+      "sha256": "80c294eff45a9ca30f6b7e57c1080d88de094d59ae11b87e58efb360e4bf0704"
+    },
+    {
+      "path": "lib/quirc/lib/quirc_internal.h",
+      "sha256": "a55ae3d85294aefbbdb0464e959e644991f190a411f36dc962a0a5114dce82e9"
+    },
+    {
+      "path": "lib/quirc/lib/version_db.c",
+      "sha256": "c74e0a754e96e0e67a98bf22d21a0624225c7814d8307bdb63c89ebd32b54ef3"
+    },
+    {
+      "path": "lib/quirc/tests/dbgutil.c",
+      "sha256": "421179b83453e3e824e2179fd6f0c72716c1b176bc27e61cc9abfe8be2567868"
+    },
+    {
+      "path": "lib/quirc/tests/dbgutil.h",
+      "sha256": "e491f0e02d7a7fe8fc5737805279f224f1b0848326809af08627a980d8760b13"
+    },
+    {
+      "path": "lib/quirc/tests/inspect.c",
+      "sha256": "3c6224710152fbe232eb786e7346c02eac89e33f490c7745789702448bf994a1"
+    },
+    {
+      "path": "lib/quirc/tests/inspect_opencv.cxx",
+      "sha256": "7aad53eb22b43e032c4c7f09b6c07c39b5fee0dd0c6c43ab04579978c7296bb6"
+    },
+    {
+      "path": "lib/quirc/tests/qrtest.c",
+      "sha256": "04393e03593d7aa85147fcdde2790799fecf28ac036909662848149f30c6b73e"
+    }
+  ],
+  "default_environment": {
+    "platform": "espressif32@8.0.0",
+    "board": "esp32cam",
+    "framework": "arduino",
+    "monitor_speed": "115200",
+    "upload_speed": "115200",
+    "monitor_dtr": "0",
+    "monitor_rts": "0",
+    "build_flags": "\n-DBOARD_HAS_PSRAM\n-mfix-esp32-psram-cache-issue"
+  }
+}

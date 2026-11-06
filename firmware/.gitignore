@@ -1,0 +1,19 @@
+# Defense in depth for all firmware projects. Keep source/example configuration.
+**/.pio/
+**/.iot01-test/
+**/backups/
+**/upstream-git-metadata/
+**/__pycache__/
+**/*.pyc
+**/include/secrets.h
+**/include/secrets.local.h
+**/include/device_secrets.h
+**/include/device_secrets.local.h
+**/.env
+**/.env.local
+**/*.bin
+**/*.elf
+**/*.map
+**/*.o
+**/*.exe
+**/*.log

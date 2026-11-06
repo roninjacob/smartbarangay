@@ -1,0 +1,7 @@
+{
+  "name": "quirc",
+  "version": "1.2.0",
+  "description": "Vendored quirc v1.2, PSRAM allocator adaptation for standalone QR feasibility",
+  "license": "ISC",
+  "build": { "srcDir": "lib", "includeDir": "lib" }
+}

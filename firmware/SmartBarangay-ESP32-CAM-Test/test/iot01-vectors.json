@@ -1,0 +1,12 @@
+[
+  {"name":"valid-synthetic","payload":"SBQ1:550e8400-e29b-41d4-a716-446655440000","format":true},
+  {"name":"wrong-prefix","payload":"BAD1:550e8400-e29b-41d4-a716-446655440000","format":false},
+  {"name":"incorrect-uuid","payload":"SBQ1:550e8400-e29b-41d4-a716-44665544000z","format":false},
+  {"name":"uppercase-uuid","payload":"SBQ1:550E8400-E29B-41D4-A716-446655440000","format":false},
+  {"name":"truncated","payload":"SBQ1:550e8400-e29b-41d4-a716-44665544000","format":false},
+  {"name":"oversized","payload":"SBQ1:550e8400-e29b-41d4-a716-446655440000-extra-extra-extra","format":false},
+  {"name":"ordinary-dummy","payload":"SMARTBARANGAY-TEST-A","format":false},
+  {"name":"wrong-version","payload":"SBQ1:550e8400-e29b-11d4-a716-446655440000","format":false},
+  {"name":"wrong-variant","payload":"SBQ1:550e8400-e29b-41d4-7716-446655440000","format":false},
+  {"name":"trailing-newline","payload":"SBQ1:550e8400-e29b-41d4-a716-446655440000\n","format":false}
+]

@@ -1,0 +1,3 @@
+# Firmware source, local configuration and build products are never web assets.
+Options -Indexes
+Require all denied
