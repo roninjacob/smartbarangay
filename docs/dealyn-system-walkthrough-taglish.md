@@ -277,6 +277,12 @@ Hindi puwedeng bawasan ang capacity below current occupying requests. Protected 
 
 Browser/laptop camera scans the ticket; Laravel verifies it sa server.
 
+**Future IoT plan (hindi pa implemented):** ESP32-CAM ang QR camera; separate
+ESP32 ang OLED/LED/buzzer controller para sa Laravel result. Browser camera stays
+as fallback. Admin pa rin ang nagko-confirm ng check-in; Completed lang ang
+kumokonsumo ng QR. OLED ang display direction, hindi LCD; dedicated GM65/USB
+scanners are superseded. See [approved IoT plan](iot-checkin-integration-design.md).
+
 Successful verification:
 
 ```text
