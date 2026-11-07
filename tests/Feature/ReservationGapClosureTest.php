@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Services\ConfigurationAudit;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -23,6 +24,8 @@ class ReservationGapClosureTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        // Keep the November 1 booking fixtures ahead of the test clock.
+        $this->travelTo(Carbon::parse('2026-10-31 08:00:00', 'Asia/Manila'));
         config(['database.default' => 'sqlite', 'database.connections.sqlite.database' => ':memory:',
             'database.connections.sqlite.url' => null, 'database.connections.sqlite.foreign_key_constraints' => true,
             'session.driver' => 'array', 'cache.default' => 'array', 'mail.default' => 'array']);

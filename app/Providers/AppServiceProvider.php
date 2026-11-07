@@ -26,6 +26,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        RateLimiter::for('iot-ip', fn (Request $request) => Limit::perMinute(config('iot.ip_requests_per_minute'))
+            ->by('iot-ip:'.hash('sha256', (string) $request->server('REMOTE_ADDR'))));
+        RateLimiter::for('iot-device', fn (Request $request) => Limit::perMinute(config('iot.device_requests_per_minute'))
+            ->by('iot-device:'.$request->attributes->get('iot_device_id')));
         View::composer('partials.notification-bell', function ($view) {
             $user = auth()->user();
             $view->with('notificationUnreadCount', $user->unreadNotifications()->count())

@@ -21,3 +21,6 @@ Schedule::command('smartbarangay:cleanup-document-previews')
 
 Schedule::command('auth:clear-resets')
     ->dailyAt('02:10')->timezone('Asia/Manila')->withoutOverlapping();
+
+Schedule::command('smartbarangay:prune-iot-nonces')->hourly()->withoutOverlapping()
+    ->when(fn () => (bool) config('iot.enabled'));

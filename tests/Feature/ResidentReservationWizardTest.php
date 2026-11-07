@@ -8,6 +8,7 @@ use App\Models\Reservation;
 use App\Models\Schedule;
 use App\Models\Service;
 use App\Models\User;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
@@ -20,6 +21,8 @@ class ResidentReservationWizardTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        // The listed November 1 appointment must remain in the future on every run.
+        $this->travelTo(Carbon::parse('2026-10-31 08:00:00', 'Asia/Manila'));
         config([
             'database.default' => 'sqlite', 'database.connections.sqlite.database' => ':memory:',
             'database.connections.sqlite.url' => null, 'database.connections.sqlite.foreign_key_constraints' => true,

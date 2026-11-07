@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Services\ReservationDocumentInformation;
 use App\Services\ReservationFileUploads;
 use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -23,6 +24,8 @@ class ResidentDocumentInformationTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        // Document workflow tests require their November 1 appointment to be bookable.
+        $this->travelTo(Carbon::parse('2026-10-31 08:00:00', 'Asia/Manila'));
         config(['database.default' => 'sqlite', 'database.connections.sqlite.database' => ':memory:',
             'database.connections.sqlite.url' => null, 'database.connections.sqlite.foreign_key_constraints' => true,
             'session.driver' => 'array', 'cache.default' => 'array', 'mail.default' => 'array']);
@@ -118,8 +121,10 @@ class ResidentDocumentInformationTest extends TestCase
         $this->start($service);
         $this->get('/resident/reservations/requirements')->assertOk()->assertDontSee('Years of Residency');
         $this->post('/resident/reservations/requirements', ['requirement_signature' => $this->requirementSignature()])->assertRedirect(route('resident.reservations.schedule'));
-        $this->post('/resident/reservations/schedule', ['schedule_id' => $schedule->id]);
+        $this->post('/resident/reservations/schedule', ['schedule_id' => $schedule->id])
+            ->assertRedirect(route('resident.reservations.confirm'))->assertSessionHasNoErrors();
         $token = session('reservation_wizard.confirmation_token');
+        $this->assertNotEmpty($token);
         $this->post('/resident/reservations', ['confirmation_token' => $token])->assertRedirect(route('resident.home'));
         $this->assertDatabaseCount('reservation_document_answers', 0);
         $this->assertSame('Original Resident', Reservation::sole()->resident_snapshot['resident_name']);
@@ -317,7 +322,8 @@ class ResidentDocumentInformationTest extends TestCase
         $this->start($service);
         $value = '<script>alert(1)</script>';
         $this->information($service, $template, ['purpose' => $value])->assertRedirect(route('resident.reservations.schedule'));
-        $this->post('/resident/reservations/schedule', ['schedule_id' => $schedule->id]);
+        $this->post('/resident/reservations/schedule', ['schedule_id' => $schedule->id])
+            ->assertRedirect(route('resident.reservations.confirm'))->assertSessionHasNoErrors();
         $this->get('/resident/reservations/confirm')->assertOk()->assertDontSee($value, false)->assertSee(e($value), false);
         $this->post('/resident/reservations', ['confirmation_token' => session('reservation_wizard.confirmation_token')]);
         $reservation = Reservation::sole();
