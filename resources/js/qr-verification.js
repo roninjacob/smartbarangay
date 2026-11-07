@@ -65,30 +65,7 @@ if (root) {
         clearResult();
         status('Camera stopped. Start the camera to scan a ticket.');
     };
-    const verify = async (payload, current) => {
-        if (busy || ! scanning || current !== generation) return;
-        busy = true;
-        releaseCamera(); // One result per explicit scan; repeated frames cannot submit again.
-        status('Verifying ticket with Barangay Calayo…');
-        const abort = new AbortController();
-        request = abort;
-        const timeout = setTimeout(() => abort.abort(), 15000);
-        try {
-            const response = await fetch(root.dataset.verifyUrl, {
-                method: 'POST', credentials: 'same-origin', cache: 'no-store',
-                headers: { 'Content-Type': 'application/json', Accept: 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
-                body: JSON.stringify({ payload }), signal: abort.signal,
-            });
-            if (current !== generation) return;
-            if (! response.ok) {
-                const message = response.status === 429 ? 'Too many scans. Wait a minute before trying again.'
-                    : [401, 403, 419].includes(response.status) ? 'Your session is unavailable. Refresh and sign in again.'
-                    : 'Verification is unavailable. Please try again.';
-                throw new Error(message);
-            }
-            const result = await response.json();
-            if (current !== generation) return;
+    const showResult = (result, current) => {
             if (typeof result.valid !== 'boolean' || (result.valid && ! result.reservation)) {
                 throw new Error('Verification is unavailable. Please try again.');
             }
@@ -117,6 +94,32 @@ if (root) {
             }
             status(result.valid ? 'QR verified. Opening reservation details…'
                 : 'Verification complete. Select Scan Next Ticket to continue.');
+    };
+    const verify = async (payload, current) => {
+        if (busy || ! scanning || current !== generation) return;
+        busy = true;
+        releaseCamera(); // One result per explicit scan; repeated frames cannot submit again.
+        status('Verifying ticket with Barangay Calayo…');
+        const abort = new AbortController();
+        request = abort;
+        const timeout = setTimeout(() => abort.abort(), 15000);
+        try {
+            const response = await fetch(root.dataset.verifyUrl, {
+                method: 'POST', credentials: 'same-origin', cache: 'no-store',
+                headers: { 'Content-Type': 'application/json', Accept: 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
+                body: JSON.stringify({ payload }), signal: abort.signal,
+            });
+            if (current !== generation) return;
+            if (! response.ok) {
+                const message = response.status === 429 ? 'Too many scans. Wait a minute before trying again.'
+                    : [401, 403, 419].includes(response.status) ? 'Your session is unavailable. Refresh and sign in again.'
+                    : 'Verification is unavailable. Please try again.';
+                throw new Error(message);
+            }
+            const result = await response.json();
+            if (current !== generation) return;
+            showResult(result, current);
         } catch (error) {
             if (current !== generation) return;
             clearResult();
@@ -192,6 +195,13 @@ if (root) {
             status(errors[error.name] || 'Unable to start camera scanning. Use HTTPS or localhost, check your camera, and try again.');
         }
     };
+    document.addEventListener('qr:mode-change', stopScanning);
+    document.addEventListener('qr:iot-result', (event) => {
+        if (root.dataset.scannerMode !== 'iot' || document.hidden) return;
+        stopScanning();
+        try { showResult(event.detail, generation); }
+        catch { status('Verification is unavailable. Please pair and scan again.'); }
+    });
     start.addEventListener('click', startScanning);
     next.addEventListener('click', startScanning);
     stop.addEventListener('click', stopScanning);

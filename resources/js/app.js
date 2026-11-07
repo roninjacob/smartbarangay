@@ -10,6 +10,7 @@ import './reservations';
 import './profile';
 import './user-preferences';
 import './qr-verification';
+import './iot-scanner';
 import './document-builder';
 
 import './document-designer';

@@ -13,6 +13,8 @@ class IotDeviceAuthentication
 {
     public const PATH = '/api/iot/v1/probe';
 
+    public const PATHS = [self::PATH, '/api/iot/v1/pair', '/api/iot/v1/scans'];
+
     public const CLOCK_SKEW = 90;
 
     public const MAX_BODY_BYTES = 1024;

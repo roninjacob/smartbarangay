@@ -55,8 +55,37 @@ function harness({ response = { valid: true, message: 'Valid QR Ticket', reserva
         advance(ms) { clock += ms; for (const [id, timer] of [...timers]) { if (timer.due <= clock) { timers.delete(id); timer.callback(); } } },
         start: () => events['start:click'](), next: () => events['next:click'](), stop: () => events['stop:click'](),
         hidden: () => { document.hidden = true; events.visibilitychange(); },
+        mode(mode) { root.dataset.scannerMode = mode; events['qr:mode-change'](); },
+        remote(result) { events['qr:iot-result']({ detail: result }); },
         scan: (text = 'opaque credential') => callback({ getText: () => text }, undefined, controls) };
 }
+
+test('IoT mode stops the laptop camera and uses the existing verified-result modal', async () => {
+    const h = harness();
+    await h.start();
+    h.mode('iot');
+    assert.ok(h.stopped() > 0);
+    h.remote({ valid: true, reservation_url: '/admin/reservations/7', reservation: {
+        resident: 'Synthetic Resident', service: 'Clearance', schedule: 'Synthetic date', status: 'Ready for Pickup',
+    } });
+    assert.equal(h.node('success-modal').visible, true);
+    assert.equal(h.node('modal-resident').textContent, 'Synthetic Resident');
+    assert.equal(h.requests.length, 0);
+    h.advance(1500);
+    assert.deepEqual(h.navigations, ['http://localhost/admin/reservations/7']);
+});
+
+test('laptop mode ignores stale IoT results and mode switches cancel navigation', async () => {
+    const h = harness();
+    h.mode('laptop');
+    h.remote({ valid: true, reservation_url: '/admin/reservations/7', reservation: {} });
+    assert.equal(h.node('success-modal').visible, false);
+    h.mode('iot');
+    h.remote({ valid: true, reservation_url: '/admin/reservations/7', reservation: {} });
+    h.mode('laptop');
+    h.advance(2000);
+    assert.deepEqual(h.navigations, []);
+});
 
 test('repeated frames submit once and success modal precedes automatic navigation by 1500ms', async () => {
     const h = harness();

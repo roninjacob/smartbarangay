@@ -24,3 +24,6 @@ Schedule::command('auth:clear-resets')
 
 Schedule::command('smartbarangay:prune-iot-nonces')->hourly()->withoutOverlapping()
     ->when(fn () => (bool) config('iot.enabled'));
+
+Schedule::command('smartbarangay:prune-iot-scanner-state')->everyMinute()->withoutOverlapping()
+    ->when(fn () => (bool) config('iot.enabled'));

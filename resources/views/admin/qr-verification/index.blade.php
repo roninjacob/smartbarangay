@@ -1,8 +1,18 @@
 @extends('layouts.authenticated')
 @section('dashboard')
-<div class="qr-verification" data-qr-verification data-verify-url="{{ route('admin.qr-verification.verify') }}">
+<div class="qr-verification" data-qr-verification data-verify-url="{{ route('admin.qr-verification.verify') }}"
+     data-iot-url="{{ url('/admin/iot-scanner') }}">
     <section class="dashboard-panel qr-scanner-panel" aria-labelledby="scanner-heading">
-        <div class="dashboard-panel-heading"><div><h2 id="scanner-heading">Scan a Resident ticket</h2><p class="panel-description">Use the laptop camera to read a SmartBarangay QR ticket.</p></div></div>
+        <div class="dashboard-panel-heading"><div><h2 id="scanner-heading">Scan a Resident ticket</h2><p class="panel-description">Choose a scanner. Laravel verifies every ticket securely.</p></div></div>
+        <div class="px-4 pt-3 d-flex flex-wrap gap-2" role="group" aria-label="Scanner mode">
+            <button type="button" class="btn btn-primary" data-scanner-mode="laptop" aria-pressed="true">Laptop Camera</button>
+            <button type="button" class="btn btn-outline-primary" data-scanner-mode="iot" aria-pressed="false"
+                @disabled(! config('iot.enabled') || config('session.driver') !== 'database')>IoT Scanner</button>
+        </div>
+        @if (! config('iot.enabled') || config('session.driver') !== 'database')
+            <p class="app-note px-4 pt-3 mb-0">IoT Scanner is unavailable in this environment. Laptop Camera remains available.</p>
+        @endif
+        <div data-laptop-panel>
         <div class="qr-scanner-body">
             <div class="qr-camera-frame">
                 <video data-qr-video muted playsinline aria-label="QR camera preview" hidden></video>
@@ -12,6 +22,22 @@
             <div class="qr-scanner-actions"><button type="button" class="btn btn-primary" data-qr-start>Start Camera</button><button type="button" class="btn btn-outline-secondary" data-qr-stop disabled>Stop Camera</button><button type="button" class="btn btn-outline-primary" data-qr-next hidden>Scan Next Ticket</button></div>
             <p class="app-note mt-3 mb-0">Camera access requires permission and HTTPS or localhost. Only the ticket credential is sent for verification; camera images are not uploaded.</p>
             <noscript><p class="alert alert-warning mt-3">Enable JavaScript to use QR camera scanning.</p></noscript>
+        </div>
+        </div>
+        <div class="p-4" data-iot-panel hidden>
+            <p class="app-note">Select your provisioned ESP32-CAM, then show it the temporary pairing QR. Keep this page open while scanning.</p>
+            <label class="form-label" for="iot-device">Scanner</label>
+            <select class="form-select mb-3" id="iot-device" data-iot-device><option value="">Loading scanners…</option></select>
+            <div class="d-flex flex-wrap gap-2 mb-3">
+                <button type="button" class="btn btn-primary" data-iot-pair disabled>Generate Pairing QR</button>
+                <button type="button" class="btn btn-outline-secondary" data-iot-refresh>Refresh scanners</button>
+                <button type="button" class="btn btn-outline-danger" data-iot-disconnect disabled>Disconnect</button>
+            </div>
+            <div class="text-center border rounded-4 p-3 mb-3" data-iot-qr-wrap hidden>
+                <img width="240" height="240" class="img-fluid" alt="Temporary scanner pairing QR" data-iot-qr>
+                <p class="mb-0 mt-2" data-iot-countdown role="timer"></p>
+            </div>
+            <p class="alert alert-info mb-0" data-iot-status role="status" aria-live="polite">Select a scanner to begin.</p>
         </div>
     </section>
     <section class="dashboard-panel qr-result-panel" tabindex="-1" aria-labelledby="result-heading" aria-live="polite" aria-atomic="true" data-qr-result>

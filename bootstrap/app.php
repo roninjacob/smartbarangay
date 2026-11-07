@@ -3,6 +3,7 @@
 use App\Http\Middleware\EnsureAccountIsActive;
 use App\Http\Middleware\EnsureUserHasRole;
 use App\Http\Middleware\LimitIotRequestBody;
+use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -32,15 +33,16 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         // Device errors never expose debug traces, request headers or SQL bindings.
-        $exceptions->dontReportWhen(fn (Throwable $exception) => request()->is('api/iot/*'));
+        $exceptions->dontReportWhen(fn (Throwable $exception) => request()->is('api/iot/*', 'admin/iot-scanner/*'));
         $exceptions->render(function (Throwable $exception, Request $request) {
-            if ($request->is('api/iot/*')) {
-                $status = $exception instanceof HttpExceptionInterface
-                    ? $exception->getStatusCode() : 503;
+            if ($request->is('api/iot/*', 'admin/iot-scanner/*')) {
+                $status = $exception instanceof AuthenticationException ? 401
+                    : ($exception instanceof HttpExceptionInterface ? $exception->getStatusCode() : 503);
                 $code = match ($status) {
-                    401 => 'authentication_failed', 403 => 'secure_transport_required',
+                    401 => 'authentication_failed', 403 => $request->is('admin/*') ? 'access_denied' : 'secure_transport_required',
+                    409 => 'scanner_conflict', 419 => 'session_expired',
                     404 => 'not_found', 405 => 'method_not_allowed', 413 => 'request_too_large',
-                    415 => 'unsupported_media_type', 422 => 'invalid_probe', 429 => 'rate_limited',
+                    415 => 'unsupported_media_type', 422 => $request->is('api/iot/v1/probe') ? 'invalid_probe' : 'invalid_request', 429 => 'rate_limited',
                     400 => 'invalid_request', default => 'service_unavailable',
                 };
                 $headers = ['Cache-Control' => 'no-store', 'X-Content-Type-Options' => 'nosniff'];

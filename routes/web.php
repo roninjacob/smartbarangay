@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\CollectionReportController;
 use App\Http\Controllers\Admin\DocumentFieldController;
 use App\Http\Controllers\Admin\DocumentLayoutController;
 use App\Http\Controllers\Admin\DocumentTemplateController;
+use App\Http\Controllers\Admin\IotScannerController;
 use App\Http\Controllers\Admin\QrVerificationController;
 use App\Http\Controllers\Admin\RecordedEventReportController;
 use App\Http\Controllers\Admin\ReportExportController;
@@ -67,7 +68,7 @@ Route::middleware('auth')->group(function () {
                 Route::post('/{notification}/read', [NotificationController::class, 'read'])->whereUuid('notification')->name('read');
             });
     }
-    Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
+    Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->block(10, 10)->name('logout');
     Route::get('/email/verify', [EmailVerificationController::class, 'notice'])->name('verification.notice');
     Route::get('/email/change', [EmailVerificationController::class, 'editEmail'])->name('verification.email.edit');
     Route::put('/email/change', [EmailVerificationController::class, 'updateEmail'])
@@ -139,6 +140,12 @@ Route::middleware('auth')->group(function () {
         Route::get('/reports/checkins', [RecordedEventReportController::class, 'checkins'])->name('reports.checkins');
         Route::get('/reports/documents', [RecordedEventReportController::class, 'documents'])->name('reports.documents');
         Route::get('/qr-verification', [QrVerificationController::class, 'index'])->name('qr-verification.index');
+        Route::prefix('iot-scanner')->name('iot-scanner.')->middleware('throttle:120,1')->group(function () {
+            Route::get('/devices', [IotScannerController::class, 'devices'])->name('devices');
+            Route::post('/challenge', [IotScannerController::class, 'challenge'])->block(10, 10)->name('challenge');
+            Route::post('/poll', [IotScannerController::class, 'poll'])->block(10, 10)->name('poll');
+            Route::post('/disconnect', [IotScannerController::class, 'disconnect'])->block(10, 10)->name('disconnect');
+        });
         Route::post('/qr-verification', [QrVerificationController::class, 'verify'])->middleware('throttle:30,1')->name('qr-verification.verify');
         Route::get('/reservations/{reservation}/attachments/{attachment}', [ReservationAttachmentController::class, 'admin'])
             ->whereNumber(['reservation', 'attachment'])->name('reservations.attachments.download');

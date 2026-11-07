@@ -3,7 +3,9 @@
 Implemented against `feature/iot-integration` at baseline `a8ef16a` on November 7,
 2026. This document specifies the firmware-facing protocol and local acceptance.
 The device probe authenticates harmless test messages. Full QR handoff and Admin
-pairing belong to subsequent milestones.
+pairing belong to subsequent milestones. The subsequent IoT-03 extension is
+documented in [IoT-03 scanner handoff](iot-03-scanner-handoff.md) and preserves
+this probe contract.
 
 ## Intended change set
 
