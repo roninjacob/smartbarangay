@@ -1,4 +1,5 @@
 .pio
+**/smartbarangay_wifi_private.h
 /.iot01-test/
 /include/secrets.h
 /include/secrets.local.h

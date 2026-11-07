@@ -41,7 +41,9 @@ def main():
         assert hashlib.sha256((ROOT / item['path']).read_bytes()).hexdigest() == item['sha256']
     new_config = configparser.ConfigParser()
     new_config.read(ROOT/'platformio.ini')
-    assert baseline['default_environment'] == dict(new_config['env:esp32cam'])
+    current_environment = dict(new_config['env:esp32cam'])
+    assert current_environment.pop('extra_scripts') == 'pre:scripts/private_wifi.py'
+    assert baseline['default_environment'] == current_environment
     assert new_config['platformio']['default_envs'] == 'esp32cam'
     print('PASS: portable camera/pins/decoder/config baseline; 1000ms/no fast experiment; no payload logging; image guards', flush=True)
     run(['php', ROOT/'test/iot01-vectors.php', args.autoload, out])

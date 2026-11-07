@@ -29,11 +29,12 @@ No nested `.git/` is introduced. Historical Markdown reports are retained as his
 their backup paths refer to the preserved standalone project, not this repository.
 Do not execute old upload/rollback instructions without reviewing the current guide.
 
-The local ignored `include/secrets.h` is created from `secrets.example.h` and
-contains placeholders only. This proves independent builds without transferring
-Wi-Fi credentials. Runtime Wi-Fi will require the owner to configure that local
-file privately before an explicitly authorized upload. Never force-add it or share
-credential-bearing firmware binaries.
+The local ignored `include/secrets.h` remains a legacy placeholder and is no longer
+read by builds. Current private Wi-Fi setup uses an external header at
+`%USERPROFILE%\.smartbarangay\firmware\esp32cam\smartbarangay_wifi_private.h`.
+The PlatformIO pre-build script validates it and adds its external include directory.
+See the firmware README for setup, permissions and safe failure behavior. Never
+force-add private headers or share credential-bearing firmware binaries.
 
 `test/iot01-baseline.json` contains non-secret QR-06 camera/library/config checksum
 evidence; it has no backup payloads or Wi-Fi-secret hash. Host tests use it instead
@@ -47,16 +48,14 @@ From a newly opened terminal with the configured PlatformIO PATH:
 
 ```powershell
 cd C:\xampp\htdocs\smartbarangay\firmware\SmartBarangay-ESP32-CAM-Test
-# On a fresh clone only, if the local header does not exist:
-if (-not (Test-Path .\include\secrets.h)) {
-    Copy-Item .\include\secrets.example.h .\include\secrets.h
-}
+# Configure the external private header first, following the firmware README.
 pio run -e esp32cam
 pio run -e esp32cam-diagnostics
 python test/run_iot01.py
 node test/qr03-web.test.cjs
 node test/qr03-web.test.cjs --safe
 python -B -m unittest discover -s test -p test_benchmark_analysis.py
+python -B -m unittest discover -s test -p test_private_wifi.py
 ```
 
 Host decoder tests additionally require gcc/g++, PHP and the installed BaconQrCode

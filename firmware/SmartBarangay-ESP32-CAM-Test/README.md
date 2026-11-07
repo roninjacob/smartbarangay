@@ -5,8 +5,8 @@ the SmartBarangay repository. The PlatformIO project still builds independently.
 See [consolidation and recovery instructions](../../docs/iot-project-consolidation.md).
 The original standalone folder is preserved as a private rollback copy. `backups/`
 is deliberately not copied or required by the portable tests. Locally generated
-`include/secrets.h` currently contains example placeholders only; configure it
-privately before any later owner-approved hardware upload.
+`include/secrets.h` is a legacy ignored placeholder and is no longer read by builds.
+Wi-Fi configuration now lives outside htdocs as described below.
 
 This project tests an AI Thinker ESP32-CAM with OV2640 over local Wi-Fi. It includes standalone on-camera QR decoding using quirc; it does not connect to Laravel or validate reservations. Current baseline: [IoT-01 security and QR compatibility](IOT-01.md). The default `esp32cam` build exposes safe counters/event metadata and mode controls only: no raw QR text, camera images or video. The explicit `esp32cam-diagnostics` build restores unauthenticated LAN images/video for synthetic/dummy codes ONLY. Neither build is a production device API. QR-06 camera scheduling/locking and the stable 1000 ms QR floor are preserved; fast experiments remain disabled.
 
@@ -15,14 +15,29 @@ Earlier QR-02 through QR-06 and STABILITY-01 documents are historical change rec
 ## Private Wi-Fi setup
 
 1. Open this folder in VS Code / PlatformIO.
-2. Edit `include/secrets.h`. A private placeholder file is already supplied locally. For a fresh checkout, copy `include/secrets.example.h` to `include/secrets.h` first.
-3. Replace `YOUR_2_4_GHZ_WIFI_NAME` and `YOUR_WIFI_PASSWORD` with your actual SSID/password. Use a 2.4 GHz personal Wi-Fi network; captive-portal and enterprise authentication are not implemented. An open network can use an empty password, but a trusted password-protected network is preferred.
+2. Create `%USERPROFILE%\.smartbarangay\firmware\esp32cam\smartbarangay_wifi_private.h` outside htdocs. The current owner's private header is already configured at `C:\Users\ronin\.smartbarangay\firmware\esp32cam\smartbarangay_wifi_private.h`. Its directory grants access to the current Windows user and SYSTEM. On another laptop, copy `include/secrets.example.h` to that external location and restrict its permissions before editing.
+3. Replace the example values privately with your actual SSID/password. Use a 2.4 GHz personal Wi-Fi network. An open network can use an empty password. SSID must be nonempty. Captive-portal and enterprise authentication are not implemented.
 4. Keep credentials inside double quotes. Escape any literal double quote as `\"` and backslash as `\\`.
-5. Save, rebuild, and upload. Credentials are compiled into the firmware; they are never printed by this application.
+5. Save and rebuild. `scripts/private_wifi.py` runs before both environments, validates the external header, and adds its directory to the compiler include search path. Credentials never enter command-line definitions or a generated repository header. Missing, unreadable, malformed, duplicate or placeholder configuration stops the build with a generic error. A private header resolving inside htdocs is rejected. Hardware upload requires separate owner authorization.
 
-`include/secrets.h`, private recovery folders and `.pio` artifacts are Git-ignored.
+Use only the two example string declarations, `#pragma once`, blank lines and `//` comments in the private header. Literal quotes and backslashes must be escaped. Laravel `.env` is independent of this configuration. Both environments use this Wi-Fi header. The diagnostics environment remains restricted to synthetic/dummy QR codes.
+
+The private header lives outside the repository. Its filename is additionally
+Git-ignored if accidentally copied here. Legacy `include/secrets.h`, private
+recovery folders and `.pio` artifacts are Git-ignored.
 This folder now belongs to the enclosing Laravel Git repository; do not initialize
 a nested repository or force-add secrets. Never share credential-bearing binaries.
+
+### Recovery
+
+The original standalone project at
+`C:\Users\ronin\OneDrive\Documents\PlatformIO\Projects\SmartBarangay-ESP32-CAM-Test`
+retains its original private setup. Reopen it for fallback builds. For a rollback
+of this configuration change, review and reverse only the external-header setup
+diff in the consolidated project, including its pre-build script and regression
+test. Preserve other pending work. Keep the external header private during recovery.
+Changing the header requires rebuilding the firmware. Previously built binaries
+retain their compiled credentials and must stay private.
 
 ## Configuration and pin mapping
 
@@ -83,7 +98,7 @@ The page and stream are unencrypted and unauthenticated for this local hardware 
 ## Failure behavior and diagnostics
 
 - Camera init error: logs hexadecimal error plus ESP error name, starts no server, and idles with delays. Correct hardware then reset; no rapid reboot loop.
-- Missing placeholder credentials: logs setup instructions and idles. A missing header fails compilation with instructions.
+- Missing or placeholder credentials stop the PlatformIO build with setup instructions. Existing runtime credential checks remain a second safeguard.
 - Wi-Fi: waits at most 20 seconds per attempt, then retries after 30 seconds. Common status values: 1 = SSID unavailable, 4 = connection failed, 6 = disconnected. No password is logged. Auto reconnect is enabled for link loss.
 - HTTP startup failure: partial servers are stopped and initialization retries after 30 seconds.
 - Stream failure: frame buffers are returned and the connection is closed. Reload/reconnect after correcting the cause.

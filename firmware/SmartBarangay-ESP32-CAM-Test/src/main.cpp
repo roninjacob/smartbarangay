@@ -14,10 +14,10 @@
 #include "lwip/sockets.h"
 #include "iot_readiness.h"
 
-#if __has_include("secrets.h")
-#include "secrets.h"
+#if __has_include("smartbarangay_wifi_private.h")
+#include "smartbarangay_wifi_private.h"
 #else
-#error "Copy include/secrets.example.h to include/secrets.h and configure Wi-Fi."
+#error "Configure the external private Wi-Fi header. See README Private Wi-Fi setup."
 #endif
 
 namespace {
@@ -900,7 +900,7 @@ void setup() {
         && strcmp(WIFI_SSID, "YOUR_2_4_GHZ_WIFI_NAME") != 0
         && strcmp(WIFI_PASSWORD, "YOUR_WIFI_PASSWORD") != 0;
     if (!credentialsReady) {
-        Serial.println("[WiFi] Configure include/secrets.h, rebuild and upload. Credentials are never logged.");
+        Serial.println("[WiFi] Configure the external private Wi-Fi header and rebuild. Credentials are never logged.");
         return;
     }
     WiFi.mode(WIFI_STA);
