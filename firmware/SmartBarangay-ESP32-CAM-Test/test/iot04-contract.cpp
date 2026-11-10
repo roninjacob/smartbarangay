@@ -21,6 +21,18 @@ void emit(const Observation &event, const char *path, const char *nonce) {
     std::cout << path << '\n' << json << '\n' << nonce << '\n' << hash << '\n' << signature << '\n';
 }
 int main() {
+    Observation automatic;
+    memcpy(automatic.payload, ticket, 42); automatic.kind = Kind::Ticket;
+    automatic.session = 1; automatic.sequence = 2; automatic.capturedUtcMs = utc;
+    const auto automaticJson = automaticBody(automatic, boot);
+    assert(automaticJson == std::string("{\"boot_id\":\"") + boot
+        + "\",\"scanner_session\":1,\"sequence\":2,\"captured_at_ms\":1794000000000,\"payload\":\"" + ticket + "\"}");
+    assert(automaticJson.find("pairing_id") == std::string::npos);
+    assert(automaticBody(automatic, "invalid").empty());
+    automatic.sequence = 0; assert(automaticBody(automatic, boot).empty());
+    const auto emptyHash = digest("{}");
+    assert(!canonical("/api/iot/v1/status", device, 1, utc / 1000, boot, emptyHash.c_str()).empty());
+    assert(!canonical("/api/iot/v1/preview", device, 1, utc / 1000, boot, emptyHash.c_str()).empty());
     assert(digest("") == "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855");
     assert(digest("hello", "invalid").empty());
     assert(classify(reinterpret_cast<const uint8_t *>(ticket), 41) == Kind::Ticket);

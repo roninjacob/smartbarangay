@@ -25,19 +25,24 @@
         </div>
         </div>
         <div class="p-4" data-iot-panel hidden>
-            <p class="app-note">Select your provisioned ESP32-CAM, then show it the temporary pairing QR. Keep this page open while scanning.</p>
+            <p class="app-note">Provisioned scanners authenticate automatically. Select a scanner to view live results. Scanning never checks in a Resident automatically.</p>
             <label class="form-label" for="iot-device">Scanner</label>
-            <select class="form-select mb-3" id="iot-device" data-iot-device><option value="">Loading scannersâ€¦</option></select>
+            <select class="form-select mb-3" id="iot-device" data-iot-device><option value="">Loading scanners…</option></select>
             <div class="d-flex flex-wrap gap-2 mb-3">
-                <button type="button" class="btn btn-primary" data-iot-pair disabled>Generate Pairing QR</button>
+                <button type="button" class="btn btn-primary" data-iot-connect disabled>Connect scanner</button>
                 <button type="button" class="btn btn-outline-secondary" data-iot-refresh>Refresh scanners</button>
                 <button type="button" class="btn btn-outline-danger" data-iot-disconnect disabled>Disconnect</button>
             </div>
-            <div class="text-center border rounded-4 p-3 mb-3" data-iot-qr-wrap hidden>
-                <img width="240" height="240" class="img-fluid" alt="Temporary scanner pairing QR" data-iot-qr>
-                <p class="mb-0 mt-2" data-iot-countdown role="timer"></p>
-            </div>
-            <p class="alert alert-info mb-0" data-iot-status role="status" aria-live="polite">Select a scanner to begin.</p>
+            <p class="alert alert-info" data-iot-status role="status" aria-live="polite">Select a scanner to begin.</p>
+            <dl class="row small"><dt class="col-sm-3">Device activity</dt><dd class="col-sm-9" data-iot-activity>No recent activity</dd>
+                <dt class="col-sm-3">Latest scan</dt><dd class="col-sm-9" data-iot-latest>No scan received</dd></dl>
+            <section class="border rounded-4 p-3" aria-labelledby="iot-preview-title">
+                <div class="d-flex flex-wrap align-items-center gap-2 mb-3"><h3 id="iot-preview-title" class="h6 me-auto mb-0">Camera Preview</h3>
+                    <button type="button" class="btn btn-outline-primary btn-sm" data-iot-preview-start disabled>Start preview</button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm" data-iot-preview-stop disabled>Stop preview</button></div>
+                <p class="app-note" data-iot-preview-note>Preview is off. Images are private and expire shortly. Keep only the ticket in view.</p>
+                <img class="img-fluid rounded-3" width="320" height="240" alt="Live ESP32-CAM image" data-iot-preview-image hidden>
+            </section>
         </div>
     </section>
     <section class="dashboard-panel qr-result-panel" tabindex="-1" aria-labelledby="result-heading" aria-live="polite" aria-atomic="true" data-qr-result>

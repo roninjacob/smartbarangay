@@ -22,8 +22,8 @@ class AuthenticateIotDevice
         abort_unless(preg_match('/\Aapplication\/json(?:\s*;\s*charset=utf-8)?\z/i', $request->header('Content-Type', '')), 415);
         abort_unless($request->header('Content-Encoding', 'identity') === 'identity', 415);
         $length = $request->header('Content-Length');
-        abort_if($length !== null && (! ctype_digit($length) || (int) $length > IotDeviceAuthentication::MAX_BODY_BYTES), 413);
-        abort_if(strlen($request->getContent()) > IotDeviceAuthentication::MAX_BODY_BYTES, 413);
+        abort_if($length !== null && (! ctype_digit($length) || (int) $length > IotDeviceAuthentication::bodyLimit($request)), 413);
+        abort_if(strlen($request->getContent()) > IotDeviceAuthentication::bodyLimit($request), 413);
         try {
             $body = json_decode($request->getContent(), false, 4, JSON_THROW_ON_ERROR);
         } catch (JsonException) {

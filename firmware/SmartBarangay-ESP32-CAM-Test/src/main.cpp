@@ -631,7 +631,7 @@ void qrWorker(void *) {
                 converted = fmt2rgb888(frame->buf, frame->len, PIXFORMAT_JPEG, rgb);
                 timing.convertUs = static_cast<uint32_t>(esp_timer_get_time() - convertStarted);
             }
-            if (frame) { esp_camera_fb_return(frame); }
+            if (frame) { deviceiot::offerFrame(frame->buf, frame->len, transportAcquiredMs); esp_camera_fb_return(frame); }
             if (!converted) {
                 setQrMessage("QR capture/JPEG conversion failed; retrying next capture.");
                 recordQrTiming(timing, attemptStarted);
@@ -651,6 +651,7 @@ void qrWorker(void *) {
             timing.detectUs = static_cast<uint32_t>(esp_timer_get_time() - detectStarted);
             timing.processed = true;
             const int count = quirc_count(decoder);
+            deviceiot::sceneEmpty(count == 0);
             setQrMessage(count ? "QR located; attempting decode." : "No QR found. Adjust distance, focus and lighting.");
             for (int i = 0; i < count; ++i) {
                 const int64_t decodeStarted = esp_timer_get_time();
@@ -901,10 +902,9 @@ void setup() {
     }
     cameraReady = initializeCamera();
     if (!cameraReady) {
-        Serial.println("[BOOT] Camera unavailable. Idle until hardware is corrected and reset pressed.");
-        return;
+        Serial.println("[BOOT] Camera unavailable. Authenticated health reporting remains available; correct hardware and reset.");
     }
-    if (psramFound() && xTaskCreatePinnedToCore(qrWorker, "qr-worker", 24576, nullptr, 1, &qrTask, 1) != pdPASS) {
+    if (cameraReady && psramFound() && xTaskCreatePinnedToCore(qrWorker, "qr-worker", 24576, nullptr, 1, &qrTask, 1) != pdPASS) {
         qrTask = nullptr;
         Serial.println("[QR] Worker allocation failed; preview only.");
     }
@@ -922,9 +922,10 @@ void setup() {
 }
 
 void loop() {
+    deviceiot::cameraState(cameraReady.load(), qrTask != nullptr);
     deviceiot::tick();
     reportDiagnostics();
-    if (!cameraReady || !credentialsReady) {
+    if (!credentialsReady) {
         delay(1000);
         return;
     }

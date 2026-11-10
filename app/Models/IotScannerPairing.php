@@ -20,7 +20,7 @@ class IotScannerPairing extends Model
 
     protected function casts(): array
     {
-        return ['session_id' => 'encrypted', 'challenge_expires_at' => 'immutable_datetime',
+        return ['automatic' => 'boolean', 'preview_until' => 'immutable_datetime', 'session_id' => 'encrypted', 'challenge_expires_at' => 'immutable_datetime',
             'paired_at' => 'immutable_datetime', 'expires_at' => 'immutable_datetime',
             'last_browser_seen_at' => 'immutable_datetime', 'credential_version' => 'integer',
             'last_scan_session' => 'integer', 'last_sequence' => 'integer', 'last_captured_at_ms' => 'integer'];

@@ -11,6 +11,8 @@
 #include "esp_system.h"
 #include "esp_timer.h"
 #include "cJSON.h"
+#include "mbedtls/base64.h"
+#include "esp_heap_caps.h"
 
 #if defined(SB_IOT_PRIVATE_BUILD) && !SB_CAMERA_DIAGNOSTICS
 #if defined(CORE_DEBUG_LEVEL) && CORE_DEBUG_LEVEL > 0
@@ -40,11 +42,15 @@ constexpr bool configured = !readiness::cameraDiagnostics;
 #else
 constexpr bool configured = false;
 #endif
-struct Pending { uint8_t payload[70]; size_t length; uint64_t acquiredMs; uint32_t session, sequence, generation; };
+struct Pending { uint8_t payload[70]; size_t length; uint64_t acquiredMs; uint32_t session, sequence, generation, presentation; };
 QueueHandle_t observations = nullptr;
-Session session;
+struct Frame { uint8_t *bytes; size_t length; uint64_t acquiredMs; };
+QueueHandle_t frames = nullptr;
+std::atomic<bool> previewWanted{false}, cameraOk{false}, decoderOk{false};
+std::atomic<uint64_t> previewExpires{0};
+char previewLease[37] = {};
 char boot[33] = {};
-std::atomic<uint32_t> generation{0}, syncedAt{0};
+std::atomic<uint32_t> generation{0}, syncedAt{0}, presentation{0};
 std::atomic<bool> synchronized{false};
 std::atomic<int> currentStatus{static_cast<int>(Status::Disabled)}, lastHttp{0};
 std::atomic<int> lastTls{0};
@@ -60,7 +66,8 @@ void publish(Status status) { currentStatus = static_cast<int>(status); }
 class DeadlineClient : public WiFiClientSecure {
 public:
     uint64_t deadline = 0;
-    bool alive() { if (monotonicMs() >= deadline) { stop(); return false; } return true; }
+    bool previewTransfer = false;
+    bool alive() { if (monotonicMs() >= deadline || (previewTransfer && uxQueueMessagesWaiting(observations) > 0)) { stop(); return false; } return true; }
     int available() override { return alive() ? WiFiClientSecure::available() : 0; }
     uint8_t connected() override { return alive() ? WiFiClientSecure::connected() : 0; }
     int read() override { return alive() ? WiFiClientSecure::read() : -1; }
@@ -101,14 +108,14 @@ uint64_t expiry(const char *value) {
     return static_cast<uint64_t>(days * 86400 + hour * 3600 + minute * 60 + second) * 1000;
 }
 
-Reply send(const Observation &event) {
+Reply send(const std::string &json, const char *path, uint64_t acquiredMs) {
     Reply reply;
-    if (!clockReady() || WiFi.status() != WL_CONNECTED || monotonicMs() - event.acquiredMs >= 5000) return reply;
-    const std::string json = body(event, boot, session.pairingId);
-    const char *path = event.kind == Kind::Pair ? "/api/iot/v1/pair" : "/api/iot/v1/scans";
-    if (json.empty() || json.size() > 1024 || !uuid(IOT_DEVICE_ID) || !hex(IOT_KEY_HEX, 64) || !IOT_ROOT_CA[0]) return reply;
+    if (!clockReady() || WiFi.status() != WL_CONNECTED || monotonicMs() - acquiredMs >= 5000) return reply;
+    const size_t limit = !strcmp(path, "/api/iot/v1/preview") ? 45056 : 1024;
+    if (json.empty() || json.size() > limit || !uuid(IOT_DEVICE_ID) || !hex(IOT_KEY_HEX, 64) || !IOT_ROOT_CA[0]) return reply;
     DeadlineClient client;
-    client.deadline = event.acquiredMs + 5000;
+    client.deadline = acquiredMs + 5000;
+    client.previewTransfer = !strcmp(path, "/api/iot/v1/preview");
     client.setCACert(IOT_ROOT_CA);
     client.setHandshakeTimeout(3);
     client.setTimeout(1500);
@@ -144,26 +151,32 @@ Reply send(const Observation &event) {
     ResponseBuffer response;
     if (reply.http == 200 && (http.getSize() > 768 || http.writeToStream(&response) < 0)) { http.end(); return reply; }
     http.end();
-    if (reply.http != 200 || !clockReady() || monotonicMs() - event.acquiredMs >= 5000 || WiFi.status() != WL_CONNECTED) return reply;
+    if (reply.http != 200 || !clockReady() || monotonicMs() - acquiredMs >= 5000 || WiFi.status() != WL_CONNECTED) return reply;
     const char *parseEnd = nullptr;
     cJSON *root = cJSON_ParseWithLengthOpts(response.bytes, response.length + 1, &parseEnd, true);
     if (!root) return reply;
     const cJSON *ok = cJSON_GetObjectItemCaseSensitive(root, "ok");
-    if (cJSON_IsObject(root) && cJSON_GetArraySize(root) == 3 && cJSON_IsTrue(ok)) {
-        if (event.kind == Kind::Pair) {
-            const cJSON *id = cJSON_GetObjectItemCaseSensitive(root, "pairing_id");
-            const cJSON *until = cJSON_GetObjectItemCaseSensitive(root, "expires_at");
-            if (cJSON_IsString(id) && uuid(id->valuestring) && cJSON_IsString(until)) {
-                memcpy(reply.pairingId, id->valuestring, 37);
-                reply.expiresUtcMs = expiry(until->valuestring);
-                reply.wellFormed = reply.expiresUtcMs != 0;
+    if (cJSON_IsObject(root) && cJSON_IsTrue(ok)) {
+        if (!strcmp(path, "/api/iot/v1/status")) {
+            previewWanted = false;
+            const cJSON *show = cJSON_GetObjectItemCaseSensitive(root, "preview");
+            const cJSON *id = cJSON_GetObjectItemCaseSensitive(root, "lease_id");
+            const cJSON *until = cJSON_GetObjectItemCaseSensitive(root, "preview_expires_at");
+            if (cJSON_IsTrue(show) && cJSON_IsString(id) && uuid(id->valuestring) && cJSON_IsString(until)) {
+                const uint64_t end = expiry(until->valuestring);
+                if (end > utcMs() && end - utcMs() <= 15000) {
+                    memcpy(previewLease, id->valuestring, sizeof(previewLease));
+                    previewExpires = end;
+                    previewWanted = true;
+                }
             }
-        } else {
+            reply.wellFormed = cJSON_IsBool(show);
+        } else if (!strcmp(path, "/api/iot/v1/scans")) {
             const cJSON *valid = cJSON_GetObjectItemCaseSensitive(root, "valid");
             const cJSON *id = cJSON_GetObjectItemCaseSensitive(root, "event_id");
             reply.wellFormed = cJSON_IsBool(valid) && cJSON_IsString(id) && uuid(id->valuestring);
             reply.valid = cJSON_IsTrue(valid);
-        }
+        } else reply.wellFormed = true;
     }
     cJSON_Delete(root);
     return reply;
@@ -171,37 +184,74 @@ Reply send(const Observation &event) {
 
 void worker(void *) {
     Pending pending{};
-    uint32_t observedGeneration = generation.load();
-    uint64_t finishedAt = 0;
+    uint64_t nextControl = 0, nextFrame = 0, backoff = 0, finishedAt = 0;
+    uint32_t frameSequence = 0;
+    std::string lastQr;
+    uint32_t lastPresentation = presentation.load();
     for (;;) {
-        const bool received = xQueueReceive(observations, &pending, pdMS_TO_TICKS(250)) == pdTRUE;
-        if (observedGeneration != generation.load()) {
-            observedGeneration = generation.load();
-            session.clear(Status::NeedPair);
+        const bool received = xQueueReceive(observations, &pending, pdMS_TO_TICKS(100)) == pdTRUE;
+        if (lastPresentation != presentation.load()) { lastQr.clear(); lastPresentation = presentation.load(); }
+        if (WiFi.status() != WL_CONNECTED || !clockReady()) {
+            previewWanted = false;
+            publish(WiFi.status() == WL_CONNECTED ? Status::NeedTime : Status::Unknown);
+            memset(&pending, 0, sizeof(pending));
+            continue;
         }
-        if (WiFi.status() != WL_CONNECTED) session.clear(Status::Unknown);
-        else if (!clockReady()) session.clear(Status::NeedTime);
-        else if (session.status == Status::NeedTime) session.clear(Status::NeedPair);
-        if (session.pairingId[0] && utcMs() >= session.expiresUtcMs) session.clear(Status::NeedPair);
-        if ((session.status == Status::Valid || session.status == Status::Invalid) && monotonicMs() - finishedAt >= 2000)
-            session.status = Status::Paired;
-        publish(session.status);
-        if (!received) continue;
-        if (pending.generation != generation.load()) continue;
-        Observation event;
-        const uint64_t now = monotonicMs(), utc = utcMs();
-        const uint64_t captured = now >= pending.acquiredMs && utc >= now - pending.acquiredMs ? utc - (now - pending.acquiredMs) : 0;
-        if (!session.offer(pending.payload, pending.length, pending.acquiredMs, captured, pending.session, pending.sequence,
-                           now, utc, clockReady(), event)) { publish(session.status); memset(&pending, 0, sizeof(pending)); continue; }
-        publish(Status::Processing);
-        const Reply reply = send(event);
-        lastHttp = reply.http;
-        if (pending.generation != generation.load()) session.clear(Status::NeedPair);
-        else session.finish(event, reply, monotonicMs(), utcMs());
-        finishedAt = monotonicMs();
-        publish(session.status);
-        memset(&event, 0, sizeof(event));
-        memset(&pending, 0, sizeof(pending));
+        if (monotonicMs() < backoff) { memset(&pending, 0, sizeof(pending)); continue; }
+        // Register a new boot before any queued ticket; control polling cannot starve
+        // while QR codes remain in view. A stale observation is never retried.
+        if (monotonicMs() >= nextControl) {
+            char json[180];
+            snprintf(json, sizeof(json), "{\"boot_id\":\"%s\",\"captured_at_ms\":%llu,\"camera_state\":\"%s\"}",
+                boot, static_cast<unsigned long long>(utcMs()), !cameraOk.load() ? "camera_error" : (decoderOk.load() ? "ready" : "detection_error"));
+            const Reply reply = send(json, "/api/iot/v1/status", monotonicMs());
+            nextControl = monotonicMs() + 5000; lastHttp = reply.http;
+            if (reply.http == 401 || reply.http == 403) { previewWanted = false; publish(Status::Revoked); backoff = UINT64_MAX; }
+            else if (!reply.wellFormed || reply.http != 200) { previewWanted = false; publish(Status::Unknown); }
+            else if (monotonicMs() - finishedAt >= 2000) publish(Status::Paired);
+            if (backoff == UINT64_MAX) continue;
+        }
+        if (received && pending.generation == generation.load() && pending.presentation == presentation.load() && monotonicMs() >= pending.acquiredMs
+            && monotonicMs() - pending.acquiredMs < 5000) {
+            Observation event;
+            memcpy(event.payload, pending.payload, pending.length);
+            event.kind = Kind::Ticket; event.acquiredMs = pending.acquiredMs;
+            event.capturedUtcMs = utcMs() - (monotonicMs() - pending.acquiredMs);
+            event.session = pending.session; event.sequence = pending.sequence;
+            // Latch stationary tickets; two empty captures re-arm the presentation.
+            const bool sent = lastQr != event.payload;
+            if (sent) {
+                lastQr = event.payload;
+                publish(Status::Processing);
+                const Reply reply = send(automaticBody(event, boot), "/api/iot/v1/scans", event.acquiredMs);
+                lastHttp = reply.http; finishedAt = monotonicMs();
+                if (reply.http == 401 || reply.http == 403) { publish(Status::Revoked); backoff = UINT64_MAX; }
+                else if (reply.http == 429) { publish(Status::RateLimited); backoff = monotonicMs() + 60000; }
+                else if (reply.http == 200 && reply.wellFormed) publish(reply.valid ? Status::Valid : Status::Invalid);
+                else { publish(Status::Unknown); backoff = monotonicMs() + 3000; lastQr.clear(); }
+            }
+            memset(&event, 0, sizeof(event)); memset(&pending, 0, sizeof(pending));
+            if (sent) continue;
+        }
+        if (previewExpires.load() <= utcMs()) previewWanted = false;
+        Frame frame{};
+        if (xQueueReceive(frames, &frame, 0) == pdTRUE) {
+            if (previewWanted && monotonicMs() >= nextFrame && monotonicMs() - frame.acquiredMs < 3000
+                && uxQueueMessagesWaiting(observations) == 0) {
+                size_t length = 0;
+                std::string encoded(4 * ((frame.length + 2) / 3) + 1, '\0');
+                if (mbedtls_base64_encode(reinterpret_cast<unsigned char *>(&encoded[0]), encoded.size(), &length, frame.bytes, frame.length) == 0) {
+                    encoded.resize(length);
+                    char prefix[230];
+                    snprintf(prefix, sizeof(prefix), "{\"boot_id\":\"%s\",\"lease_id\":\"%s\",\"sequence\":%u,\"captured_at_ms\":%llu,\"image\":\"",
+                        boot, previewLease, static_cast<unsigned>(++frameSequence), static_cast<unsigned long long>(utcMs() - (monotonicMs() - frame.acquiredMs)));
+                    const Reply reply = send(std::string(prefix) + encoded + "\"}", "/api/iot/v1/preview", frame.acquiredMs);
+                    if (reply.http != 200) previewWanted = false;
+                }
+                nextFrame = monotonicMs() + 1100;
+            }
+            memset(frame.bytes, 0, frame.length); free(frame.bytes);
+        }
     }
 }
 } // namespace
@@ -210,14 +260,14 @@ const char *statusText() {
     switch (static_cast<Status>(currentStatus.load())) {
         case Status::Disabled: return "disabled";
         case Status::NeedTime: return "waiting_for_time_sync";
-        case Status::NeedPair: return "scan_pairing_qr";
-        case Status::Paired: return "paired_waiting_for_ticket";
+        case Status::NeedPair: return "ready_for_ticket";
+        case Status::Paired: return "ready_for_ticket";
         case Status::Processing: return "processing";
         case Status::Valid: return "server_valid";
         case Status::Invalid: return "server_invalid";
         case Status::Revoked: return "authentication_or_authorization_failed";
         case Status::RateLimited: return "rate_limited_wait_60_seconds";
-        default: return "unknown_scan_new_pairing_qr";
+        default: return "connection_unavailable";
     }
 }
 int httpStatus() { return lastHttp.load(); }
@@ -227,7 +277,8 @@ bool start(const char *bootId) {
     if (!configured || started || !hex(bootId, 32)) return started;
     memcpy(boot, bootId, sizeof(boot));
     observations = xQueueCreate(1, sizeof(Pending));
-    if (!observations) { publish(Status::Unknown); Serial.println("[IoT] communication queue allocation failed"); return false; }
+    frames = xQueueCreate(1, sizeof(Frame));
+    if (!observations || !frames) { publish(Status::Unknown); Serial.println("[IoT] communication queue allocation failed"); return false; }
     sntp_set_time_sync_notification_cb(synchronizedTime);
     sntp_set_sync_interval(300000);
     configTime(0, 0, "pool.ntp.org", "time.google.com");
@@ -244,15 +295,40 @@ bool start(const char *bootId) {
     return true;
 }
 void observe(const uint8_t *payload, size_t length, uint64_t acquiredMs, uint32_t scannerSession, uint32_t sequence) {
-    if (!observations || length > 69 || classify(payload, length) == Kind::Other || !clockReady() || WiFi.status() != WL_CONNECTED) return;
+    if (!observations || length > 69 || classify(payload, length) != Kind::Ticket || !clockReady() || WiFi.status() != WL_CONNECTED) return;
     Pending pending{};
     memcpy(pending.payload, payload, length); pending.length = length; pending.acquiredMs = acquiredMs;
     pending.session = scannerSession; pending.sequence = sequence; pending.generation = generation.load();
+    pending.presentation = presentation.load();
     // A single latest observation is enough; old queued events are never retried.
     xQueueOverwrite(observations, &pending);
     memset(&pending, 0, sizeof(pending));
 }
+void sceneEmpty(bool empty) {
+    // Called only by the camera task; the transport worker sees an atomic epoch.
+    static unsigned missing = 0;
+    static bool rearmed = false;
+    if (!empty) { missing = 0; rearmed = false; return; }
+    if (missing < 2) ++missing;
+    if (missing == 2 && !rearmed) { presentation++; rearmed = true; }
+}
+void cameraState(bool ready, bool decoderReady) { cameraOk = ready; decoderOk = decoderReady; }
+void offerFrame(const uint8_t *jpeg, size_t length, uint64_t acquiredMs) {
+    static uint64_t lastOffered = 0;
+    if (!frames || !previewWanted || !clockReady() || previewExpires.load() <= utcMs() || length > 32768
+        || monotonicMs() - lastOffered < 1100 || length < 4 || jpeg[0] != 0xff || jpeg[1] != 0xd8) return;
+    // Copy only; no TLS/network, waiting, extra capture, or decoding on the camera task.
+    auto *copy = static_cast<uint8_t *>(heap_caps_malloc(length, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT));
+    if (!copy) return;
+    memcpy(copy, jpeg, length);
+    Frame previous{};
+    if (xQueueReceive(frames, &previous, 0) == pdTRUE) { memset(previous.bytes, 0, previous.length); free(previous.bytes); }
+    Frame frame{copy, length, acquiredMs};
+    if (xQueueSend(frames, &frame, 0) != pdTRUE) { memset(copy, 0, length); free(copy); }
+    lastOffered = monotonicMs();
+}
 void invalidate() {
+    previewWanted = false;
     generation++;
     if (observations) xQueueReset(observations);
 }

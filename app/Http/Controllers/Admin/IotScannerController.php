@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Services\IotAutomaticScanner;
 use App\Services\IotScannerSessions;
 use BaconQrCode\Renderer\Image\SvgImageBackEnd;
 use BaconQrCode\Renderer\ImageRenderer;
@@ -10,6 +11,7 @@ use BaconQrCode\Renderer\RendererStyle\RendererStyle;
 use BaconQrCode\Writer;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 
 class IotScannerController extends Controller
 {
@@ -40,6 +42,27 @@ class IotScannerController extends Controller
         $scanners->disconnect($request);
 
         return $this->respond(['state' => 'unpaired']);
+    }
+
+    public function connect(Request $request, IotAutomaticScanner $scanner): JsonResponse
+    {
+        $data = $request->validate(['device_id' => ['required', 'uuid']]);
+
+        return $this->respond($scanner->connect($request, $data['device_id']));
+    }
+
+    public function preview(Request $request, IotAutomaticScanner $scanner): JsonResponse
+    {
+        $data = $request->validate(['enabled' => ['required', 'boolean']]);
+
+        return $this->respond($scanner->preview($request, (bool) $data['enabled']));
+    }
+
+    public function frame(Request $request, IotAutomaticScanner $scanner): Response
+    {
+        return response($scanner->frame($request))->header('Content-Type', 'image/jpeg')
+            ->header('Cache-Control', 'private, no-store')->header('X-Content-Type-Options', 'nosniff')
+            ->header('Referrer-Policy', 'no-referrer');
     }
 
     private function respond(array $body): JsonResponse

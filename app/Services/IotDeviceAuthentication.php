@@ -13,11 +13,16 @@ class IotDeviceAuthentication
 {
     public const PATH = '/api/iot/v1/probe';
 
-    public const PATHS = [self::PATH, '/api/iot/v1/pair', '/api/iot/v1/scans'];
+    public const PATHS = [self::PATH, '/api/iot/v1/pair', '/api/iot/v1/scans', '/api/iot/v1/status', '/api/iot/v1/preview'];
 
     public const CLOCK_SKEW = 90;
 
     public const MAX_BODY_BYTES = 1024;
+
+    public static function bodyLimit(Request $request): int
+    {
+        return $request->getRequestUri() === '/api/iot/v1/preview' ? 45056 : self::MAX_BODY_BYTES;
+    }
 
     public function authenticate(Request $request): ?string
     {

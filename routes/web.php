@@ -140,7 +140,10 @@ Route::middleware('auth')->group(function () {
         Route::get('/reports/checkins', [RecordedEventReportController::class, 'checkins'])->name('reports.checkins');
         Route::get('/reports/documents', [RecordedEventReportController::class, 'documents'])->name('reports.documents');
         Route::get('/qr-verification', [QrVerificationController::class, 'index'])->name('qr-verification.index');
-        Route::prefix('iot-scanner')->name('iot-scanner.')->middleware('throttle:120,1')->group(function () {
+        Route::prefix('iot-scanner')->name('iot-scanner.')->middleware('throttle:240,1')->group(function () {
+            Route::post('/connect', [IotScannerController::class, 'connect'])->block()->name('connect');
+            Route::post('/preview', [IotScannerController::class, 'preview'])->block()->name('preview');
+            Route::get('/frame', [IotScannerController::class, 'frame'])->block()->name('frame');
             Route::get('/devices', [IotScannerController::class, 'devices'])->name('devices');
             Route::post('/challenge', [IotScannerController::class, 'challenge'])->block(10, 10)->name('challenge');
             Route::post('/poll', [IotScannerController::class, 'poll'])->block(10, 10)->name('poll');

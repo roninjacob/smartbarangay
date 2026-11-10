@@ -38,7 +38,11 @@ def main():
     for function in ['streamHandler', 'qrFrameHandler']:
         assert re.search(r'esp_err_t '+function+r'\(httpd_req_t \*request\) \{\s*if \(!readiness::cameraDiagnostics\)', source)
     for item in baseline['library_files']:
-        assert hashlib.sha256((ROOT / item['path']).read_bytes()).hexdigest() == item['sha256']
+        raw = (ROOT / item['path']).read_bytes()
+        # The reviewed checksum snapshot used Windows CRLF; Git may check out LF.
+        # Accept only that mechanical conversion, never a changed library body.
+        windows = raw.replace(b'\r\n', b'\n').replace(b'\n', b'\r\n')
+        assert item['sha256'] in {hashlib.sha256(raw).hexdigest(), hashlib.sha256(windows).hexdigest()}, item['path']
     new_config = configparser.ConfigParser()
     new_config.read(ROOT/'platformio.ini')
     current_environment = dict(new_config['env:esp32cam'])

@@ -13,3 +13,10 @@ Route::middleware(['throttle:iot-ip', AuthenticateIotDevice::class, 'throttle:io
     Route::post('/iot/v1/pair', [IotScannerController::class, 'pair'])->name('iot.v1.pair');
     Route::post('/iot/v1/scans', [IotScannerController::class, 'scan'])->name('iot.v1.scans');
 });
+
+// Preview/control have separate budgets: uploads cannot exhaust the scan allowance.
+foreach (['status', 'preview'] as $action) {
+    Route::post('/iot/v1/'.$action, [IotScannerController::class, $action])
+        ->middleware(['throttle:iot-'.$action.'-ip', AuthenticateIotDevice::class, 'throttle:iot-'.$action.'-device'])
+        ->name('iot.v1.'.$action);
+}

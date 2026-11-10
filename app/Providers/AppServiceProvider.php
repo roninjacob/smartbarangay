@@ -26,6 +26,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        foreach (['status' => 20, 'preview' => 65] as $action => $limit) {
+            RateLimiter::for('iot-'.$action.'-ip', fn (Request $request) => Limit::perMinute($limit * 2)
+                ->by('iot-'.$action.'-ip:'.hash('sha256', (string) $request->server('REMOTE_ADDR'))));
+            RateLimiter::for('iot-'.$action.'-device', fn (Request $request) => Limit::perMinute($limit)
+                ->by('iot-'.$action.'-device:'.$request->attributes->get('iot_device_id')));
+        }
         RateLimiter::for('iot-ip', fn (Request $request) => Limit::perMinute(config('iot.ip_requests_per_minute'))
             ->by('iot-ip:'.hash('sha256', (string) $request->server('REMOTE_ADDR'))));
         RateLimiter::for('iot-device', fn (Request $request) => Limit::perMinute(config('iot.device_requests_per_minute'))

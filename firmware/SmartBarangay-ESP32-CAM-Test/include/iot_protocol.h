@@ -30,7 +30,7 @@ inline bool hex(const char *value, size_t length) {
 }
 inline std::string canonical(const char *path, const char *device, unsigned version,
                              uint64_t seconds, const char *nonce, const char *bodyHash) {
-    if (!path || (std::strcmp(path, "/api/iot/v1/pair") && std::strcmp(path, "/api/iot/v1/scans") && std::strcmp(path, "/api/iot/v1/probe"))
+    if (!path || (std::strcmp(path, "/api/iot/v1/pair") && std::strcmp(path, "/api/iot/v1/scans") && std::strcmp(path, "/api/iot/v1/probe") && std::strcmp(path, "/api/iot/v1/status") && std::strcmp(path, "/api/iot/v1/preview"))
         || !uuid(device) || !version || version > 999999999 || seconds < 1000000000ULL || seconds > 9999999999ULL
         || !hex(nonce, 32) || !hex(bodyHash, 64)) return {};
     char numbers[48];
@@ -43,6 +43,16 @@ struct Observation {
     uint64_t acquiredMs = 0, capturedUtcMs = 0;
     uint32_t session = 0, sequence = 0;
 };
+inline std::string automaticBody(const Observation &event, const char *boot) {
+    if (!hex(boot, 32) || event.kind != Kind::Ticket || !event.session || !event.sequence
+        || event.session > 2147483647u || event.sequence > 2147483647u
+        || classify(reinterpret_cast<const uint8_t *>(event.payload), std::strlen(event.payload)) != Kind::Ticket) return {};
+    char values[150];
+    std::snprintf(values, sizeof(values), "\",\"scanner_session\":%u,\"sequence\":%u,\"captured_at_ms\":%llu,\"payload\":\"",
+        static_cast<unsigned>(event.session), static_cast<unsigned>(event.sequence), static_cast<unsigned long long>(event.capturedUtcMs));
+    return std::string("{\"boot_id\":\"") + boot + values + event.payload + "\"}";
+}
+
 struct Reply {
     int http = 0;
     bool wellFormed = false, valid = false;

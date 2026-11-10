@@ -12,7 +12,7 @@ class LimitIotRequestBody
     public function handle(Request $request, Closure $next): Response
     {
         if ($request->is('api/iot/*')) {
-            $maximum = IotDeviceAuthentication::MAX_BODY_BYTES;
+            $maximum = IotDeviceAuthentication::bodyLimit($request);
             $length = $request->header('Content-Length');
             abort_if($length !== null && (! ctype_digit($length) || (int) $length > $maximum), 413);
             // Bound input before Laravel's global JSON input transformations run.

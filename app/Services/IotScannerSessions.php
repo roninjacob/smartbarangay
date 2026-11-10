@@ -47,7 +47,7 @@ class IotScannerSessions
             && $session->last_activity >= now()->subMinutes(config('session.lifetime'))->timestamp;
     }
 
-    private function owns(IotScannerPairing $pairing, Request $request): bool
+    public function owns(IotScannerPairing $pairing, Request $request): bool
     {
         $binding = $request->session()->get(self::BINDING_KEY);
 
@@ -150,6 +150,10 @@ class IotScannerSessions
 
     public function poll(Request $request): array
     {
+        $automatic = IotScannerPairing::where('session_hash', $this->sessionHash($request))->first();
+        if ($automatic?->automatic) {
+            return app(IotAutomaticScanner::class)->poll($request);
+        }
         $this->browserReady();
 
         return DB::transaction(function () use ($request) {
@@ -202,6 +206,7 @@ class IotScannerSessions
         DB::transaction(function () use ($request) {
             $pairing = IotScannerPairing::where('session_hash', $this->sessionHash($request))->lockForUpdate()->first();
             if ($pairing && $this->owns($pairing, $request)) {
+                app(IotAutomaticScanner::class)->deleteFrame($pairing->device_id);
                 $pairing->delete();
             }
         });
