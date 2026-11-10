@@ -3,6 +3,7 @@
 use App\Http\Middleware\EnsureAccountIsActive;
 use App\Http\Middleware\EnsureUserHasRole;
 use App\Http\Middleware\LimitIotRequestBody;
+use App\Http\Middleware\SecurityHeaders;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -23,7 +24,9 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->prepend(LimitIotRequestBody::class);
-        $middleware->trustProxies(at: '*');
+        // TrustProxies reads config/trustedproxy.php after configuration loads.
+        $middleware->trustHosts(at: fn () => ['^'.preg_quote((string) parse_url(config('app.url'), PHP_URL_HOST)).'$'], subdomains: false);
+        $middleware->append(SecurityHeaders::class);
 
         $middleware->appendToGroup('web', EnsureAccountIsActive::class);
         $middleware->appendToGroup('web', AuthenticateSession::class);

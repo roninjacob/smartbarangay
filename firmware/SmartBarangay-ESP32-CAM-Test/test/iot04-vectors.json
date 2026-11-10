@@ -1,0 +1,14 @@
+[
+  {
+    "path": "/api/iot/v1/pair",
+    "body": "{\"challenge\":\"SBP1:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"boot_id\":\"11111111111111111111111111111111\"}",
+    "nonce": "00000000000000000000000000000000",
+    "signature": "32c5cff68815f3b4de02cf7dde622ee542c3edc338f88c2b4ebbeb9567480ea6"
+  },
+  {
+    "path": "/api/iot/v1/scans",
+    "body": "{\"pairing_id\":\"22222222-2222-4222-8222-222222222222\",\"boot_id\":\"11111111111111111111111111111111\",\"scanner_session\":1,\"sequence\":1,\"captured_at_ms\":1794000000000,\"payload\":\"SBQ1:550e8400-e29b-41d4-a716-446655440000\"}",
+    "nonce": "11111111111111111111111111111111",
+    "signature": "6f938b57de9a4f8f4a8731ef8909c377159b17ac96c9a802fe7de28d922907ec"
+  }
+]

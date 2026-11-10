@@ -13,6 +13,7 @@
 #include "esp_timer.h"
 #include "lwip/sockets.h"
 #include "iot_readiness.h"
+#include "iot_client.h"
 
 #if __has_include("smartbarangay_wifi_private.h")
 #include "smartbarangay_wifi_private.h"
@@ -199,7 +200,7 @@ const char TEST_PAGE[] PROGMEM = R"HTML(<!doctype html>
 <h2>Scan event readiness</h2>
 <pre id="qrResult" style="white-space:pre-wrap;overflow-wrap:anywhere;font-size:1.4rem;padding:16px;border:2px solid #8dd9ff" aria-live="polite">No QR decoded yet.</pre>
 <pre id="qrDetails" style="white-space:pre-wrap;overflow-wrap:anywhere"></pre>
-<p>QR content is never shown or logged. Format match is not ticket verification. Nothing is submitted to Laravel. Camera diagnostics are disabled by default; enable them only for dummy codes on a trusted LAN.</p>
+<p>QR content is never shown or logged. Format match is not ticket verification. The device API is active only with reviewed private configuration; its safe state is shown below. Camera diagnostics are disabled by default; enable them only for dummy codes on a trusted LAN.</p>
 <p>Use one viewer on a trusted LAN. In the default build, missing video is intentional. Port 81 is available only in the explicitly enabled dummy-only diagnostics build.</p>
 <a id="direct" hidden>Open direct MJPEG stream</a>
 <script>
@@ -278,7 +279,7 @@ async function poll(){
   const data=JSON.parse(await body.text());if(closed||generation!==modeGeneration)return;
   cameraDiagnostics=data.camera_diagnostics===true;
   for(const id of ['start','stop','direct'])document.getElementById(id).hidden=!cameraDiagnostics;
-  details.textContent=data.text;
+  details.textContent=data.text+'\nDevice API: '+(data.iot_state||'disabled')+'; HTTP '+(data.iot_http||0)+'.';
   let fresh=data.event_state==='fresh'&&data.mode==='qr'&&typeof data.event_id==='string'&&data.event_id.length>0&&Number.isFinite(data.event_age_ms)&&data.event_age_ms>=0&&data.event_age_ms<5000;
   if(fresh){const deadline=performance.now()+5000-data.event_age_ms;if(currentEvent===data.event_id)eventDeadline=Math.min(eventDeadline,deadline);else{currentEvent=data.event_id;eventDeadline=deadline;}fresh=performance.now()<eventDeadline;}
   const summary=fresh?'QR decoded ('+data.decoded_bytes+' bytes). '+(data.format_match?'SmartBarangay format match; NOT server verified.':'Other QR format; NOT server verified.'):'No fresh scan event. Cached metadata is not a new scan.';
@@ -520,6 +521,7 @@ void qrWorker(void *) {
         scanEvents.expire(static_cast<uint64_t>(esp_timer_get_time() / 1000));
         xSemaphoreGive(qrResultMutex);
         if (qrRequested.load() != qrActive.load()) {
+            deviceiot::invalidate();
             modeSwitching = true;
             xSemaphoreTake(qrResultMutex, portMAX_DELAY);
             scanEvents.invalidate();
@@ -592,6 +594,7 @@ void qrWorker(void *) {
             camera_fb_t *stale = esp_camera_fb_get();
             if (stale) { esp_camera_fb_return(stale); }
             camera_fb_t *frame = esp_camera_fb_get();
+            const uint64_t transportAcquiredMs = static_cast<uint64_t>(esp_timer_get_time() / 1000);
             const uint32_t captureUs = static_cast<uint32_t>(esp_timer_get_time() - started);
             const uint32_t acquiredMs = millis();
             timing.captureUs = captureUs;
@@ -672,6 +675,10 @@ void qrWorker(void *) {
                 timing.decoded = true;
                 timing.readyUs = static_cast<uint32_t>(esp_timer_get_time() - attemptStarted);
                 if (notify) {
+                    if (scanEvents.sequence <= 2147483647ULL) {
+                        deviceiot::observe(data->payload, data->payload_len, transportAcquiredMs,
+                                           qrSession, static_cast<uint32_t>(scanEvents.sequence));
+                    }
                     Serial.printf("[QR] Decoded bytes=%d; content withheld; NOT server verified.\n", data->payload_len);
                 }
                 break; // First successfully decoded code per capture is enough for feasibility.
@@ -690,6 +697,10 @@ void qrWorker(void *) {
 }
 
 esp_err_t modeHandler(httpd_req_t *request) {
+    if (deviceiot::enabled()) {
+        httpd_resp_set_status(request, "403 Forbidden");
+        return httpd_resp_sendstr(request, "Secure integration keeps QR mode active. Mode changes require a reviewed local build.");
+    }
     char query[32] = {}, value[16] = {};
     if (httpd_req_get_url_query_str(request, query, sizeof(query)) != ESP_OK ||
         httpd_query_key_value(query, "value", value, sizeof(value)) != ESP_OK ||
@@ -755,7 +766,8 @@ esp_err_t qrStatusHandler(httpd_req_t *request) {
         ",\"decoded_bytes\":" + static_cast<unsigned int>(byteCount) + ",\"format_match\":" + (formatMatch ? "true" : "false") +
         ",\"camera_diagnostics\":" + (readiness::cameraDiagnostics ? "true" : "false") +
         ",\"event_age_ms\":" + age + ",\"event_attempt\":" + eventAttempt +
-        ",\"scan_interval_ms\":" + qrCurrentIntervalMs.load() + ",\"scanning\":" + (qrProcessing.load() ? "true" : "false") + ",\"snapshot_sequence\":" + snapshotSequence.load() + "}";
+        ",\"scan_interval_ms\":" + qrCurrentIntervalMs.load() + ",\"scanning\":" + (qrProcessing.load() ? "true" : "false") + ",\"snapshot_sequence\":" + snapshotSequence.load() +
+        ",\"iot_state\":" + quoteJson(deviceiot::statusText()) + ",\"iot_http\":" + deviceiot::httpStatus() + ",\"iot_tls\":" + deviceiot::tlsStatus() + "}";
     httpd_resp_set_type(request, "application/json");
     httpd_resp_set_hdr(request, "Cache-Control", "no-store");
     return httpd_resp_send(request, json.c_str(), json.length());
@@ -910,6 +922,7 @@ void setup() {
 }
 
 void loop() {
+    deviceiot::tick();
     reportDiagnostics();
     if (!cameraReady || !credentialsReady) {
         delay(1000);
@@ -922,6 +935,7 @@ void loop() {
             uint8_t nonce[16]; esp_fill_random(nonce, sizeof(nonce));
             for (size_t i = 0; i < sizeof(nonce); ++i) { snprintf(bootId + i * 2, 3, "%02x", nonce[i]); }
         }
+        if (deviceiot::start(bootId)) { qrRequested = true; }
         const String ip = WiFi.localIP().toString();
         Serial.printf("[WiFi] Connected; RSSI=%d dBm.\n", WiFi.RSSI());
         Serial.printf("[WiFi] Metadata page: http://%s/\n", ip.c_str());

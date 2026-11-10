@@ -1,9 +1,19 @@
+Options -Indexes
+
+# Defense in depth; the application root must still remain outside the web root.
+<FilesMatch "(?i)(^\.|\.(?:env|ini|log|sql|sqlite|sqlite3|key|pem|bak|old|orig|save|zip|rar|7z|tar|gz)$|^(?:composer\.(?:json|lock)|artisan|phpunit\.xml)$)">
+    Require all denied
+</FilesMatch>
+
 <IfModule mod_rewrite.c>
     <IfModule mod_negotiation.c>
         Options -MultiViews -Indexes
     </IfModule>
 
     RewriteEngine On
+
+    # Reject private directories before the front controller, including PATH_INFO.
+    RewriteRule "(?:^|/)(?:\.(?!well-known(?:/|$))|app(?:/|$)|bootstrap(?:/|$)|config(?:/|$)|database(?:/|$)|vendor(?:/|$)|firmware(?:/|$)|tests(?:/|$)|backups(?:/|$)|storage(?:/|$))" - [F,L,NC]
 
     # Handle Authorization Header
     RewriteCond %{HTTP:Authorization} .

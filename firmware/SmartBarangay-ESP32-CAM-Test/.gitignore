@@ -1,5 +1,8 @@
 .pio
 **/smartbarangay_wifi_private.h
+**/smartbarangay_iot.json
+**/smartbarangay_iot_private.generated.h
+/.iot04-test/
 /.iot01-test/
 /include/secrets.h
 /include/secrets.local.h

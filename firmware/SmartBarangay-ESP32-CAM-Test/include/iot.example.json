@@ -1,0 +1,9 @@
+{
+  "enabled": false,
+  "host": "approved-https-host.example",
+  "port": 443,
+  "device_id": "REPLACE_WITH_PROVISIONED_DEVICE_ID",
+  "key_version": 1,
+  "key_hex": "REPLACE_WITH_PRIVATE_64_LOWERCASE_HEX_KEY",
+  "root_ca_file": "C:/Users/OWNER/.smartbarangay/firmware/esp32cam/approved-root-ca.pem"
+}

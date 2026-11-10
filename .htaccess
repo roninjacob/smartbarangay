@@ -1,0 +1,4 @@
+# Proposed repository-root guard for the legacy shared Apache path.
+# Do not install until owner approval. Independent HTTPS ignores .htaccess.
+Options -Indexes
+Require all denied

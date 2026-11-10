@@ -354,6 +354,8 @@ class IotDeviceApiTest extends TestCase
     public function test_loopback_plaintext_is_rejected_in_production_environment(): void
     {
         [$device, $key] = $this->device();
+        // The synthetic transport request must use the configured production host.
+        config(['app.url' => 'http://localhost']);
         app()->instance('env', 'production');
         $headers = $this->headers($device, $key);
         $this->sendProbe($headers)->assertStatus(403);

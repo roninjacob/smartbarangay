@@ -15,7 +15,7 @@ class AuthenticateIotDevice
         abort_unless(config('iot.enabled'), 503);
         $peer = $request->server('REMOTE_ADDR');
         $localTest = app()->environment(['local', 'testing']) && in_array($peer, ['127.0.0.1', '::1'], true);
-        // Do not trust the application's wildcard forwarded-proxy headers for device TLS.
+        // Device TLS requires direct server evidence, never client-forwarded headers.
         $directTls = in_array(strtolower((string) $request->server('HTTPS')), ['on', '1'], true);
         abort_unless($directTls || $localTest, 403);
         abort_unless($request->method() === 'POST' && in_array($request->getRequestUri(), IotDeviceAuthentication::PATHS, true), 400);

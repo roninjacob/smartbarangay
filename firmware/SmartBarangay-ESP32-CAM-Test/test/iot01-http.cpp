@@ -1,6 +1,7 @@
 // Host shim executes the actual status serializer and route registration extracted
 // from main.cpp by run_iot01.py. No board/network or Arduino hardware is simulated.
 #include "iot_readiness.h"
+namespace deviceiot { const char *statusText() { return "disabled"; } int httpStatus() { return 0; } int tlsStatus() { return 0; } }
 #include <atomic>
 #include <cassert>
 #include <cstdio>
