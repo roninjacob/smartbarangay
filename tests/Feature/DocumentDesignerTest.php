@@ -98,6 +98,19 @@ class DocumentDesignerTest extends TestCase
         $this->get($this->url($service).'/pdf?revision=wrong')->assertNotFound();
     }
 
+    public function test_missing_physical_pdf_fails_closed_without_erasing_saved_layout(): void
+    {
+        [$service, $template, $field] = $this->fixture();
+        $this->saveLayout($service, [$this->position($field)])->assertOk();
+        $positions = $field->positions()->get()->toJson();
+        Storage::disk('local')->delete($service->documentTemplate->stored_path);
+        $this->get($this->url($service).'/pdf?revision='.$template->source_revision)->assertNotFound();
+        $this->get($this->url($service))->assertOk()->assertSee('The official PDF has changed or is unavailable');
+        $this->saveLayout($service, [])->assertUnprocessable()->assertJsonValidationErrors('layout');
+        $this->assertSame($positions, $field->positions()->get()->toJson());
+        $this->assertDatabaseCount('service_document_templates', 1);
+    }
+
     public function test_layout_save_reuses_positions_and_preserves_fields_original_pdf_and_business_records(): void
     {
         [$service,$template,$field] = $this->fixture();

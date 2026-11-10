@@ -1,4 +1,5 @@
 import {clampPlacement, pagePoint, overlappingPlacements} from './document-layout-geometry';
+import {DocumentBuilderError, officialPdfBytes, saveDocumentLayout} from './document-builder-requests';
 
 const root = document.querySelector('[data-document-designer]');
 if (root) initialize(root);
@@ -115,7 +116,7 @@ async function initialize(root) {
     });
     find('remove').addEventListener('click',()=>{if(busy)return;const index=positions.findIndex(item=>item.uid===selected);if(index<0)return;positions.splice(index,1);select(null);changed();});
     find('sample').addEventListener('change',draw);
-    function fail() {failed=true;save.disabled=true;sheet.hidden=true;previous.disabled=next.disabled=true;message('The official PDF could not be loaded. Reload this page or review the document configuration.',true);}
+    function fail(error) {failed=true;save.disabled=true;sheet.hidden=true;previous.disabled=next.disabled=true;message(error instanceof DocumentBuilderError ? error.message : 'The PDF could not be rendered. It may be unsupported, damaged, or require unavailable browser features. Ask the administrator to inspect the official PDF and viewer assets.',true);}
     async function render() {
         if(rendering) {pending=true;return;}
         rendering=true;save.disabled=true;previous.disabled=next.disabled=true;
@@ -136,7 +137,7 @@ async function initialize(root) {
             sheet.style.width=`${width}px`;canvas.width=Math.ceil(viewport.width);canvas.height=Math.ceil(viewport.height);
             await page.render({canvasContext:canvas.getContext('2d'),viewport}).promise;
             sheet.hidden=false;find('page').textContent=`Page ${pageNumber} of ${pdf.numPages}`;canvas.setAttribute('aria-label',`Official document, page ${pageNumber} of ${pdf.numPages}`);draw();
-        } catch { fail(); }
+        } catch(error) { fail(error); }
         finally {rendering=false;save.disabled=busy||failed;previous.disabled=failed||pageNumber<=1;next.disabled=failed||pageNumber>=pdf.numPages;if(pending){pending=false;render();}}
     }
     previous.addEventListener('click',()=>{if(rendering||busy||pageNumber<=1)return;pageNumber--;select(null);render();});
@@ -151,22 +152,28 @@ async function initialize(root) {
             result.alignment=position.alignment;result.text_behavior=position.text_behavior;return result;
         })};
         try {
-            const response=await fetch(data.save_url,{method:'PUT',credentials:'same-origin',headers:{'Content-Type':'application/json','Accept':'application/json','X-CSRF-TOKEN':document.querySelector('meta[name="csrf-token"]').content},body:JSON.stringify(payload)});
-            const result=await response.json();
-            if(!response.ok) throw new Error(Object.values(result.errors??{}).flat().join(' ')||'Unable to save. Reload the page and sign in again if needed.');
+            const result=await saveDocumentLayout(data.save_url,payload,document.querySelector('meta[name="csrf-token"]').content);
             data.version=result.version;dirty=false;message('Document layout saved. The original PDF is unchanged.');
         } catch(error) {message(error.message||'Unable to save. Your unsaved layout is still on this page.',true);}
         finally {busy=false;save.disabled=failed;settings.disabled=!selection();}
     });
     window.addEventListener('beforeunload',event=>{if(dirty){event.preventDefault();event.returnValue='';}});
     try {
-        const [pdfjs,worker]=await Promise.all([import('pdfjs-dist'),import('pdfjs-dist/build/pdf.worker.min.mjs?url')]);pdfjs.GlobalWorkerOptions.workerSrc=worker.default;
-        const url=new URL(data.pdf_url,location.href);if(url.origin!==location.origin)throw new Error('Invalid preview origin');
-        pdf=await pdfjs.getDocument({url:url.href,isEvalSupported:false,enableXfa:false,useSystemFonts:true}).promise;
+        let pdfjs,worker;
+        try { [pdfjs,worker]=await Promise.all([import('pdfjs-dist'),import('pdfjs-dist/build/pdf.worker.min.mjs?url')]); }
+        catch { throw new DocumentBuilderError('The PDF viewer assets could not be loaded. Reload the page or ask the administrator to verify the deployed Vite build.'); }
+        pdfjs.GlobalWorkerOptions.workerSrc=worker.default;
+        const bytes=await officialPdfBytes(data.pdf_url);
+        try { pdf=await pdfjs.getDocument({data:bytes,isEvalSupported:false,enableXfa:false,useSystemFonts:true}).promise; }
+        catch(error) {
+            if (error?.name === 'PasswordException') throw new DocumentBuilderError('The official PDF is password-protected. Upload an unencrypted supported PDF.');
+            if (/worker/i.test(error?.message ?? '')) throw new DocumentBuilderError('The PDF worker could not start. Ask the administrator to verify the matching PDF.js worker asset, MIME type and browser compatibility.');
+            throw error;
+        }
         if(positions.some(position=>Number(position.page_number)>pdf.numPages)) message('Some saved fields refer to pages that are unavailable. Review the layout before saving.',true);
         else message('Choose a field from the toolbox to begin.');
         await render();
         let lastWidth=0;
         new ResizeObserver(entries=>{const width=Math.round(entries[0].contentRect.width);if(width!==lastWidth){lastWidth=width;render();}}).observe(root.querySelector('.designer-paper-area'));
-    } catch {fail();}
+    } catch(error) {fail(error);}
 }

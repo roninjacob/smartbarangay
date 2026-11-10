@@ -8,6 +8,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use League\Flysystem\FilesystemException;
 
 class ServiceDocumentTemplates
 {
@@ -17,8 +18,21 @@ class ServiceDocumentTemplates
         $extension = strtolower($file->getClientOriginalExtension());
         $path = 'service-document-templates/'.$service->id.'/'.Str::random(40).'.'.$extension;
         $newPaths[] = $path;
-        if (! Storage::disk('local')->putFileAs(dirname($path), $file, basename($path))) {
-            throw ValidationException::withMessages(['official_template' => 'The template could not be saved. Please select the file and try again.']);
+        $disk = Storage::disk('local');
+        try {
+            $written = $disk->putFileAs(dirname($path), $file, basename($path));
+            $persisted = $written && $disk->exists($path) && $disk->size($path) === $file->getSize()
+                && is_readable($disk->path($path));
+            if ($persisted) {
+                $originalHash = @hash_file('sha256', $file->getRealPath());
+                $storedHash = @hash_file('sha256', $disk->path($path));
+                $persisted = is_string($originalHash) && is_string($storedHash) && hash_equals($originalHash, $storedHash);
+            }
+        } catch (FilesystemException) {
+            $persisted = false;
+        }
+        if (! $persisted) {
+            throw ValidationException::withMessages(['official_template' => 'The official PDF could not be saved and verified in private storage. Ask the administrator to check storage permissions and available space, then try again.']);
         }
         $current = $service->documentTemplate()->first();
         $previous = $current?->stored_path;

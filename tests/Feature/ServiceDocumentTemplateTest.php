@@ -4,10 +4,12 @@ namespace Tests\Feature;
 
 use App\Enums\ReservationStatus;
 use App\Enums\UserRole;
+use App\Models\Reservation;
 use App\Models\Schedule;
 use App\Models\Service;
 use App\Models\User;
 use App\Services\ConfigurationAudit;
+use App\Services\ReservationDocumentInformation;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Artisan;
@@ -103,6 +105,79 @@ class ServiceDocumentTemplateTest extends TestCase
         $this->assertDatabaseCount('services', 0);
         $this->assertDatabaseCount('service_document_templates', 0);
         $this->assertSame([], Storage::disk('local')->allFiles());
+    }
+
+    public function test_success_reported_by_storage_cannot_save_missing_or_corrupt_pdf_metadata(): void
+    {
+        $service = $this->createTemplate();
+        $original = $service->documentTemplate->getRawOriginal();
+        $disk = Storage::disk('local');
+        $bytes = $disk->get($original['stored_path']);
+        $adapter = \Mockery::mock($disk);
+        $attempt = 0;
+        $adapter->shouldReceive('putFileAs')->andReturnUsing(function ($directory, $file, $name) use ($disk, &$attempt) {
+            $path = $directory.'/'.$name;
+            if ($attempt++ > 0) {
+                $disk->put($path, str_repeat('x', $file->getSize()));
+            }
+
+            return $path;
+        });
+        Storage::shouldReceive('disk')->with('local')->andReturn($adapter);
+        foreach (['missing', 'corrupt'] as $failure) {
+            $this->put('/admin/services/'.$service->id, ['edit_revision' => app(ConfigurationAudit::class)->revision($service->fresh()),
+                'fee_amount' => '0.00', 'name' => $service->name, 'official_template' => $this->pdf()])->assertSessionHasErrors('official_template');
+            $this->assertSame($original, $service->fresh()->documentTemplate->getRawOriginal(), $failure);
+            $this->assertSame($bytes, $disk->get($original['stored_path']));
+            $this->assertSame([$original['stored_path']], $disk->allFiles());
+        }
+    }
+
+    public function test_uploaded_pdf_layout_survives_reopen_and_required_reservation_workflow_issues_valid_qr_on_approval(): void
+    {
+        $admin = $this->admin();
+        $this->actingAs($admin)->post('/admin/services', ['name' => 'End to end PDF', 'fee_amount' => '0.00',
+            'official_template' => $this->pdf()])->assertSessionHasNoErrors();
+        $service = Service::sole();
+        $pdf = $service->documentTemplate()->sole();
+        $this->post('/admin/services/'.$service->id.'/document-configuration', ['pdf_id' => $pdf->id,
+            'pdf_revision' => $pdf->revision(), 'is_active' => false])->assertSessionHasNoErrors();
+        $template = $service->dynamicDocumentTemplate()->sole();
+        $field = $template->fields()->create(['field_name' => 'purpose', 'label' => 'Purpose', 'source' => 'custom',
+            'field_type' => 'text', 'is_required' => true]);
+        $position = ['field_id' => $field->id, 'system_name' => null, 'page_number' => 1, 'x_position' => 72,
+            'y_position' => 150, 'width' => 180, 'height' => 30, 'font_size' => 12, 'alignment' => 'left', 'text_behavior' => 'wrap'];
+        $this->putJson('/admin/services/'.$service->id.'/document-layout', ['version' => $template->version,
+            'pdf_revision' => $template->source_revision, 'placements' => [$position]])->assertOk();
+        $this->get('/admin/services/'.$service->id.'/document-layout')->assertOk()->assertSee('Purpose');
+        $this->assertSame('150.000', $field->positions()->sole()->y_position);
+        $this->patch('/admin/services/'.$service->id.'/document-configuration', ['version' => $template->fresh()->version,
+            'is_active' => true])->assertSessionHasNoErrors();
+        $schedule = Schedule::create(['date' => now('Asia/Manila')->addDays(2)->toDateString(), 'start_time' => '09:00',
+            'end_time' => '10:00', 'capacity' => 10, 'is_active' => true]);
+        $this->actingAs($this->resident());
+        $this->post('/resident/reservations/service', ['service_id' => $service->id])->assertSessionHasNoErrors();
+        $data = ['requirement_signature' => $this->requirementSignature(),
+            'document_signature' => app(ReservationDocumentInformation::class)->signature($template->fresh('fields'))];
+        $this->post('/resident/reservations/requirements', $data)->assertSessionHasErrors('document_answers.'.$field->id);
+        $this->post('/resident/reservations/requirements', [...$data, 'document_answers' => [$field->id => 'Employment']])
+            ->assertRedirect(route('resident.reservations.schedule'));
+        $this->post('/resident/reservations/schedule', ['schedule_id' => $schedule->id])->assertSessionHasNoErrors();
+        $this->get('/resident/reservations/confirm')->assertOk();
+        $this->post('/resident/reservations', ['confirmation_token' => session('reservation_wizard.confirmation_token')])->assertSessionHasNoErrors();
+        $reservation = Reservation::sole();
+        $this->assertSame('Employment', $reservation->documentAnswers()->sole()->answer);
+        $this->assertNull($reservation->qrTicket);
+        $this->actingAs($admin);
+        foreach ([['pending', 'under_review'], ['under_review', 'approved']] as [$expected, $next]) {
+            $this->patch('/admin/reservations/'.$reservation->id.'/status', ['expected_status' => $expected, 'status' => $next])->assertSessionHasNoErrors();
+        }
+        $ticket = $reservation->fresh()->qrTicket;
+        $this->assertNotNull($ticket);
+        $this->postJson('/admin/qr-verification', ['payload' => $ticket->encodedPayload()])->assertOk()->assertJsonPath('valid', true);
+        $this->assertDatabaseCount('checkin_logs', 0);
+        $this->assertSame(ReservationStatus::Approved, $reservation->fresh()->status);
+        $this->assertSame($pdf->getRawOriginal(), $pdf->fresh()->getRawOriginal());
     }
 
     public static function protectedActions(): array
