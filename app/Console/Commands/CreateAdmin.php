@@ -4,38 +4,62 @@ namespace App\Console\Commands;
 
 use App\Enums\UserRole;
 use App\Models\User;
-use Illuminate\Auth\Events\Registered;
-use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
 use App\Rules\PhilippineContactNumber;
+use Illuminate\Auth\Events\Registered;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rules\Password;
 use Symfony\Component\Console\Exception\RuntimeException;
+use Symfony\Component\Console\Input\StreamableInputInterface;
+use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
 
 class CreateAdmin extends Command
 {
-    protected $signature = 'smartbarangay:create-admin';
+    protected $signature = 'smartbarangay:create-admin
+        {--password-stdin : Read one password from piped standard input}
+        {--name= : Administrator full name for stdin mode}
+        {--email= : Administrator email for stdin mode}
+        {--contact= : Optional contact number for stdin mode}';
 
-    protected $description = 'Interactively create an authorized Barangay Calayo administrator';
+    protected $description = 'Create an authorized Barangay Calayo administrator securely';
 
     public function handle(): int
     {
-        if (! $this->input->isInteractive()) {
+        $stdinMode = (bool) $this->option('password-stdin');
+        if (! $stdinMode && ! $this->input->isInteractive()) {
             $this->error('Run this command interactively to enter the administrator details securely.');
 
             return self::FAILURE;
         }
 
-        $name = $this->ask('Admin Full Name');
-        $email = $this->ask('Admin Email');
-        $contact = $this->ask('Contact Number (optional)');
+        if ($stdinMode && (! is_string($this->option('name')) || ! is_string($this->option('email')))) {
+            $this->error('--password-stdin requires --name and --email.');
+
+            return self::FAILURE;
+        }
+
+        if (! $stdinMode && ($this->option('name') !== null || $this->option('email') !== null || $this->option('contact') !== null)) {
+            $this->error('Use --password-stdin with the noninteractive administrator options.');
+
+            return self::FAILURE;
+        }
+
+        $name = $stdinMode ? $this->option('name') : $this->ask('Admin Full Name');
+        $email = $stdinMode ? $this->option('email') : $this->ask('Admin Email');
+        $contact = $stdinMode ? $this->option('contact') : $this->ask('Contact Number (optional)');
 
         try {
-            // Disable visible-input fallback when the terminal cannot hide passwords.
-            $password = $this->secret('Password', false);
-            $confirmation = $this->secret('Password Confirmation', false);
+            if ($stdinMode) {
+                $password = $this->passwordFromStdin();
+                $confirmation = $password;
+            } else {
+                // Disable visible-input fallback when the terminal cannot hide passwords.
+                $password = $this->secret('Password', false);
+                $confirmation = $this->secret('Password Confirmation', false);
+            }
         } catch (RuntimeException $exception) {
-            $this->error('This terminal cannot hide password input. Use an interactive terminal with hidden input support.');
+            $this->error($stdinMode ? $exception->getMessage()
+                : 'This terminal cannot hide password input. Use an interactive terminal with hidden input support.');
 
             return self::FAILURE;
         }
@@ -82,5 +106,33 @@ class CreateAdmin extends Command
         }
 
         return self::SUCCESS;
+    }
+
+    private function passwordFromStdin(): string
+    {
+        $stream = $this->input instanceof StreamableInputInterface ? $this->input->getStream() : null;
+        $stream ??= STDIN;
+
+        if (! is_resource($stream) || ! function_exists('stream_isatty') || stream_isatty($stream)) {
+            throw new RuntimeException('--password-stdin requires piped input. Password entry through a terminal is refused.');
+        }
+
+        // 72 bcrypt bytes, optional CRLF, and one extra byte to detect overflow.
+        $password = @stream_get_contents($stream, 75);
+        if ($password === false) {
+            throw new RuntimeException('Unable to read password from standard input.');
+        }
+
+        if (str_ends_with($password, "\r\n")) {
+            $password = substr($password, 0, -2);
+        } elseif (str_ends_with($password, "\n")) {
+            $password = substr($password, 0, -1);
+        }
+
+        if (strlen($password) > 72 || strpbrk($password, "\0\r\n") !== false) {
+            throw new RuntimeException('Provide one password of at most 72 UTF-8 bytes, without NUL or embedded line breaks.');
+        }
+
+        return $password;
     }
 }
