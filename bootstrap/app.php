@@ -12,6 +12,7 @@ use Illuminate\Http\Exceptions\ThrottleRequestsException;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Exceptions\InvalidSignatureException;
 use Illuminate\Session\Middleware\AuthenticateSession;
+use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
@@ -36,11 +37,12 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         // Device errors never expose debug traces, request headers or SQL bindings.
-        $exceptions->dontReportWhen(fn (Throwable $exception) => request()->is('api/iot/*', 'admin/iot-scanner/*'));
+        $exceptions->dontReportWhen(fn (Throwable $exception) => request()->is('api/iot/*', 'admin/iot-scanner/*', 'admin/iot-dashboard/data'));
         $exceptions->render(function (Throwable $exception, Request $request) {
-            if ($request->is('api/iot/*', 'admin/iot-scanner/*')) {
+            if ($request->is('api/iot/*', 'admin/iot-scanner/*', 'admin/iot-dashboard/data')) {
                 $status = $exception instanceof AuthenticationException ? 401
-                    : ($exception instanceof HttpExceptionInterface ? $exception->getStatusCode() : 503);
+                    : ($exception instanceof ValidationException ? 422
+                    : ($exception instanceof HttpExceptionInterface ? $exception->getStatusCode() : 503));
                 $code = match ($status) {
                     401 => 'authentication_failed', 403 => $request->is('admin/*') ? 'access_denied' : 'secure_transport_required',
                     409 => 'scanner_conflict', 419 => 'session_expired',

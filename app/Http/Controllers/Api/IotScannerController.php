@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Services\IotAutomaticScanner;
 use App\Services\IotScannerSessions;
+use App\Services\IotTelemetry;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -45,7 +46,11 @@ class IotScannerController extends Controller
     public function status(Request $request, IotAutomaticScanner $scanner): JsonResponse
     {
         $body = $request->attributes->get('iot_body');
-        $this->shape($body, ['boot_id', 'captured_at_ms', 'camera_state']);
+        $keys = ['boot_id', 'captured_at_ms', 'camera_state'];
+        $this->shape($body, array_key_exists('telemetry', $body) ? array_merge($keys, ['telemetry']) : $keys);
+        if (array_key_exists('telemetry', $body)) {
+            $body['telemetry'] = app(IotTelemetry::class)->validate($body['telemetry']);
+        }
         $this->common($body);
         abort_unless(in_array($body['camera_state'], ['ready', 'camera_error', 'detection_error'], true), 422);
 

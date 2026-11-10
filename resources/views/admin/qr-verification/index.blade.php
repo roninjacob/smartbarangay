@@ -3,7 +3,7 @@
 <div class="qr-verification" data-qr-verification data-verify-url="{{ route('admin.qr-verification.verify') }}"
      data-iot-url="{{ url('/admin/iot-scanner') }}">
     <section class="dashboard-panel qr-scanner-panel" aria-labelledby="scanner-heading">
-        <div class="dashboard-panel-heading"><div><h2 id="scanner-heading">Scan a Resident ticket</h2><p class="panel-description">Choose a scanner. Laravel verifies every ticket securely.</p></div></div>
+        <div class="dashboard-panel-heading"><div><h2 id="scanner-heading">Scan a Resident ticket</h2><p class="panel-description">Position the complete ticket inside the camera view.</p></div></div>
         <div class="px-4 pt-3 d-flex flex-wrap gap-2" role="group" aria-label="Scanner mode">
             <button type="button" class="btn btn-primary" data-scanner-mode="laptop" aria-pressed="true">Laptop Camera</button>
             <button type="button" class="btn btn-outline-primary" data-scanner-mode="iot" aria-pressed="false"
@@ -24,25 +24,24 @@
             <noscript><p class="alert alert-warning mt-3">Enable JavaScript to use QR camera scanning.</p></noscript>
         </div>
         </div>
-        <div class="p-4" data-iot-panel hidden>
-            <p class="app-note">Provisioned scanners authenticate automatically. Select a scanner to view live results. Scanning never checks in a Resident automatically.</p>
-            <label class="form-label" for="iot-device">Scanner</label>
-            <select class="form-select mb-3" id="iot-device" data-iot-device><option value="">Loading scanners…</option></select>
-            <div class="d-flex flex-wrap gap-2 mb-3">
-                <button type="button" class="btn btn-primary" data-iot-connect disabled>Connect scanner</button>
-                <button type="button" class="btn btn-outline-secondary" data-iot-refresh>Refresh scanners</button>
-                <button type="button" class="btn btn-outline-danger" data-iot-disconnect disabled>Disconnect</button>
+        <div class="qr-scanner-body pt-3" data-iot-panel hidden>
+            <div class="iot-device-controls">
+                <div><label class="form-label" for="iot-device">ESP32-CAM scanner</label>
+                    <select class="form-select" id="iot-device" data-iot-device><option value="">Select a scanner</option></select></div>
+                <button type="button" class="btn btn-outline-secondary" data-iot-refresh>Refresh</button>
+                <button type="button" class="btn btn-outline-primary" data-iot-retry hidden>Resume scanner</button>
+                <button type="button" class="btn btn-outline-secondary" data-iot-disconnect disabled>Pause</button>
             </div>
-            <p class="alert alert-info" data-iot-status role="status" aria-live="polite">Select a scanner to begin.</p>
-            <dl class="row small"><dt class="col-sm-3">Device activity</dt><dd class="col-sm-9" data-iot-activity>No recent activity</dd>
-                <dt class="col-sm-3">Latest scan</dt><dd class="col-sm-9" data-iot-latest>No scan received</dd></dl>
-            <section class="border rounded-4 p-3" aria-labelledby="iot-preview-title">
-                <div class="d-flex flex-wrap align-items-center gap-2 mb-3"><h3 id="iot-preview-title" class="h6 me-auto mb-0">Camera Preview</h3>
-                    <button type="button" class="btn btn-outline-primary btn-sm" data-iot-preview-start disabled>Start preview</button>
-                    <button type="button" class="btn btn-outline-secondary btn-sm" data-iot-preview-stop disabled>Stop preview</button></div>
-                <p class="app-note" data-iot-preview-note>Preview is off. Images are private and expire shortly. Keep only the ticket in view.</p>
-                <img class="img-fluid rounded-3" width="320" height="240" alt="Live ESP32-CAM image" data-iot-preview-image hidden>
-            </section>
+            <p class="qr-scan-status" data-iot-status role="status" aria-live="polite">Select a scanner to connect and open its camera.</p>
+            <h3 class="visually-hidden">Camera Preview</h3>
+            <div class="qr-camera-frame iot-camera-viewport" aria-label="Authenticated ESP32-CAM camera preview">
+                <img alt="Recent image from the selected ESP32-CAM" data-iot-preview-image hidden>
+                <div class="qr-camera-placeholder" data-iot-preview-placeholder><x-app-icon name="qr"/><p data-iot-preview-note>Waiting for a scanner</p></div>
+                <span class="iot-live-badge" data-iot-live hidden>LIVE</span>
+            </div>
+            <dl class="iot-scanner-summary"><div><dt>Device activity</dt><dd data-iot-activity>Not connected</dd></div>
+                <div><dt>Latest scan</dt><dd data-iot-latest>No scan received</dd></div></dl>
+            <p class="app-note mb-0">The camera opens automatically for your session. Keep the complete ticket QR visible. Check-in requires your confirmation on the reservation page.</p>
         </div>
     </section>
     <section class="dashboard-panel qr-result-panel" tabindex="-1" aria-labelledby="result-heading" aria-live="polite" aria-atomic="true" data-qr-result>

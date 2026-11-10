@@ -10,7 +10,7 @@
 #endif
 
 namespace deviceiot {
-inline std::string digest(const std::string &message, const char *keyHex = nullptr) {
+inline std::string digestBytes(const uint8_t *message, size_t length, const char *keyHex = nullptr) {
     uint8_t key[32] = {}, output[32] = {};
     if (keyHex) {
         if (std::strlen(keyHex) != 64) return {};
@@ -22,14 +22,14 @@ inline std::string digest(const std::string &message, const char *keyHex = nullp
         }
     }
 #ifdef SB_IOT_HOST_TEST
-    unsigned length = 0;
-    const bool ok = keyHex ? HMAC(EVP_sha256(), key, sizeof(key), reinterpret_cast<const unsigned char *>(message.data()), message.size(), output, &length) != nullptr
-                           : EVP_Digest(message.data(), message.size(), output, &length, EVP_sha256(), nullptr) == 1;
+    unsigned outputLength = 0;
+    const bool ok = keyHex ? HMAC(EVP_sha256(), key, sizeof(key), message, length, output, &outputLength) != nullptr
+                           : EVP_Digest(message, length, output, &outputLength, EVP_sha256(), nullptr) == 1;
 #else
     const mbedtls_md_info_t *algorithm = mbedtls_md_info_from_type(MBEDTLS_MD_SHA256);
     const bool ok = algorithm && (keyHex
-        ? mbedtls_md_hmac(algorithm, key, sizeof(key), reinterpret_cast<const unsigned char *>(message.data()), message.size(), output)
-        : mbedtls_md(algorithm, reinterpret_cast<const unsigned char *>(message.data()), message.size(), output)) == 0;
+        ? mbedtls_md_hmac(algorithm, key, sizeof(key), message, length, output)
+        : mbedtls_md(algorithm, message, length, output)) == 0;
 #endif
     volatile uint8_t *wipe = key;
     for (size_t i = 0; i < sizeof(key); ++i) wipe[i] = 0;
@@ -38,5 +38,8 @@ inline std::string digest(const std::string &message, const char *keyHex = nullp
     std::string result(64, '0');
     for (size_t i = 0; i < sizeof(output); ++i) { result[i * 2] = alphabet[output[i] >> 4]; result[i * 2 + 1] = alphabet[output[i] & 15]; }
     return result;
+}
+inline std::string digest(const std::string &message, const char *keyHex = nullptr) {
+    return digestBytes(reinterpret_cast<const uint8_t *>(message.data()), message.size(), keyHex);
 }
 } // namespace deviceiot

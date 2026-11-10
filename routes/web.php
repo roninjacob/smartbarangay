@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\CollectionReportController;
 use App\Http\Controllers\Admin\DocumentFieldController;
 use App\Http\Controllers\Admin\DocumentLayoutController;
 use App\Http\Controllers\Admin\DocumentTemplateController;
+use App\Http\Controllers\Admin\IotDashboardController;
 use App\Http\Controllers\Admin\IotScannerController;
 use App\Http\Controllers\Admin\QrVerificationController;
 use App\Http\Controllers\Admin\RecordedEventReportController;
@@ -139,6 +140,8 @@ Route::middleware('auth')->group(function () {
         Route::get('/reports/collections', CollectionReportController::class)->name('reports.collections');
         Route::get('/reports/checkins', [RecordedEventReportController::class, 'checkins'])->name('reports.checkins');
         Route::get('/reports/documents', [RecordedEventReportController::class, 'documents'])->name('reports.documents');
+        Route::get('/iot-dashboard', [IotDashboardController::class, 'index'])->name('iot-dashboard.index');
+        Route::get('/iot-dashboard/data', [IotDashboardController::class, 'data'])->middleware('throttle:30,1')->name('iot-dashboard.data');
         Route::get('/qr-verification', [QrVerificationController::class, 'index'])->name('qr-verification.index');
         Route::prefix('iot-scanner')->name('iot-scanner.')->middleware('throttle:240,1')->group(function () {
             Route::post('/connect', [IotScannerController::class, 'connect'])->block()->name('connect');

@@ -20,6 +20,8 @@ class IotDeviceState extends Model
 
     protected function casts(): array
     {
-        return ['last_seen_at' => 'immutable_datetime', 'last_scan_at' => 'immutable_datetime', 'frame_at' => 'immutable_datetime'];
+        return ['frame_captured_ms' => 'integer', 'heartbeat_at' => 'immutable_datetime', 'telemetry' => 'array', 'telemetry_at' => 'immutable_datetime', 'counts_since' => 'immutable_datetime',
+            'offline_reported_at' => 'immutable_datetime', 'scan_count' => 'integer', 'valid_count' => 'integer', 'invalid_count' => 'integer',
+            'last_seen_at' => 'immutable_datetime', 'last_scan_at' => 'immutable_datetime', 'frame_at' => 'immutable_datetime'];
     }
 }

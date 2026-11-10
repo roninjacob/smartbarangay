@@ -200,7 +200,7 @@ if (root) {
         if (root.dataset.scannerMode !== 'iot' || document.hidden) return;
         stopScanning();
         try { showResult(event.detail, generation); }
-        catch { status('Verification is unavailable. Please pair and scan again.'); }
+        catch { status('Verification is unavailable. Please resume the scanner and scan again.'); }
     });
     start.addEventListener('click', startScanning);
     next.addEventListener('click', startScanning);

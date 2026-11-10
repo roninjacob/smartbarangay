@@ -11,6 +11,7 @@ import './profile';
 import './user-preferences';
 import './qr-verification';
 import './iot-scanner';
+import './iot-dashboard';
 import './document-builder';
 
 import './document-designer';

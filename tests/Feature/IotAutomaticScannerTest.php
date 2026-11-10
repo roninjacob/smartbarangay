@@ -213,6 +213,16 @@ class IotAutomaticScannerTest extends TestCase
         $this->assertFalse($poll['online']);
     }
 
+    public function test_preview_lifetime_starts_at_signed_capture_and_cannot_restart_at_upload(): void
+    {
+        $this->automatic()->connect($this->browser, $this->device->id, true);
+        $this->control()->assertOk();
+        $this->api('/api/iot/v1/preview', $this->frameBody(['captured_at_ms' => now()->getTimestampMs() - 4000]))->assertOk();
+        $this->assertSame(4000, $this->automatic()->frameSnapshot($this->browser)['age_ms']);
+        $this->travel(1)->seconds();
+        $this->denied(fn () => $this->automatic()->frame($this->browser), 404);
+    }
+
     public function test_preview_requires_authorized_admin_lease_and_real_bounded_jpeg(): void
     {
         $this->automatic()->connect($this->browser, $this->device->id);
@@ -336,5 +346,18 @@ class IotAutomaticScannerTest extends TestCase
         $this->control(['captured_at_ms' => now()->getTimestampMs() - 2000])->assertOk();
         $this->control(['boot_id' => str_repeat('3', 32), 'captured_at_ms' => now()->getTimestampMs() - 3000])->assertStatus(409);
         $this->assertSame(self::BOOT, IotDeviceState::first()->boot_id);
+    }
+
+    public function test_automatic_selection_creates_short_preview_lease_and_snapshot_age(): void
+    {
+        $this->automatic()->connect($this->browser, $this->device->id, true);
+        $this->control()->assertOk()->assertJsonPath('preview', true);
+        $this->api('/api/iot/v1/preview', $this->frameBody())->assertOk();
+        $this->travel(2)->seconds();
+        $snapshot = $this->automatic()->frameSnapshot($this->browser);
+        $this->assertSame(2000, $snapshot['age_ms']);
+        $this->assertSame(IMAGETYPE_JPEG, getimagesizefromstring($snapshot['jpeg'])[2]);
+        $this->travel(9)->seconds();
+        $this->control()->assertOk()->assertJsonPath('preview', false);
     }
 }

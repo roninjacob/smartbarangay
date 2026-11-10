@@ -46,9 +46,9 @@ class IotScannerController extends Controller
 
     public function connect(Request $request, IotAutomaticScanner $scanner): JsonResponse
     {
-        $data = $request->validate(['device_id' => ['required', 'uuid']]);
+        $data = $request->validate(['device_id' => ['required', 'uuid'], 'preview' => ['sometimes', 'boolean']]);
 
-        return $this->respond($scanner->connect($request, $data['device_id']));
+        return $this->respond($scanner->connect($request, $data['device_id'], (bool) ($data['preview'] ?? false)));
     }
 
     public function preview(Request $request, IotAutomaticScanner $scanner): JsonResponse
@@ -60,7 +60,10 @@ class IotScannerController extends Controller
 
     public function frame(Request $request, IotAutomaticScanner $scanner): Response
     {
-        return response($scanner->frame($request))->header('Content-Type', 'image/jpeg')
+        $frame = $scanner->frameSnapshot($request);
+
+        return response($frame['jpeg'])->header('X-SB-Frame-Age-Ms', (string) $frame['age_ms'])
+            ->header('X-SB-Frame-Sequence', (string) $frame['sequence'])->header('Content-Type', 'image/jpeg')
             ->header('Cache-Control', 'private, no-store')->header('X-Content-Type-Options', 'nosniff')
             ->header('Referrer-Policy', 'no-referrer');
     }

@@ -478,6 +478,8 @@ void setQrMessage(const char *message) {
 void recordQrTiming(QrTimings timing, int64_t started) {
     timing.totalUs = static_cast<uint32_t>(esp_timer_get_time() - started);
     timing.completedMs = millis();
+    deviceiot::recordQrAttempt({timing.captureUs, timing.convertUs, timing.grayUs, timing.detectUs,
+        timing.decodeUs, timing.totalUs, timing.captured, timing.decoded});
     const bool headroom = timing.processed && timing.totalUs <= QR_FAST_HEADROOM_US &&
         ESP.getFreeHeap() >= 65536 && uxTaskGetStackHighWaterMark(nullptr) >= 4096;
     const uint32_t good = headroom ? qrHeadroomSamples.load() + 1 : 0;
@@ -538,9 +540,11 @@ void qrWorker(void *) {
                 data = static_cast<quirc_data *>(heap_caps_calloc(1, sizeof(quirc_data), MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT));
                 rgb = static_cast<uint8_t *>(heap_caps_malloc(640 * 480 * 3, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT));
                 xSemaphoreTake(snapshotMutex, portMAX_DELAY);
-                qrSnapshot = static_cast<uint8_t *>(heap_caps_malloc(128 * 1024, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT));
+                if (readiness::cameraDiagnostics) {
+                    qrSnapshot = static_cast<uint8_t *>(heap_caps_malloc(128 * 1024, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT));
+                }
                 xSemaphoreGive(snapshotMutex);
-                if (!decoder || !code || !data || !rgb || !qrSnapshot || quirc_resize(decoder, 640, 480) < 0) {
+                if (!decoder || !code || !data || !rgb || (readiness::cameraDiagnostics && !qrSnapshot) || quirc_resize(decoder, 640, 480) < 0) {
                     setQrMessage("Insufficient QR workspace memory. Returning to preview.");
                     releaseDecoder();
                     qrRequested = false;
@@ -568,6 +572,7 @@ void qrWorker(void *) {
                 Serial.println("[QR] Preview camera restored; QR workspace released.");
             }
             xSemaphoreGive(cameraMutex);
+            deviceiot::cameraState(cameraReady.load(), qrActive.load());
             modeSwitching = false;
             lastScan = millis();
             previousAttempt = 0;
@@ -901,6 +906,7 @@ void setup() {
         return;
     }
     cameraReady = initializeCamera();
+    deviceiot::cameraState(cameraReady.load(), false);
     if (!cameraReady) {
         Serial.println("[BOOT] Camera unavailable. Authenticated health reporting remains available; correct hardware and reset.");
     }
@@ -922,7 +928,6 @@ void setup() {
 }
 
 void loop() {
-    deviceiot::cameraState(cameraReady.load(), qrTask != nullptr);
     deviceiot::tick();
     reportDiagnostics();
     if (!credentialsReady) {

@@ -53,13 +53,14 @@ class IotAutomaticScanner
             $state = $this->state($device, $body['boot_id']);
             // An older delayed heartbeat cannot roll a newer boot backwards.
             abort_if($body['captured_at_ms'] < $state->last_status_capture, 409);
+            app(IotTelemetry::class)->heartbeat($state, $body);
             if ($state->boot_id !== $body['boot_id']) {
                 $this->deleteFrame($device->id);
                 $state->forceFill(['boot_id' => $body['boot_id'], 'last_session' => 0, 'last_sequence' => 0,
-                    'last_capture' => 0, 'frame_at' => null, 'frame_sequence' => 0, 'frame_lease' => null]);
+                    'last_capture' => 0, 'frame_at' => null, 'frame_sequence' => 0, 'frame_lease' => null, 'frame_captured_ms' => null]);
             }
             $state->forceFill(['last_seen_at' => now('UTC'), 'camera_state' => $body['camera_state'],
-                'last_status_capture' => $body['captured_at_ms']])->save();
+                'last_status_capture' => $body['captured_at_ms'], 'heartbeat_at' => now('UTC')])->save();
             $lease = IotScannerPairing::find($device->id);
             $preview = $lease && $lease->automatic && $lease->preview_until?->isFuture()
                 && app(IotScannerSessions::class)->live($lease, $device);
@@ -90,6 +91,7 @@ class IotAutomaticScanner
                 'scanner_session' => $body['scanner_session'], 'sequence' => $body['sequence'],
                 'captured_at_ms' => $body['captured_at_ms'], 'payload' => $body['payload'],
                 'expires_at' => Carbon::createFromTimestampMsUTC($body['captured_at_ms'])->addSeconds(5)])->save();
+            app(IotTelemetry::class)->scan($state, $result['valid']);
             $state->forceFill(['last_seen_at' => now('UTC'), 'last_session' => $body['scanner_session'],
                 'last_sequence' => $body['sequence'], 'last_capture' => $body['captured_at_ms'],
                 'last_payload_hash' => $hash, 'last_scan_at' => now('UTC'), 'last_result' => $result['valid'] ? 'valid' : 'invalid'])->save();
@@ -98,15 +100,15 @@ class IotAutomaticScanner
         }, 3);
     }
 
-    public function connect(Request $request, string $id): array
+    public function connect(Request $request, string $id, bool $preview = false): array
     {
-        return DB::transaction(function () use ($request, $id) {
+        return DB::transaction(function () use ($request, $id, $preview) {
             // Reuse the existing exclusive, password/session-bound Admin lease.
             app(IotScannerSessions::class)->challenge($request, $id);
             IotScannerPairing::findOrFail($id)->forceFill(['automatic' => true, 'paired_at' => now('UTC'),
-                'challenge_hash' => null, 'preview_until' => null, 'monitor_started_ms' => now()->getTimestampMs()])->save();
+                'challenge_hash' => null, 'preview_until' => $preview ? now('UTC')->addSeconds(10) : null, 'monitor_started_ms' => now()->getTimestampMs()])->save();
 
-            return ['state' => 'connected'];
+            return ['state' => 'connected', 'preview' => $preview];
         }, 3);
     }
 
@@ -148,12 +150,13 @@ class IotAutomaticScanner
                 if (now()->getTimestampMs() - $event->captured_at_ms >= 5000) {
                     $result = null;
                 } elseif ($evidence) {
+                    $state?->forceFill(['last_handoff_age_ms' => now()->getTimestampMs() - $event->captured_at_ms])->save();
                     $request->session()->put(CheckInReservations::SESSION_KEY, $evidence);
                 }
             }
 
             return ['state' => 'connected', 'device' => $device->name, 'expires_at' => $lease->expires_at->toIso8601String(),
-                'online' => (bool) $state?->last_seen_at->gt(now()->subSeconds(15)),
+                'online' => (bool) $state?->heartbeat_at?->gt(now()->subSeconds(15)),
                 'last_seen_at' => $state?->last_seen_at->toIso8601String(), 'camera_state' => $state?->camera_state,
                 'last_scan_at' => $state?->last_scan_at?->toIso8601String(), 'last_result' => $state?->last_result,
                 'preview' => (bool) $lease->preview_until?->isFuture(), 'result' => $result];
@@ -208,7 +211,7 @@ class IotAutomaticScanner
                 abort_if($body['sequence'] <= $state->frame_sequence || $state->frame_at?->gt(now()->subSecond()), 409);
             }
             abort_unless(Storage::disk('local')->put($this->framePath($device->id), Crypt::encryptString(base64_encode($clean))), 503);
-            $state->forceFill(['frame_at' => now('UTC'), 'frame_sequence' => $body['sequence'], 'frame_lease' => $lease->id,
+            $state->forceFill(['frame_at' => now('UTC'), 'frame_captured_ms' => $body['captured_at_ms'], 'frame_sequence' => $body['sequence'], 'frame_lease' => $lease->id,
                 'last_seen_at' => now('UTC')])->save();
 
             return ['ok' => true];
@@ -217,13 +220,22 @@ class IotAutomaticScanner
 
     public function frame(Request $request): string
     {
+        return $this->frameSnapshot($request)['jpeg'];
+    }
+
+    public function frameSnapshot(Request $request): array
+    {
         return DB::transaction(function () use ($request) {
             [$device, $lease] = $this->browserLease($request);
             $state = IotDeviceState::find($device->id);
             abort_unless($lease->preview_until?->isFuture() && $state?->frame_lease === $lease->id
                 && $state->frame_at?->gt(now()->subSeconds(5)) && Storage::disk('local')->exists($this->framePath($device->id)), 404);
+            $age = now()->getTimestampMs() - ($state->frame_captured_ms ?? 0);
+            abort_unless($age >= 0 && $age < 5000, 404);
 
-            return base64_decode(Crypt::decryptString(Storage::disk('local')->get($this->framePath($device->id))), true);
+            return ['jpeg' => base64_decode(Crypt::decryptString(Storage::disk('local')->get($this->framePath($device->id))), true),
+                'age_ms' => max($age, now()->getTimestampMs() - $state->frame_at->getTimestampMs()),
+                'sequence' => $state->frame_sequence];
         });
     }
 

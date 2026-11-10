@@ -31,6 +31,7 @@ return [
             ['label' => 'Reservation Management', 'icon' => 'document', 'route' => 'admin.reservations.index', 'active' => 'admin.reservations.*'],
             ['label' => 'Schedule & Slot Management', 'icon' => 'calendar', 'route' => 'admin.schedules.index', 'active' => 'admin.schedules.*'],
             ['label' => 'QR Verification', 'icon' => 'qr', 'route' => 'admin.qr-verification.index', 'active' => 'admin.qr-verification.*'],
+            ['label' => 'IoT Dashboard', 'icon' => 'dashboard', 'route' => 'admin.iot-dashboard.index', 'active' => 'admin.iot-dashboard.*'],
             ['label' => 'Services & Document Management', 'icon' => 'services', 'route' => 'admin.services.index', 'active' => 'admin.services.*'],
             ['label' => 'User Management', 'icon' => 'users', 'route' => 'admin.users.index', 'active' => 'admin.users.*'],
             ['label' => 'Reservation Logs', 'icon' => 'history', 'route' => 'admin.reservation-logs.index', 'active' => 'admin.reservation-logs.*'],
