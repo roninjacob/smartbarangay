@@ -27,11 +27,13 @@ Manifest schema:
 }
 ```
 
-This empty-list example is a schema illustration, **not approval to activate an unreviewed dataset**. Every environment needs explicit review, including one with no exclusions. Obtain the exact binding from `ReportingExclusions::binding()` in that environment; do not copy the example's placeholder strings. Keep the binding fields in the illustrated order. Do not copy another database's reviewed manifest or assume IDs identify the same fixtures after import/reset.
+This empty-list example is a schema illustration, **not approval to activate an unreviewed dataset**. Every environment needs explicit review, including one with no exclusions. Obtain the exact binding from `ReportingExclusions::binding()` in that environment; do not copy the example's placeholder strings. JSON binding field order is irrelevant; the exact field names, value types and values must match. Do not copy another database's reviewed manifest or assume IDs identify the same fixtures after import/reset.
 
 Each exclusion is an object with exactly five fields: integer positive `reservation_id`, `user_id`, `service_id`, `schedule_id`, and `created_at` as the original UTC `YYYY-MM-DD HH:MM:SS` string. Review against retained acceptance provenance and the actual row. Names, inactivity and statuses are never classification criteria. Legitimate inactive records and records named TEST remain included unless separately approved by exact identity.
 
 Missing/unreadable/oversized (>1 MiB)/invalid manifests, unsupported versions, absent review, wrong environment/database binding, non-list entries, duplicate IDs, missing rows and mismatched tuple members block the entire report. All listed rows validate, even outside the requested period. No invalid entry is silently skipped. A generic warning replaces all totals, charts and table; private diagnostics are not rendered. Fixes require operator review, not an Admin UI bypass.
+
+For safe operator diagnostics and the production review procedure, see [Reporting production readiness](reporting-production-readiness.md). `php artisan smartbarangay:reporting-check` verifies schema, the manifest, and all four report queries without approving or changing data.
 
 The manifest is read once and validated **on every request**; its contents are never placed in Laravel's configuration cache or a service singleton. `config:cache` caches only the path. After a path/environment/connection configuration change, rebuild the deployment's config cache normally; content changes at the same path are read next request. Replace manifests atomically during maintenance to avoid partial reads (partial reads fail closed). A file editable by an untrusted person is not a trustworthy review artifact; protect filesystem access. No public manifest-upload or classification editor exists.
 

@@ -2,8 +2,8 @@
 
 namespace App\Services;
 
+use App\Exceptions\ReportingConfigurationException;
 use Illuminate\Support\Facades\DB;
-use RuntimeException;
 
 class ReportingExclusions
 {
@@ -23,42 +23,67 @@ class ReportingExclusions
     public function validatedIds(): array
     {
         $path = config('reporting.manifest');
-        if (! is_string($path) || ! is_file($path) || ! is_readable($path) || filesize($path) > 1048576) {
-            throw new RuntimeException(self::UNAVAILABLE);
+        if (! is_string($path) || $path === '') {
+            throw new ReportingConfigurationException('manifest_path_invalid');
+        }
+        clearstatcache(true, $path);
+        if (! is_file($path)) {
+            throw new ReportingConfigurationException('manifest_missing');
+        }
+        if (! is_readable($path)) {
+            throw new ReportingConfigurationException('manifest_unreadable');
+        }
+        if (filesize($path) > 1048576) {
+            throw new ReportingConfigurationException('manifest_too_large');
         }
         $contents = @file_get_contents($path);
         if ($contents === false) {
-            throw new RuntimeException(self::UNAVAILABLE);
+            throw new ReportingConfigurationException('manifest_unreadable');
         }
         try {
             // Preserve JSON types: {} must never become an approved empty [] list.
             $data = json_decode($contents, false, 32, JSON_THROW_ON_ERROR);
         } catch (\JsonException) {
-            throw new RuntimeException(self::UNAVAILABLE);
+            throw new ReportingConfigurationException('manifest_invalid_json');
         }
-        if (! ($data instanceof \stdClass) || ($data->version ?? null) !== 1 || ($data->reviewed ?? null) !== true
-            || ! (($data->binding ?? null) instanceof \stdClass) || get_object_vars($data->binding) !== $this->binding()
-            || ! is_array($data->excluded_reservations ?? null)) {
-            throw new RuntimeException(self::UNAVAILABLE);
+        if (! ($data instanceof \stdClass) || ($data->version ?? null) !== 1) {
+            throw new ReportingConfigurationException('manifest_schema_invalid');
+        }
+        if (($data->reviewed ?? null) !== true) {
+            throw new ReportingConfigurationException('manifest_not_reviewed');
+        }
+        // JSON objects are unordered. Preserve exact keys, types and values without
+        // rejecting an otherwise identical binding serialized in a different order.
+        $binding = ($data->binding ?? null) instanceof \stdClass ? get_object_vars($data->binding) : [];
+        $expected = $this->binding();
+        ksort($binding);
+        ksort($expected);
+        if ($binding !== $expected) {
+            throw new ReportingConfigurationException('manifest_binding_mismatch');
+        }
+        if (! is_array($data->excluded_reservations ?? null)) {
+            throw new ReportingConfigurationException('manifest_entries_invalid');
         }
         $entries = [];
         $ids = [];
         foreach ($data->excluded_reservations as $object) {
             if (! ($object instanceof \stdClass)) {
-                throw new RuntimeException(self::UNAVAILABLE);
+                throw new ReportingConfigurationException('manifest_entries_invalid');
             }
             $entry = get_object_vars($object);
             if (count($entry) !== 5) {
-                throw new RuntimeException(self::UNAVAILABLE);
+                throw new ReportingConfigurationException('manifest_entries_invalid');
             }
             foreach (['reservation_id', 'user_id', 'service_id', 'schedule_id'] as $key) {
                 if (! is_int($entry[$key] ?? null) || $entry[$key] < 1) {
-                    throw new RuntimeException(self::UNAVAILABLE);
+                    throw new ReportingConfigurationException('manifest_entries_invalid');
                 }
             }
-            if (! is_string($entry['created_at'] ?? null) || ! preg_match('/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/D', $entry['created_at'])
-                || in_array($entry['reservation_id'], $ids, true)) {
-                throw new RuntimeException(self::UNAVAILABLE);
+            if (! is_string($entry['created_at'] ?? null) || ! preg_match('/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/D', $entry['created_at'])) {
+                throw new ReportingConfigurationException('manifest_entries_invalid');
+            }
+            if (in_array($entry['reservation_id'], $ids, true)) {
+                throw new ReportingConfigurationException('manifest_duplicate_fixture');
             }
             $ids[] = $entry['reservation_id'];
             $entries[] = $entry;
@@ -68,7 +93,7 @@ class ReportingExclusions
             $row = $rows->get($entry['reservation_id']);
             if (! $row || (int) $row->user_id !== $entry['user_id'] || (int) $row->service_id !== $entry['service_id']
                 || (int) $row->schedule_id !== $entry['schedule_id'] || $row->created_at !== $entry['created_at']) {
-                throw new RuntimeException(self::UNAVAILABLE);
+                throw new ReportingConfigurationException('manifest_fixture_identity_mismatch');
             }
         }
 

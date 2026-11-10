@@ -7,11 +7,13 @@ use App\Models\Reservation;
 use App\Models\Schedule;
 use App\Models\Service;
 use App\Models\User;
+use App\Services\CollectionReports;
 use App\Services\ReportingExclusions;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
@@ -269,6 +271,123 @@ class ReservationReportsTest extends TestCase
         $this->assertSame(1, $data['total']);
         $this->assertSame(0, $data['excluded']);
         $this->assertSame([$row->id], $data['reservations']->pluck('id')->all());
+    }
+
+    public function test_binding_object_order_does_not_block_any_report_or_export(): void
+    {
+        $fixture = $this->reservation();
+        $this->writeManifest([$this->tuple($fixture)], [
+            'binding' => array_reverse(app(ReportingExclusions::class)->binding(), true),
+        ]);
+
+        foreach (['reservations', 'collections', 'checkins', 'documents'] as $kind) {
+            $this->actingAs($this->admin)->get(route('admin.reports.'.$kind))
+                ->assertOk()->assertViewHas('reportError', fn ($error) => $error === null)
+                ->assertViewHas('report', fn ($report) => is_array($report));
+            $this->get(route('admin.reports.'.$kind.'.export'))->assertOk()->streamedContent();
+        }
+        $this->assertSame([$fixture->id], app(ReportingExclusions::class)->validatedIds());
+    }
+
+    public static function bindingFailures(): array
+    {
+        return [['value'], ['type'], ['extra_key'], ['missing_key']];
+    }
+
+    #[DataProvider('bindingFailures')]
+    public function test_binding_still_requires_exact_keys_types_and_values(string $case): void
+    {
+        $binding = app(ReportingExclusions::class)->binding();
+        if ($case === 'value') {
+            $binding['database'] = 'another-private-database';
+        } elseif ($case === 'type') {
+            $binding['port'] = 0;
+        } elseif ($case === 'extra_key') {
+            $binding['unexpected'] = true;
+        } else {
+            unset($binding['host']);
+        }
+        $this->writeManifest(overrides: ['binding' => $binding]);
+        foreach (['reservations', 'collections', 'checkins', 'documents'] as $kind) {
+            $this->actingAs($this->admin)->get(route('admin.reports.'.$kind))->assertOk()
+                ->assertViewHas('report', fn ($report) => $report === null)
+                ->assertDontSee('another-private-database');
+        }
+        $this->artisan('smartbarangay:reporting-check')->expectsOutputToContain('manifest_binding_mismatch')
+            ->doesntExpectOutputToContain('another-private-database')->assertFailed();
+    }
+
+    public function test_operator_check_runs_all_reports_without_writes_or_private_output(): void
+    {
+        $fixture = $this->reservation();
+        $this->writeManifest([$this->tuple($fixture)]);
+        $manifestHash = hash_file('sha256', $this->manifest);
+        DB::enableQueryLog();
+        DB::flushQueryLog();
+        $this->artisan('smartbarangay:reporting-check', ['--start' => '2026-10-01', '--end' => '2026-10-31'])
+            ->expectsOutputToContain('Schema: PASS')
+            ->expectsOutputToContain('Reviewed manifest and all fixture identities: PASS')
+            ->expectsOutputToContain('reservations: PASS')->expectsOutputToContain('collections: PASS')
+            ->expectsOutputToContain('checkins: PASS')->expectsOutputToContain('documents: PASS')
+            ->doesntExpectOutputToContain($this->manifest)->doesntExpectOutputToContain($this->resident->email)
+            ->assertSuccessful();
+        foreach (DB::getQueryLog() as $query) {
+            $this->assertDoesNotMatchRegularExpression('/^\s*(insert|update|delete|create|alter|drop|replace)\b/i', $query['query']);
+        }
+        DB::disableQueryLog();
+        $this->assertSame($manifestHash, hash_file('sha256', $this->manifest));
+        $this->assertSame(1, Reservation::count());
+    }
+
+    public static function diagnosticFailures(): array
+    {
+        return [['missing', 'manifest_missing'], ['malformed', 'manifest_invalid_json'],
+            ['unreviewed', 'manifest_not_reviewed'], ['duplicate', 'manifest_duplicate_fixture'],
+            ['identity', 'manifest_fixture_identity_mismatch']];
+    }
+
+    #[DataProvider('diagnosticFailures')]
+    public function test_operator_diagnostics_explain_common_guard_without_exposing_data(string $case, string $reason): void
+    {
+        $row = $this->reservation();
+        $tuple = $this->tuple($row);
+        if ($case === 'missing') {
+            unlink($this->manifest);
+        } elseif ($case === 'malformed') {
+            file_put_contents($this->manifest, '{private-invalid-content');
+        } elseif ($case === 'unreviewed') {
+            $this->writeManifest(overrides: ['reviewed' => false]);
+        } elseif ($case === 'duplicate') {
+            $this->writeManifest([$tuple, $tuple]);
+        } else {
+            $tuple['user_id']++;
+            $this->writeManifest([$tuple]);
+        }
+        foreach (['reservations', 'collections', 'checkins', 'documents'] as $kind) {
+            $this->actingAs($this->admin)->get(route('admin.reports.'.$kind))
+                ->assertOk()->assertViewHas('report', fn ($report) => $report === null)
+                ->assertDontSee($this->manifest)->assertDontSee($reason);
+        }
+        $this->artisan('smartbarangay:reporting-check')->expectsOutputToContain($reason)
+            ->doesntExpectOutputToContain('private-invalid-content')->doesntExpectOutputToContain($this->manifest)
+            ->assertFailed();
+    }
+
+    public function test_operator_check_rejects_invalid_period_and_reports_schema_and_reconciliation_failures(): void
+    {
+        foreach ([['--start' => '2026-10-01'], ['--end' => '2026-10-31'], ['--start' => '', '--end' => ''],
+            ['--start' => '2026-10-31', '--end' => '2026-10-01'],
+            ['--start' => '2026-02-30', '--end' => '2026-03-01']] as $options) {
+            $this->artisan('smartbarangay:reporting-check', $options)->expectsOutputToContain('invalid_period')->assertFailed();
+        }
+        $this->mock(CollectionReports::class, function ($mock) {
+            $mock->shouldReceive('data')->once()->andThrow(new \RuntimeException(ReportingExclusions::UNAVAILABLE));
+        });
+        $this->artisan('smartbarangay:reporting-check')->expectsOutputToContain('collections: reconciliation_failed')
+            ->expectsOutputToContain('checkins: PASS')->expectsOutputToContain('documents: PASS')->assertFailed();
+        // Isolated in-memory schema only; production command never runs a migration or DDL.
+        Schema::drop('reservation_payments');
+        $this->artisan('smartbarangay:reporting-check')->expectsOutputToContain('schema_missing: reservation_payments')->assertFailed();
     }
 
     public function test_pagination_order_filters_ties_and_top_five(): void
