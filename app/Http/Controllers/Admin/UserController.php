@@ -2,13 +2,18 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\ResidencyStatus;
 use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\FilterUsersRequest;
+use App\Http\Requests\Admin\ReviewResidencyRequest;
 use App\Http\Requests\Admin\UpdateUserStatusRequest;
+use App\Models\AuditLog;
+use App\Models\ResidencyReview;
 use App\Models\User;
 use App\Services\AccountEligibility;
 use App\Services\ConfigurationAudit;
+use App\Services\ResidencyProfileChanges;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
@@ -22,7 +27,7 @@ class UserController extends Controller
         $filters = $request->validated();
         $search = $filters['search'] ?? '';
         $users = User::query()->where('role', UserRole::Resident->value)
-            ->select(['id', 'name', 'email', 'contact_number', 'profile_picture', 'is_active', 'email_verified_at', 'created_at'])
+            ->select(['id', 'name', 'email', 'contact_number', 'profile_picture', 'is_active', 'email_verified_at', 'created_at', 'residency_status'])
             ->when($search !== '', function (Builder $query) use ($search) {
                 $query->where(function (Builder $query) use ($search) {
                     $query->where('name', 'like', '%'.$search.'%')
@@ -34,6 +39,7 @@ class UserController extends Controller
             ->when($filters['verification'] ?? null, function (Builder $query, string $verification) {
                 $verification === 'verified' ? $query->whereNotNull('email_verified_at') : $query->whereNull('email_verified_at');
             })
+            ->when($filters['residency'] ?? null, fn (Builder $query, string $status) => $query->where('residency_status', $status))
             ->latest()->orderByDesc('id')->paginate(10)->appends($filters);
 
         return view('admin.users.index', [...$this->shellData('User Management'), 'users' => $users, 'filters' => $filters]);
@@ -43,7 +49,37 @@ class UserController extends Controller
     {
         abort_unless($user->role === UserRole::Resident, 404);
 
-        return view('admin.users.show', [...$this->shellData('Resident Account Details'), 'resident' => $user]);
+        return view('admin.users.show', [...$this->shellData('Resident Account Details'), 'resident' => $user,
+            'residencyReviews' => $user->residencyReviews()->with('reviewer:id,name')->latest('id')->paginate(10)->withQueryString(),
+            'residencyChanges' => AuditLog::where('action', ResidencyProfileChanges::ACTION)->where('target_id', $user->id)
+                ->with('user:id,name')->latest('id')->paginate(10, ['*'], 'profile_changes_page')->withQueryString()]);
+    }
+
+    public function reviewResidency(ReviewResidencyRequest $request, User $user): RedirectResponse
+    {
+        $data = $request->validated();
+        DB::transaction(function () use ($request, $user, $data) {
+            $admin = app(AccountEligibility::class)->lock($request->user(), UserRole::Admin);
+            $resident = User::where('role', UserRole::Resident->value)->lockForUpdate()->findOrFail($user->id);
+            if ($resident->residency_revision !== (int) $data['expected_residency_revision']) {
+                throw ValidationException::withMessages(['residency_status' => 'This residency review has changed. Reload the account before reviewing again.']);
+            }
+            $decision = ResidencyStatus::from($data['residency_status']);
+            if ($resident->residency_status === $decision) {
+                throw ValidationException::withMessages(['residency_status' => 'This resident already has the selected residency status.']);
+            }
+            $review = new ResidencyReview;
+            $review->forceFill(['user_id' => $resident->id, 'reviewed_by' => $admin->id,
+                'from_status' => $resident->residency_status, 'to_status' => $decision,
+                'resident_message' => $data['resident_message'] ?? null, 'reviewed_at' => now()])->save();
+            $resident->residency_status = $decision;
+            $resident->residency_revision++;
+            $resident->residency_reviewed_by = $admin->id;
+            $resident->residency_reviewed_at = $review->reviewed_at;
+            $resident->save();
+        });
+
+        return to_route('admin.users.show', $user)->with('status', 'Residency review recorded.');
     }
 
     public function updateStatus(UpdateUserStatusRequest $request, User $user): RedirectResponse

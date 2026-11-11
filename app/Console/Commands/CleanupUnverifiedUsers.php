@@ -31,7 +31,7 @@ class CleanupUnverifiedUsers extends Command
                         if (! $user) {
                             return 'no_longer_eligible';
                         }
-                        if ($user->reservations()->exists() || $user->checkinLogs()->exists() || $user->statusHistories()->exists() || $user->profile()->exists()) {
+                        if ($user->reservations()->exists() || $user->checkinLogs()->exists() || $user->statusHistories()->exists() || $user->profile()->exists() || $user->residencyReviews()->exists()) {
                             return 'business_records';
                         }
                         if ($dryRun) {

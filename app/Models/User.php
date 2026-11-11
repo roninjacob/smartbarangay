@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\ResidencyStatus;
 use App\Enums\UserRole;
 use Carbon\CarbonInterface;
 use Database\Factories\UserFactory;
@@ -19,6 +20,8 @@ class User extends Authenticatable implements MustVerifyEmail
 
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
+
+    protected $attributes = ['residency_status' => 'pending', 'residency_revision' => 0];
 
     /**
      * The attributes that are mass assignable.
@@ -55,12 +58,26 @@ class User extends Authenticatable implements MustVerifyEmail
             'password' => 'hashed',
             'role' => UserRole::class,
             'is_active' => 'boolean',
+            'residency_status' => ResidencyStatus::class,
+            'residency_revision' => 'integer',
+            'residency_reviewed_at' => 'immutable_datetime',
         ];
     }
 
     public function reservations(): HasMany
     {
         return $this->hasMany(Reservation::class);
+    }
+
+    public function residencyReviews(): HasMany
+    {
+        return $this->hasMany(ResidencyReview::class);
+    }
+
+    public function canSubmitReservations(): bool
+    {
+        return $this->role === UserRole::Resident && $this->is_active && $this->hasVerifiedEmail()
+            && $this->residency_status === ResidencyStatus::Approved;
     }
 
     public function profile(): HasOne

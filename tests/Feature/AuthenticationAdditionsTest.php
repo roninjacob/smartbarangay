@@ -96,7 +96,7 @@ class AuthenticationAdditionsTest extends TestCase
         Event::fake([Verified::class]);
         $user = $this->user($role);
         $link = $this->signedLink($user);
-        $destination = $role === UserRole::Resident ? route('resident.profile.edit') : $home;
+        $destination = $home;
         $this->actingAs($user)->get($link)->assertRedirect($destination)->assertSessionHas('status', 'Email verified successfully.');
         $this->assertTrue($user->fresh()->hasVerifiedEmail());
         Event::assertDispatched(Verified::class, fn ($event) => $event->user->id === $user->id);
@@ -375,7 +375,7 @@ class AuthenticationAdditionsTest extends TestCase
         $this->assertFalse($user->fresh()->hasVerifiedEmail());
         $this->post('/login', ['email' => $user->email, 'password' => 'password'])
             ->assertRedirect($link)->assertSessionMissing('url.intended');
-        $destination = $user->role === UserRole::Resident ? route('resident.profile.edit') : $home;
+        $destination = $home;
         $this->get($link)->assertRedirect($destination)->assertSessionHas('status', 'Email verified successfully.');
         $this->assertTrue($user->fresh()->hasVerifiedEmail());
         $this->get($destination)->assertOk()->assertSee('Email verified successfully.');

@@ -23,6 +23,8 @@ class UpdateProfileRequest extends FormRequest
             'is_active' => ['prohibited'], 'email_verified_at' => ['prohibited'],
             'email' => ['prohibited'], 'password' => ['prohibited'], 'remember_token' => ['prohibited'],
             'profile_picture' => ['prohibited'], 'permissions' => ['prohibited'],
+            'residency_status' => ['prohibited'], 'residency_revision' => ['prohibited'],
+            'residency_reviewed_by' => ['prohibited'], 'residency_reviewed_at' => ['prohibited'],
         ];
     }
 }

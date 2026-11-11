@@ -142,7 +142,7 @@ class UnverifiedAccountCleanupTest extends TestCase
     {
         $user = $this->resident(8);
         $link = URL::temporarySignedRoute('verification.verify', now()->addHour(), ['id' => $user->id, 'hash' => sha1($user->email)]);
-        $this->actingAs($user)->get($link)->assertRedirect(route('resident.profile.edit'));
+        $this->actingAs($user)->get($link)->assertRedirect(route('resident.home'));
         $this->artisan('smartbarangay:cleanup-unverified-users')
             ->expectsOutput('Candidates: 0; eligible: 0; removed: 0; skipped: 0.')->assertSuccessful();
         $this->assertTrue($user->fresh()->hasVerifiedEmail());
@@ -285,7 +285,7 @@ class UnverifiedAccountCleanupTest extends TestCase
         $link = $notification->toMail($user)->actionUrl;
         $this->assertStringContainsString(sha1('corrected@example.com'), $link);
         $this->assertStringNotContainsString(sha1($originalEmail), $link);
-        $this->get($link)->assertRedirect(route('resident.profile.edit'));
+        $this->get($link)->assertRedirect(route('resident.home'));
         $this->assertTrue($user->fresh()->hasVerifiedEmail());
     }
 

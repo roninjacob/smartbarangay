@@ -31,7 +31,7 @@ class ServiceFeesTest extends TestCase
 
     private function user(UserRole $role = UserRole::Resident): User
     {
-        return User::factory()->create(['role' => $role, 'is_active' => true]);
+        return User::factory()->residencyApproved()->create(['role' => $role, 'is_active' => true]);
     }
 
     private function schedule(): Schedule

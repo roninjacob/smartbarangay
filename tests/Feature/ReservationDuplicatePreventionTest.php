@@ -175,7 +175,7 @@ class ReservationDuplicatePreventionTest extends TestCase
 
     private function resident(): User
     {
-        $user = User::factory()->make();
+        $user = User::factory()->residencyApproved()->make();
         $user->forceFill(['role' => UserRole::Resident, 'is_active' => true])->save();
 
         return $user;

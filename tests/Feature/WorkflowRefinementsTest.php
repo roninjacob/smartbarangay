@@ -47,7 +47,7 @@ class WorkflowRefinementsTest extends TestCase
 
     private function fixture(?User $resident = null, string $status = 'pending'): Reservation
     {
-        $resident ??= User::factory()->create(['role' => UserRole::Resident, 'is_active' => true]);
+        $resident ??= User::factory()->residencyApproved()->create(['role' => UserRole::Resident, 'is_active' => true]);
         $service = Service::create(['name' => 'Clearance '.Service::count(), 'fee_amount' => '0.00']);
         $schedule = Schedule::first() ?? Schedule::create(['date' => '2026-11-01', 'start_time' => '09:00:00', 'end_time' => '10:00:00', 'capacity' => 10]);
 

@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Enums\ResidencyStatus;
 use App\Enums\UserRole;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -19,6 +20,7 @@ class FilterUsersRequest extends FormRequest
     {
         return ['search' => ['nullable', 'string', 'max:255'],
             'status' => ['nullable', Rule::in(['active', 'inactive'])],
-            'verification' => ['nullable', Rule::in(['verified', 'unverified'])]];
+            'verification' => ['nullable', Rule::in(['verified', 'unverified'])],
+            'residency' => ['nullable', Rule::enum(ResidencyStatus::class)]];
     }
 }

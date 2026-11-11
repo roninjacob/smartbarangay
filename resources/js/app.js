@@ -1,6 +1,7 @@
 import './bootstrap';
 import 'bootstrap';
 import './auth';
+import './email-verification';
 import './dashboard';
 import './collection-reports';
 import './event-reports';

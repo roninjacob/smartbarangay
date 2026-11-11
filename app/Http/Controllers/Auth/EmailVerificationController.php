@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\ChangeVerificationEmailRequest;
 use App\Models\User;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -19,33 +20,40 @@ class EmailVerificationController extends Controller
 {
     public function notice(Request $request): View|RedirectResponse
     {
-        return ! $request->user()->requiresEmailVerification()
+        return ! $request->user()->fresh()->requiresEmailVerification()
             ? redirect()->route($request->user()->homeRouteName())
             : view('auth.verify-email');
     }
 
+    public function status(Request $request): JsonResponse
+    {
+        $user = $request->user()->fresh();
+        abort_unless($user && $user->is_active, 403);
+        Auth::setUser($user);
+        $request->setUserResolver(fn () => $user);
+
+        return response()->json(['verified' => $user->hasVerifiedEmail(),
+            'redirect' => $user->hasVerifiedEmail() ? route($user->homeRouteName()) : null])
+            ->header('Cache-Control', 'no-store, private');
+    }
+
     public function verify(EmailVerificationRequest $request): RedirectResponse
     {
-        $newlyVerified = DB::transaction(function () use ($request) {
+        DB::transaction(function () use ($request) {
             $user = User::whereKey($request->user()->id)->lockForUpdate()->firstOrFail();
             abort_unless($user->is_active && hash_equals(sha1($user->getEmailForVerification()), (string) $request->route('hash')), 403);
             $request->setUserResolver(fn () => $user);
-            $newlyVerified = ! $user->hasVerifiedEmail();
             $request->fulfill();
             Auth::setUser($user);
-
-            return $newlyVerified;
         });
 
-        $onboarding = $newlyVerified && $request->user()->role === UserRole::Resident;
-
-        return redirect()->route($onboarding ? 'resident.profile.edit' : $request->user()->homeRouteName())
-            ->with('status', 'Email verified successfully.')->with('profile_onboarding', $onboarding);
+        return redirect()->route($request->user()->homeRouteName())
+            ->with('status', 'Email verified successfully.');
     }
 
     public function resend(Request $request): RedirectResponse
     {
-        if (! $request->user()->requiresEmailVerification()) {
+        if (! $request->user()->fresh()->requiresEmailVerification()) {
             return redirect()->route($request->user()->homeRouteName());
         }
 

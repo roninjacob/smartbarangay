@@ -8,7 +8,7 @@
     <span class="section-eyebrow">FOR BARANGAY CALAYO RESIDENTS</span>
     <h2 id="auth-heading">Create your account</h2>
     <p>Create your resident account to access SmartBarangay services in Barangay Calayo.</p>
-    <p class="auth-audience">Reserve barangay documents, choose available schedules, track request progress, and access your QR tickets through one resident account.</p>
+    <p class="auth-audience">Verify your email to open your dashboard. An Admin will review your Barangay Calayo residency before you can submit document requests.</p>
 </div>
 @endsection
 

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Resident;
 
 use App\Enums\ReservationStatus;
+use App\Enums\ResidencyStatus;
 use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Resident\ReservationWizardRequest;
@@ -157,6 +158,7 @@ class ReservationController extends Controller
         try {
             DB::transaction(function () use ($request, $draft, $uploads, &$storedPaths) {
                 $resident = app(AccountEligibility::class)->lock($request->user(), UserRole::Resident);
+                abort_unless($resident->canSubmitReservations(), 403, ResidencyStatus::BLOCKED_MESSAGE);
                 // Serialize final checks against Admin edits to these same records.
                 $service = Service::lockForUpdate()->find($draft['service_id']);
                 $schedule = Schedule::lockForUpdate()->find($draft['schedule_id']);

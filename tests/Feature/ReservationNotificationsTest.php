@@ -40,7 +40,7 @@ class ReservationNotificationsTest extends TestCase
 
     private function user(UserRole $role = UserRole::Resident, array $attributes = []): User
     {
-        return User::factory()->create([...['role' => $role, 'is_active' => true], ...$attributes]);
+        return User::factory()->residencyApproved()->create([...['role' => $role, 'is_active' => true], ...$attributes]);
     }
 
     private function fixture(string $status = 'pending', ?string $fee = '50.00'): Reservation

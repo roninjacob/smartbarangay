@@ -69,8 +69,8 @@ class Milestone3AcceptanceTest extends TestCase
         $this->assertNull($resident->email_verified_at);
         $this->get(route('resident.profile.edit'))->assertRedirect(route('verification.notice'));
         $verification = URL::temporarySignedRoute('verification.verify', now()->addHour(), ['id' => $resident->id, 'hash' => sha1($resident->email)]);
-        $this->get($verification)->assertRedirect(route('resident.profile.edit'));
-        $this->get(route('resident.profile.edit'))->assertOk()->assertSee('Prepare your profile next.');
+        $this->get($verification)->assertRedirect(route('resident.home'));
+        $this->get(route('resident.profile.edit'))->assertOk()->assertSee('Your profile supports your document requests.');
         $occupation = 'Community Development and Disaster Preparedness Coordination Assistant';
         $street = trim(str_repeat('Synthetic Coastal Access Road, ', 7));
         $this->put(route('resident.profile.demographics.update'), ['birthdate' => '2000-02-29', 'civil_status' => 'Single',
@@ -103,6 +103,10 @@ class Milestone3AcceptanceTest extends TestCase
             }
         }
         $schedule = Schedule::create(['date' => '2026-10-26', 'start_time' => '09:00:00', 'end_time' => '10:00:00', 'capacity' => 5, 'is_active' => true]);
+        $this->withSession(['password_hash_web' => $admin->password])->actingAs($admin)->patch(route('admin.users.residency', $resident), [
+            'residency_status' => 'approved', 'expected_residency_revision' => $resident->fresh()->residency_revision,
+        ])->assertRedirect(route('admin.users.show', $resident))->assertSessionHasNoErrors();
+        $this->withSession(['password_hash_web' => $resident->password])->actingAs($resident->fresh());
         $this->post(route('resident.reservations.service'), ['service_id' => $service->id])->assertRedirect();
         $this->get(route('resident.reservations.requirements'))->assertOk()->assertSee($occupation);
         $this->post(route('resident.reservations.requirements.review'), ['requirement_signature' => $this->requirementSignature(),

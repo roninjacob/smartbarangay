@@ -2,8 +2,10 @@
 @section('dashboard')
 <p class="text-secondary mb-4">Keep your contact details up to date for Barangay Calayo services.</p>
 @if($user->role === \App\Enums\UserRole::Resident)
+    @include('partials.residency-status', ['resident' => $user])
     <div class="alert alert-info" role="status">
-        <strong>{{ session('profile_onboarding') ? 'Your email is verified. Prepare your profile next.' : 'Your profile supports your document requests.' }}</strong>
+        <strong>Your profile supports your document requests.</strong>
+        <p class="mb-0 mt-2">Changing your name, birthdate or address information requires another residency review before you can submit new requests.</p>
         <p class="mb-0 mt-2">You can complete this information gradually. Only the profile fields required by your selected document must be filled before continuing that request. Emergency contacts are optional and stay private.</p>
     </div>
 @endif

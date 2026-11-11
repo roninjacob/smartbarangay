@@ -42,6 +42,8 @@ class AppServiceProvider extends ServiceProvider
                 ->with('notificationLatest', $user->notifications()->reorder()->orderByDesc('created_at')->orderByDesc('id')->limit(5)->get());
         });
         RateLimiter::for('verification-email', fn (Request $request) => Limit::perMinute(1)->by('verification:'.$request->user()->id));
+        RateLimiter::for('verification-status', fn (Request $request) => Limit::perMinute(12)->by('verification-status:'.$request->user()->id));
+        RateLimiter::for('residency-review', fn (Request $request) => Limit::perMinute(20)->by('residency-review:'.$request->user()->id));
         RateLimiter::for('password-email', fn (Request $request) => [
             Limit::perMinute(5)->by('password-ip:'.$request->ip()),
             Limit::perMinute(1)->by('password-address:'.hash('sha256',

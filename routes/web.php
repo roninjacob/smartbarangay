@@ -41,6 +41,7 @@ use App\Http\Controllers\Resident\ReservationCancellationController;
 use App\Http\Controllers\Resident\ReservationController;
 use App\Http\Controllers\Resident\ReservationViewController;
 use App\Http\Controllers\UserPreferencesController;
+use App\Http\Middleware\EnsureResidencyApproved;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', HomeController::class)->name('home');
@@ -71,6 +72,8 @@ Route::middleware('auth')->group(function () {
     }
     Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->block(10, 10)->name('logout');
     Route::get('/email/verify', [EmailVerificationController::class, 'notice'])->name('verification.notice');
+    Route::get('/email/verification-status', [EmailVerificationController::class, 'status'])
+        ->middleware('throttle:verification-status')->name('verification.status');
     Route::get('/email/change', [EmailVerificationController::class, 'editEmail'])->name('verification.email.edit');
     Route::put('/email/change', [EmailVerificationController::class, 'updateEmail'])
         ->middleware('throttle:verification-email')->name('verification.email.update');
@@ -101,14 +104,16 @@ Route::middleware('auth')->group(function () {
             Route::get('/{reservation}/attachments/{attachment}', [ReservationAttachmentController::class, 'resident'])
                 ->whereNumber(['reservation', 'attachment'])->name('attachments.download');
             Route::get('/', [ReservationViewController::class, 'index'])->name('index');
-            Route::get('/create', [ReservationController::class, 'create'])->block(10, 10)->name('create');
-            Route::post('/service', [ReservationController::class, 'selectService'])->block(10, 10)->name('service');
-            Route::get('/requirements', [ReservationController::class, 'requirements'])->block(10, 10)->name('requirements');
-            Route::post('/requirements', [ReservationController::class, 'reviewRequirements'])->block(10, 10)->name('requirements.review');
-            Route::get('/schedule', [ReservationController::class, 'schedule'])->block(10, 10)->name('schedule');
-            Route::post('/schedule', [ReservationController::class, 'selectSchedule'])->block(10, 10)->name('schedule.select');
-            Route::get('/confirm', [ReservationController::class, 'confirm'])->block(10, 10)->name('confirm');
-            Route::post('/', [ReservationController::class, 'store'])->block(10, 10)->name('store');
+            Route::middleware(EnsureResidencyApproved::class)->group(function () {
+                Route::get('/create', [ReservationController::class, 'create'])->block(10, 10)->name('create');
+                Route::post('/service', [ReservationController::class, 'selectService'])->block(10, 10)->name('service');
+                Route::get('/requirements', [ReservationController::class, 'requirements'])->block(10, 10)->name('requirements');
+                Route::post('/requirements', [ReservationController::class, 'reviewRequirements'])->block(10, 10)->name('requirements.review');
+                Route::get('/schedule', [ReservationController::class, 'schedule'])->block(10, 10)->name('schedule');
+                Route::post('/schedule', [ReservationController::class, 'selectSchedule'])->block(10, 10)->name('schedule.select');
+                Route::get('/confirm', [ReservationController::class, 'confirm'])->block(10, 10)->name('confirm');
+                Route::post('/', [ReservationController::class, 'store'])->block(10, 10)->name('store');
+            });
             Route::get('/{reservation}/generated-document', [GeneratedReservationDocumentController::class, 'show'])->whereNumber('reservation')->name('generated.show');
             Route::get('/{reservation}/generated-document/pdf', [GeneratedReservationDocumentController::class, 'pdf'])->whereNumber('reservation')->name('generated.pdf');
             Route::get('/{reservation}/generated-document/download', [GeneratedReservationDocumentController::class, 'download'])->whereNumber('reservation')->name('generated.download');
@@ -164,6 +169,8 @@ Route::middleware('auth')->group(function () {
         Route::get('/users', [AdminUserController::class, 'index'])->name('users.index');
         Route::get('/users/{user}', [AdminUserController::class, 'show'])->whereNumber('user')->name('users.show');
         Route::patch('/users/{user}/status', [AdminUserController::class, 'updateStatus'])->whereNumber('user')->name('users.status');
+        Route::patch('/users/{user}/residency', [AdminUserController::class, 'reviewResidency'])
+            ->whereNumber('user')->middleware('throttle:residency-review')->name('users.residency');
         Route::get('/reservations', [AdminReservationController::class, 'index'])->name('reservations.index');
         Route::get('/reservation-logs', [ReservationLogController::class, 'index'])->name('reservation-logs.index');
         Route::post('/reservations/{reservation}/payment', [ReservationPaymentController::class, 'store'])->whereNumber('reservation')->name('reservations.payment.store');

@@ -40,7 +40,7 @@ class WorkflowIntegrityCorrectionsTest extends TestCase
         Storage::fake('local');
         $this->withoutVite();
         $this->travelTo(now('Asia/Manila')->setDate(2026, 10, 27)->setTime(10, 0));
-        $this->resident = User::factory()->create(['role' => UserRole::Resident, 'is_active' => true]);
+        $this->resident = User::factory()->residencyApproved()->create(['role' => UserRole::Resident, 'is_active' => true]);
         $this->service = Service::create(['name' => 'Clearance', 'fee_amount' => '50.00']);
         $this->slot = Schedule::create(['date' => '2026-11-01', 'start_time' => '09:00:00', 'end_time' => '10:00:00', 'capacity' => 20]);
         $this->actingAs($this->resident);

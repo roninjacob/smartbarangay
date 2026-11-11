@@ -2,14 +2,15 @@
 @section('title', 'Verify your email')
 @section('eyebrow', 'VERIFY YOUR EMAIL')
 @section('heading', 'Check your inbox')
-@section('description', 'Check your inbox for a verification link, or request a new one below. Please verify your email before accessing SmartBarangay services.')
+@section('description', 'Check your inbox for a verification link, or request a new one below. Verify your email to open your SmartBarangay account.')
 @section('form')
 <ol class="auth-progress list-unstyled" aria-label="Account setup progress">
     <li><span aria-hidden="true">✓</span> Account created</li>
     <li aria-current="step"><span aria-hidden="true">2</span> Verify email</li>
-    <li><span aria-hidden="true">3</span> Access services</li>
+    <li><span aria-hidden="true">3</span> Open your dashboard</li>
 </ol>
 <x-auth-feedback />
+<p class="auth-action-hint" data-verification-sync data-status-url="{{ route('verification.status') }}" role="status" aria-live="polite">This page checks automatically when your email is verified, including on another device.</p>
 <div class="auth-email-destination"><span>Verification email destination</span><strong>{{ auth()->user()->email }}</strong></div>
 @if(auth()->user()->role === \App\Enums\UserRole::Resident)
 <p class="auth-action-hint">Wrong email address? <a href="{{ route('verification.email.edit') }}">Change Email Address</a></p>

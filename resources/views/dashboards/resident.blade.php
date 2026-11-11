@@ -1,7 +1,8 @@
 @extends('layouts.authenticated')
 @section('dashboard')
+@include('partials.residency-status', ['resident' => auth()->user()])
 <section class="dashboard-welcome resident-welcome" aria-labelledby="welcome-heading">
-    <div class="welcome-copy"><span class="welcome-eyebrow">YOUR COMMUNITY, CONNECTED</span><h2 id="welcome-heading">Welcome, {{ auth()->user()->name }}</h2><p>Your barangay services, in one place.<br>We'll guide you through your next document request.</p><a href="{{ route('resident.reservations.create') }}" class="btn btn-primary resident-start-action">Request a document <x-app-icon name="arrow"/></a><span class="welcome-location">Barangay Calayo · Nasugbu, Batangas</span></div>
+    <div class="welcome-copy"><span class="welcome-eyebrow">YOUR COMMUNITY, CONNECTED</span><h2 id="welcome-heading">Welcome, {{ auth()->user()->name }}</h2><p>Your barangay services, in one place.<br>We'll guide you through your next document request.</p><a href="{{ route(auth()->user()->canSubmitReservations() ? 'resident.reservations.create' : 'resident.profile.edit') }}" class="btn btn-primary resident-start-action">{{ auth()->user()->canSubmitReservations() ? 'Request a document' : 'Review your profile' }} <x-app-icon name="arrow"/></a><span class="welcome-location">Barangay Calayo · Nasugbu, Batangas</span></div>
     <div class="welcome-art" aria-hidden="true"><x-app-icon name="services"/><span>Reserve. Track. Verify.</span></div>
 </section>
 
@@ -21,6 +22,8 @@
                     <p>You have documents ready for pickup. Contact the Barangay Calayo office for collection guidance.</p>
                 @elseif($inProgress > 0)
                     <p>Your requests are being processed. Check this dashboard for updates from Barangay Calayo.</p>
+                @elseif(! auth()->user()->canSubmitReservations())
+                    <p>Review your residency status and keep your profile up to date while the barangay office reviews your account.</p>
                 @else
                     <p>Need a barangay document? Start a new reservation to choose your service and schedule.</p>
                 @endif
@@ -29,7 +32,7 @@
     </div>
     <div class="col-12 dashboard-aside dashboard-support"><x-dashboard-statuses :statuses="$statuses" :counts="$counts" :total="$totalReservations"/>
         <section class="dashboard-quick-actions" aria-labelledby="quick-actions-heading"><h2 id="quick-actions-heading">Quick access</h2>
-            <a class="account-quick-link" href="{{ route('resident.reservations.create') }}"><x-app-icon name="plus"/><span>New Reservation</span><x-app-icon name="arrow"/></a>
+            @if(auth()->user()->canSubmitReservations())<a class="account-quick-link" href="{{ route('resident.reservations.create') }}"><x-app-icon name="plus"/><span>New Reservation</span><x-app-icon name="arrow"/></a>@endif
             <a class="account-quick-link" href="{{ route('resident.reservations.index') }}"><x-app-icon name="document"/><span>My Reservations</span><x-app-icon name="arrow"/></a>
             <a class="account-quick-link" href="{{ route('resident.qr-tickets.index') }}"><x-app-icon name="qr"/><span>My QR Tickets</span><x-app-icon name="arrow"/></a>
             <a class="account-quick-link" href="{{ route('resident.request-status.index') }}"><x-app-icon name="status"/><span>Request Status</span><x-app-icon name="arrow"/></a>

@@ -285,7 +285,7 @@ class ReservationGapClosureTest extends TestCase
 
     private function user(UserRole $role = UserRole::Resident): User
     {
-        $user = User::factory()->make();
+        $user = User::factory()->residencyApproved()->make();
         $user->forceFill(['role' => $role, 'is_active' => true])->save();
 
         return $user;

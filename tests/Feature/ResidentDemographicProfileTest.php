@@ -35,7 +35,7 @@ class ResidentDemographicProfileTest extends TestCase
         Artisan::call('migrate', ['--database' => 'sqlite', '--force' => true]);
         Storage::fake('local');
         $this->withoutVite();
-        $this->resident = User::factory()->create(['role' => UserRole::Resident, 'is_active' => true, 'address' => 'Legacy account address']);
+        $this->resident = User::factory()->residencyApproved()->create(['role' => UserRole::Resident, 'is_active' => true, 'address' => 'Legacy account address']);
     }
 
     protected function tearDown(): void
@@ -54,6 +54,15 @@ class ResidentDemographicProfileTest extends TestCase
     private function save(array $changes = [])
     {
         return $this->actingAs($this->resident)->put(route('resident.profile.demographics.update'), $this->payload($changes));
+    }
+
+    private function approveCurrentProfile(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin, 'is_active' => true]);
+        $this->actingAs($admin)->patch(route('admin.users.residency', $this->resident), [
+            'residency_status' => 'approved', 'expected_residency_revision' => $this->resident->fresh()->residency_revision,
+        ])->assertSessionHasNoErrors();
+        $this->actingAs($this->resident->fresh());
     }
 
     public function test_resident_creates_and_updates_one_profile_without_overwriting_legacy_address(): void
@@ -168,6 +177,7 @@ class ResidentDemographicProfileTest extends TestCase
     public function test_demographic_changes_use_existing_snapshot_preview_and_exact_final_pdf_pipeline(): void
     {
         $this->save()->assertSessionHasNoErrors();
+        $this->approveCurrentProfile();
         $service = Service::create(['name' => 'Demographic Certificate', 'fee_amount' => '0.00']);
         $bytes = CertificatePdf::bytes();
         $path = 'service-document-templates/'.$service->id.'/'.str_repeat('a', 40).'.pdf';
@@ -187,7 +197,8 @@ class ResidentDemographicProfileTest extends TestCase
         $this->post(route('resident.reservations.store'), ['confirmation_token' => session('reservation_wizard.confirmation_token'), 'resident_civil_status' => 'Spoofed'])->assertRedirect(route('resident.home'));
         $reservation = Reservation::sole();
         $snapshot = $reservation->resident_snapshot;
-        $this->save(['civil_status' => 'Married', 'occupation' => 'Farmer'])->assertSessionHasNoErrors();
+        $this->save(['civil_status' => 'Married', 'occupation' => 'Farmer', 'address_street' => 'Changed Street'])->assertSessionHasNoErrors();
+        $this->assertFalse($this->resident->fresh()->canSubmitReservations());
         $this->assertSame($snapshot, $reservation->fresh()->resident_snapshot);
         $data = app(ReservationDocumentPreview::class)->data($reservation->fresh());
         $this->assertSame(['Single', 'Teacher', '2000-02-29', 'Sample Street', 'Purok 1'], array_column($data['placements'], 'text'));
@@ -233,6 +244,8 @@ class ResidentDemographicProfileTest extends TestCase
         $this->assertDatabaseCount('reservations', 0);
         $this->get(route('resident.profile.edit'))->assertOk()->assertSee('Return to document form');
         $this->save()->assertRedirect(route('resident.profile.edit'));
+        $this->get(route('resident.reservations.requirements'))->assertForbidden();
+        $this->approveCurrentProfile();
         $page = $this->get(route('resident.reservations.requirements'))->assertOk()->assertSee('Single')
             ->assertDontSee('Complete the profile information required for this document.');
         $this->assertSame([], $page->viewData('missingProfileFields'));

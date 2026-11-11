@@ -7,6 +7,7 @@ use App\Http\Requests\UpdateProfilePictureRequest;
 use App\Http\Requests\UpdateProfileRequest;
 use App\Http\Requests\UpdateResidentDemographicsRequest;
 use App\Models\User;
+use App\Services\ResidencyProfileChanges;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -24,7 +25,7 @@ class ProfileController extends Controller
 
         return view('profile.edit', [
             'residentProfile' => $role === UserRole::Resident ? $request->user()->profile()->first() : null,
-            'resumeReservation' => $role === UserRole::Resident && $request->session()->get('reservation_wizard.resident_id') === $request->user()->id
+            'resumeReservation' => $role === UserRole::Resident && $request->user()->canSubmitReservations() && $request->session()->get('reservation_wizard.resident_id') === $request->user()->id
                 && $request->session()->has('reservation_wizard.service_id'),
             'user' => $request->user(), 'roleLabel' => $role === UserRole::Admin ? 'Admin' : 'Resident',
             'navigation' => config('navigation.'.$role->value), 'profileRoutePrefix' => $role->value.'.profile',
@@ -37,7 +38,9 @@ class ProfileController extends Controller
     {
         DB::transaction(function () use ($request) {
             $user = $this->lockedUser($request);
-            $user->fill($request->safe()->only(['name', 'contact_number', 'address']))->save();
+            $user->fill($request->safe()->only(['name', 'contact_number', 'address']));
+            app(ResidencyProfileChanges::class)->record($user, $user);
+            $user->save();
         });
 
         return to_route($this->profileRole($request)->value.'.profile.edit')->with('status', 'Your profile information has been updated.');
@@ -79,7 +82,12 @@ class ProfileController extends Controller
             $user = $this->lockedUser($request);
             abort_unless($user->role === UserRole::Resident, 403);
             $profile = $user->profile()->lockForUpdate()->first() ?? $user->profile()->make();
-            $profile->forceFill($request->validated())->save();
+            $profile->forceFill($request->validated());
+            app(ResidencyProfileChanges::class)->record($user, $profile);
+            $profile->save();
+            if ($user->isDirty()) {
+                $user->save();
+            }
         });
 
         return to_route('resident.profile.edit')->with('status', 'Your resident demographic profile has been updated. Existing requests remain unchanged.');

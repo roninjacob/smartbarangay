@@ -37,7 +37,7 @@ class ReservationWorkflowHardeningTest extends TestCase
         $this->withoutVite();
         Storage::fake('local');
         Carbon::setTestNow(Carbon::parse('2026-11-01 08:00:00', 'Asia/Manila'));
-        $this->resident = User::factory()->create(['role' => UserRole::Resident, 'is_active' => true]);
+        $this->resident = User::factory()->residencyApproved()->create(['role' => UserRole::Resident, 'is_active' => true]);
         $this->service = Service::create(['name' => 'Clearance', 'fee_amount' => '0.00', 'is_active' => true]);
         $this->schedule = Schedule::create(['date' => '2026-11-01', 'start_time' => '09:00:00', 'end_time' => '10:00:00', 'capacity' => 10, 'is_active' => true]);
         $this->actingAs($this->resident);
