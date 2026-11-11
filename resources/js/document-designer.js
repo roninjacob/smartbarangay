@@ -23,8 +23,7 @@ async function initialize(root) {
         draw();
     }
     function sample(field) {
-        const examples={resident_name:'Juan Dela Cruz',resident_address:'Barangay Calayo, Nasugbu, Batangas',resident_contact:'0912 345 6789',date_issued:'October 13, 2026',barangay_name:'Barangay Calayo',resident_birthdate:'2000-02-29',resident_civil_status:'Single',resident_occupation:'Teacher',resident_address_street:'Sample Street',resident_address_zone_purok:'Purok 1'};
-        return examples[field.name] ?? (field.type==='dropdown' ? field.options?.[0] ?? 'Sample option' : field.type==='number' ? '5' : field.type==='date' ? 'October 13, 2026' : 'Employment');
+        return field.sample != null ? String(field.sample) : (field.type==='dropdown' ? field.options?.[0] ?? 'Sample option' : field.type==='number' ? '5' : field.type==='date' ? '2026-11-12' : 'Employment');
     }
     function draw() {
         if(!pageSize) return;

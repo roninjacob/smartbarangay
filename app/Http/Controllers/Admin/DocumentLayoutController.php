@@ -9,6 +9,7 @@ use App\Models\DocumentTemplate;
 use App\Models\Service;
 use App\Services\CertificatePreview;
 use App\Services\DocumentLayout;
+use App\Services\DocumentSystemFields;
 use App\Services\DocumentTemplateConfiguration;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -20,12 +21,6 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class DocumentLayoutController extends Controller
 {
-    private const SYSTEM_LABELS = ['resident_name' => 'Resident Name', 'resident_address' => 'Resident Address',
-        'resident_contact' => 'Resident Contact', 'date_issued' => 'Date Issued', 'barangay_name' => 'Barangay Name',
-        'resident_birthdate' => 'Resident Birthdate', 'resident_civil_status' => 'Resident Civil Status',
-        'resident_occupation' => 'Resident Occupation', 'resident_address_street' => 'Resident Street',
-        'resident_address_zone_purok' => 'Resident Zone / Purok'];
-
     public function edit(Service $service, CertificatePreview $pdf): View
     {
         $template = $service->dynamicDocumentTemplate()->with('fields.positions')->firstOrFail();
@@ -35,12 +30,15 @@ class DocumentLayoutController extends Controller
             'name' => $field->field_name, 'label' => $field->label, 'source' => $field->source,
             'type' => $field->field_type->value, 'options' => $field->options,
         ])->values();
-        foreach (self::SYSTEM_LABELS as $name => $label) {
+        foreach (DocumentField::SYSTEM_LABELS as $name => $label) {
             if (! $template->fields->contains('field_name', $name)) {
                 $fields->push(['key' => 'system:'.$name, 'field_id' => null, 'system_name' => $name,
                     'name' => $name, 'label' => $label, 'source' => 'system', 'type' => DocumentField::SYSTEM_FIELDS[$name], 'options' => null]);
             }
         }
+        $samples = app(DocumentSystemFields::class)->samples();
+        $fields = $fields->map(fn ($field) => [...$field,
+            'sample' => $field['source'] === 'system' ? ($samples[$field['name']] ?? '') : null]);
         $placements = $template->fields->flatMap(fn ($field) => $field->positions->map(fn ($position) => [
             'key' => 'field:'.$field->id, ...$position->only(['page_number', 'x_position', 'y_position', 'width', 'height', 'font_size', 'alignment', 'text_behavior']),
         ]))->values();
@@ -90,7 +88,7 @@ class DocumentLayoutController extends Controller
                     }
                 } else {
                     $field = $template->fields()->firstOrCreate(['field_name' => $name], [
-                        'label' => self::SYSTEM_LABELS[$name], 'source' => 'system', 'field_type' => DocumentField::SYSTEM_FIELDS[$name],
+                        'label' => DocumentField::SYSTEM_LABELS[$name], 'source' => 'system', 'field_type' => DocumentField::SYSTEM_FIELDS[$name],
                         'is_required' => false, 'sort_order' => 0,
                     ]);
                     if ($field->source !== 'system') {

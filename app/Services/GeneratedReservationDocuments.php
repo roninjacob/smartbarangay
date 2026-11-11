@@ -55,7 +55,9 @@ class GeneratedReservationDocuments
                     throw ValidationException::withMessages(['document' => ReservationDocumentPreview::UNAVAILABLE]);
                 }
                 $disk = Storage::disk('local');
-                $bytes = app(CanonicalDocumentPreview::class)->reviewed($record, $admin, $previewToken, true);
+                $generatedAt = now('UTC');
+                $bytes = app(CanonicalDocumentPreview::class)->reviewed($record, $admin, $previewToken, true,
+                    finalizationDate: $generatedAt->copy()->timezone('Asia/Manila')->toDateString());
                 $masterId = $data['source']['template_id'];
                 $master = $service->documentTemplate;
                 $masterId = $master?->id === $masterId && hash_equals($data['source']['revision'], $master->revision()) ? $masterId : null;
@@ -69,7 +71,7 @@ class GeneratedReservationDocuments
                     'template_version' => $snapshot['version'], 'template_filename' => $snapshot['source_filename'],
                     'original_filename' => 'Certificate-'.$record->id.'.pdf', 'stored_path' => $path,
                     'mime_type' => 'application/pdf', 'file_size' => strlen($bytes), 'content_hash' => hash('sha256', $bytes),
-                    'generated_by' => $admin->id, 'generated_at' => now(),
+                    'generated_by' => $admin->id, 'generated_at' => $generatedAt,
                 ]);
             });
         } catch (Throwable $exception) {

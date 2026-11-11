@@ -91,7 +91,7 @@ class DocumentDesignerTest extends TestCase
     public function test_admin_sees_private_designer_and_system_and_custom_toolbox_without_manual_coordinates(): void
     {
         [$service,$template,$field] = $this->fixture();
-        $this->get($this->url($service))->assertOk()->assertSee('Save Layout')->assertSee('Resident Name')->assertSee('Purpose')->assertSee('Preview with Sample Data')->assertSee('data-designer-canvas', false)->assertDontSee($service->documentTemplate->stored_path, false);
+        $this->get($this->url($service))->assertOk()->assertSee('Save Layout')->assertSee('Full Name')->assertSee('Purpose')->assertSee('Preview with Sample Data')->assertSee('data-designer-canvas', false)->assertDontSee($service->documentTemplate->stored_path, false);
         $this->get('/admin/services/'.$service->id.'/document-fields/'.$field->id.'/edit')->assertOk()->assertDontSee('X position')->assertDontSee('Y position')->assertSee('Design Document Layout');
         $this->get('/admin/services/'.$service->id.'/document-configuration')->assertOk()->assertSee('Design Document Layout');
         $this->get($this->url($service).'/pdf?revision='.$template->source_revision)->assertOk()->assertHeader('Content-Type', 'application/pdf')->assertHeader('Cache-Control', 'no-store, private');

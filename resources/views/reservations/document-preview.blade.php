@@ -8,6 +8,7 @@
         @if(!$artifact)
             <p class="alert alert-warning" role="alert">{{ $previewError ?? \App\Services\ReservationDocumentPreview::UNAVAILABLE }}</p>
         @else
+            @if($artifact['issue_date'] ?? null)<p class="app-note">Document issue date for this preview · {{ $artifact['date_values']['document_date_full'] }}. Finalize on this Philippine date, or open and review a new preview. Age reflects the date the request was submitted.</p>@endif
             @include('admin.services.document-preview', ['preview' => ['kind' => 'pdf', 'url' => route($documentRole.'.reservations.document-preview.pdf', [$reservation, 'preview' => $artifact['token']])], 'previewHeading' => 'Personalized Certificate Preview'])
             @if($documentRole === 'admin' && $reservation->status->canPrepareDocument())
                 <form method="POST" action="{{ route('admin.reservations.generated.store', $reservation) }}" class="mt-3" data-finalize-preview>
@@ -17,7 +18,7 @@
                     <p class="app-note mt-2">Review every page before finalizing. This preview expires after 30 minutes. An expired or changed preview must be reviewed again.</p>
                 </form>
             @endif
-            <details class="mt-3"><summary>Recorded document information</summary><dl class="reservation-summary document-information-summary">@foreach($reservation->documentAnswers as $answer)<div><dt>{{ $answer->field_snapshot['label'] }}</dt><dd>{{ $answer->answer ?? 'Not provided' }}</dd></div>@endforeach</dl></details>
+            <details class="mt-3"><summary>Recorded document information</summary><dl class="reservation-summary document-information-summary">@foreach($reservation->documentAnswers as $answer)<div><dt>{{ $answer->field_snapshot['label'] }}</dt><dd>{{ ($answer->field_snapshot['source'] === 'system' ? ($artifact['date_values'][$answer->field_snapshot['name']] ?? $answer->answer) : $answer->answer) ?? 'Not provided' }}</dd></div>@endforeach</dl></details>
         @endif
     </div>
 </section>

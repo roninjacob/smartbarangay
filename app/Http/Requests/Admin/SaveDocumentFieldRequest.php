@@ -68,7 +68,9 @@ class SaveDocumentFieldRequest extends FormRequest
                 || DocumentField::SYSTEM_FIELDS[$name] !== $this->input('field_type'))) {
                 $validator->errors()->add('field_name', 'Choose a supported system name and its matching type.');
             }
-            if ($this->input('source') === 'custom' && is_string($name) && isset(DocumentField::SYSTEM_FIELDS[$name])) {
+            $existing = $this->route('service')->dynamicDocumentTemplate?->fields()->find($this->route('documentField'));
+            $keptCustom = $existing?->source === 'custom' && $existing->field_name === $name;
+            if ($this->input('source') === 'custom' && is_string($name) && isset(DocumentField::SYSTEM_FIELDS[$name]) && ! $keptCustom) {
                 $validator->errors()->add('field_name', 'This name is reserved for a system field.');
             }
             if (is_numeric($this->input('min_value')) && is_numeric($this->input('max_value'))

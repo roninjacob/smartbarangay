@@ -20,9 +20,14 @@ class CanonicalDocumentPreview
 
     public function fingerprint(Reservation $reservation, array $data): string
     {
-        return hash('sha256', json_encode([self::RENDERER, $reservation->id, $reservation->service_id,
+        $values = [self::RENDERER, $reservation->id, $reservation->service_id,
             $reservation->resident_snapshot, $reservation->document_template_snapshot,
-            $data['source'], $data['placements']], JSON_THROW_ON_ERROR));
+            $data['source'], $data['placements']];
+        if (isset($data['issue_date'])) {
+            $values[] = $data['issue_date'];
+        }
+
+        return hash('sha256', json_encode($values, JSON_THROW_ON_ERROR));
     }
 
     public function create(Reservation $reservation, User $user): array
@@ -46,6 +51,7 @@ class CanonicalDocumentPreview
                 }
                 $artifact = ['token' => $token, 'user_id' => $user->id, 'reservation_id' => $record->id,
                     'path' => $path, 'fingerprint' => $this->fingerprint($record, $data),
+                    'issue_date' => $data['issue_date'] ?? null, 'date_values' => $data['date_values'] ?? [],
                     'viewed' => false, 'hash' => hash('sha256', $bytes), 'size' => strlen($bytes), 'expires' => now()->addMinutes(30)->timestamp];
                 if (! Cache::put('document-preview:'.$token, $artifact, now()->addMinutes(30))) {
                     throw new \RuntimeException('Preview cache unavailable.');
@@ -65,11 +71,22 @@ class CanonicalDocumentPreview
         }
     }
 
-    public function reviewed(Reservation $reservation, User $user, ?string $token, bool $finalizing = false, bool $markReviewed = true): string
+    public function reviewed(Reservation $reservation, User $user, ?string $token, bool $finalizing = false, bool $markReviewed = true, ?string $finalizationDate = null): string
     {
         $artifact = is_string($token) && preg_match('/\A[A-Za-z0-9]{40}\z/', $token)
             ? Cache::get('document-preview:'.$token) : null;
-        $data = app(ReservationDocumentPreview::class)->data($reservation);
+        if (app(DocumentSystemFields::class)->usesIssueDate($reservation)) {
+            if (! is_array($artifact) || ! is_string($artifact['issue_date'] ?? null)
+                || ! preg_match('/\A\d{4}-\d{2}-\d{2}\z/', $artifact['issue_date'])
+                || ($finalizing && $artifact['issue_date'] !== ($finalizationDate ?? now('Asia/Manila')->toDateString()))) {
+                $this->stale();
+            }
+        }
+        try {
+            $data = app(ReservationDocumentPreview::class)->data($reservation, $artifact['issue_date'] ?? null);
+        } catch (\InvalidArgumentException) {
+            $this->stale();
+        }
         $disk = Storage::disk('local');
         if (! is_array($artifact) || ($artifact['user_id'] ?? null) !== $user->id || ($artifact['reservation_id'] ?? null) !== $reservation->id
             || ($finalizing && ! ($artifact['viewed'] ?? false)) || ($artifact['expires'] ?? 0) <= now()->timestamp || ! $data

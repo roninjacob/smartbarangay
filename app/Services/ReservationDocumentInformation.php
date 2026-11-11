@@ -52,11 +52,21 @@ class ReservationDocumentInformation
     {
         // Query afresh: the final submission already holds the same parent User lock as profile writes.
         $demographics = $resident->profile()->first();
+        $date = now('Asia/Manila')->toDateString();
+        $birthdate = $demographics?->birthdate?->toDateString();
+        $system = app(DocumentSystemFields::class);
 
-        return ['resident_name' => $resident->name, 'resident_address' => $resident->address,
-            'resident_contact' => $resident->contact_number, 'date_issued' => now('Asia/Manila')->toDateString(),
-            'barangay_name' => 'Barangay Calayo',
-            'resident_birthdate' => $demographics?->birthdate?->toDateString(),
+        return ['resident_name' => $resident->full_name, 'resident_address' => $resident->address,
+            'resident_contact' => $resident->contact_number, ...$system->dates($date),
+            '_document_issue_policy' => DocumentSystemFields::ISSUE_POLICY,
+            'resident_age_reference_date' => $date, 'resident_age' => $system->age($birthdate, $date),
+            'resident_first_name' => $resident->hasStructuredName() ? $resident->first_name : null,
+            'resident_middle_name' => $resident->hasStructuredName() ? $resident->middle_name : null,
+            'resident_last_name' => $resident->hasStructuredName() ? $resident->last_name : null,
+            'resident_suffix' => $resident->hasStructuredName() ? $resident->suffix : null,
+            'barangay_name' => 'Barangay Calayo', 'municipality_name' => 'Nasugbu', 'province_name' => 'Batangas',
+            'resident_house_unit_number' => $demographics?->house_unit_number,
+            'resident_birthdate' => $birthdate,
             'resident_civil_status' => $demographics?->civil_status,
             'resident_occupation' => $demographics?->occupation,
             'resident_address_street' => $demographics?->address_street,
