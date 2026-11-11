@@ -61,7 +61,7 @@ class AuthenticationTest extends TestCase
         $this->assertSame(UserRole::Resident, $user->role);
         $this->assertTrue($user->is_active);
         $this->assertSame('0917 123 4567', $user->contact_number);
-        $this->assertSame('Sitio Test, Barangay Calayo', $user->address);
+        $this->assertSame('Sitio Test, Barangay Calayo, Nasugbu, Batangas', $user->address);
         $this->assertTrue(Hash::check('Resident123', $user->password));
         $this->assertNotSame('Resident123', $user->password);
         $this->assertNull($user->email_verified_at);
@@ -110,12 +110,12 @@ class AuthenticationTest extends TestCase
     public static function invalidRegistration(): array
     {
         return [
-            ['email', 'not-an-email'], ['name', ''], ['email', ''],
-            ['contact_number', ''], ['address', ''], ['password', ''],
+            ['email', 'not-an-email'], ['first_name', ''], ['email', ''],
+            ['contact_number', ''], ['address_street', ''], ['password', ''],
             ['password_confirmation', 'different'],
             ['password', 'short1'], ['password', 'onlyletters'],
             ['password', '123456789'], ['contact_number', 'not-a-number'],
-            ['name', str_repeat('x', 256)], ['address', str_repeat('x', 1001)],
+            ['first_name', str_repeat('x', 81)], ['address_street', str_repeat('x', 256)],
             ['password', str_repeat('A1', 37)],
         ];
     }
@@ -123,13 +123,13 @@ class AuthenticationTest extends TestCase
     public function test_all_required_fields_are_validated_and_passwords_are_not_flashed(): void
     {
         $this->from('/register')->post('/register', [])
-            ->assertSessionHasErrors(['name', 'email', 'contact_number', 'address', 'password']);
+            ->assertSessionHasErrors(['first_name', 'last_name', 'birthdate', 'email', 'contact_number', 'address_street', 'password']);
 
         $this->from('/register')->post('/register', [
             ...$this->registrationData(), 'email' => 'invalid',
         ])->assertSessionHasErrors('email')
-            ->assertSessionHasInput('name', 'Calayo Resident')
-            ->assertSessionHasInput('address', 'Sitio Test, Barangay Calayo');
+            ->assertSessionHasInput('first_name', 'Calayo')
+            ->assertSessionHasInput('address_street', 'Sitio Test');
         $this->assertNull(session()->getOldInput('password'));
         $this->assertNull(session()->getOldInput('password_confirmation'));
         $this->get('/register')->assertDontSee('value="Resident123"', false);
@@ -373,10 +373,10 @@ class AuthenticationTest extends TestCase
     private function registrationData(): array
     {
         return [
-            'name' => 'Calayo Resident',
+            'first_name' => 'Calayo', 'last_name' => 'Resident', 'birthdate' => '2000-01-01',
             'email' => 'resident@example.com',
             'contact_number' => '0917 123 4567',
-            'address' => 'Sitio Test, Barangay Calayo',
+            'address_street' => 'Sitio Test',
             'password' => 'Resident123',
             'password_confirmation' => 'Resident123',
         ];

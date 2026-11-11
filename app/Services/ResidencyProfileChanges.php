@@ -17,7 +17,8 @@ class ResidencyProfileChanges
     public const ACTION = 'residency_profile_changed';
 
     public const LABELS = ['name' => 'Full name', 'address' => 'Recorded address',
-        'birthdate' => 'Birthdate', 'address_street' => 'Street', 'address_zone_purok' => 'Zone / Purok'];
+        'first_name' => 'First name', 'middle_name' => 'Middle name', 'last_name' => 'Last name', 'suffix' => 'Suffix',
+        'birthdate' => 'Birthdate', 'house_unit_number' => 'House / Unit', 'address_street' => 'Street', 'address_zone_purok' => 'Zone / Purok'];
 
     /** Called with the parent User locked, after filling fields and before saving either model. */
     public function record(User $user, Model $profile): void
@@ -28,17 +29,20 @@ class ResidencyProfileChanges
         if ($user->role !== UserRole::Resident) {
             return;
         }
-        $fields = match (true) {
-            $profile instanceof User && $profile->id === $user->id => ['name', 'address'],
-            $profile instanceof ResidentProfile && $profile->user_id === $user->id => ['birthdate', 'address_street', 'address_zone_purok'],
+        $models = match (true) {
+            $profile instanceof User && $profile->id === $user->id => [$user],
+            $profile instanceof ResidentProfile && $profile->user_id === $user->id => [$user, $profile],
             default => throw new LogicException('Residency changes must belong to the locked resident.'),
         };
         $before = [];
         $after = [];
-        foreach ($fields as $field) {
-            if ($profile->isDirty($field)) {
-                $old = $profile->getOriginal($field);
-                $new = $profile->getAttribute($field);
+        foreach ($models as $model) {
+            foreach (array_keys(self::LABELS) as $field) {
+                if (! $model->isDirty($field)) {
+                    continue;
+                }
+                $old = $model->getOriginal($field);
+                $new = $model->getAttribute($field);
                 $before[$field] = $old instanceof CarbonInterface ? $old->toDateString() : $old;
                 $after[$field] = $new instanceof CarbonInterface ? $new->toDateString() : $new;
             }

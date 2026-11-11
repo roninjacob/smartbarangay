@@ -52,6 +52,13 @@
             <p class="text-secondary">Update your name, contact number and address.</p>
             <form method="POST" action="{{ route($profileRoutePrefix.'.update') }}" data-service-submit>
                 @csrf @method('PUT')
+                @if($user->role === \App\Enums\UserRole::Resident)
+                    @unless($user->hasStructuredName())
+                        <div class="alert alert-info"><strong>Complete your personal information</strong><p class="mb-0">Your existing name is {{ $user->name }}. Your recorded address is {{ $user->address ?: 'Not provided' }}. Enter the separate name and address fields below when you are ready. Saving identity or address changes requires Admin review.</p></div>
+                    @endunless
+                    @include('partials.resident-identity-fields', ['identityUser' => $user, 'identityProfile' => $residentProfile])
+                    <p class="form-text">Verified email · {{ $user->email }}. Email changes are unavailable here.</p>
+                @else
                 <div class="mb-4">
                     <label for="name" class="form-label">Full name</label>
                     <input id="name" name="name" class="form-control @error('name') is-invalid @enderror" value="{{ old('name', $user->name) }}" required maxlength="255" autocomplete="name" @error('name') aria-invalid="true" aria-describedby="name-error" @enderror>
@@ -73,6 +80,7 @@
                     <textarea id="address" name="address" class="form-control @error('address') is-invalid @enderror" rows="3" maxlength="1000" autocomplete="street-address" @error('address') aria-invalid="true" aria-describedby="address-error" @enderror>{{ old('address', $user->address) }}</textarea>
                     @error('address')<div id="address-error" class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
+                @endif
                 <div class="profile-actions"><a href="{{ route($user->homeRouteName()) }}" class="btn btn-outline-secondary">Back to dashboard</a><button type="submit" class="btn btn-primary" data-saving-label="Saving…">Save changes</button></div>
             </form>
         </section>

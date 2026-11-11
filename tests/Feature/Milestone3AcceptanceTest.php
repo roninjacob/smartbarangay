@@ -61,7 +61,7 @@ class Milestone3AcceptanceTest extends TestCase
     public function test_controlled_registration_to_reviewed_final_pdf_and_print_with_long_text(): void
     {
         $admin = User::factory()->create(['name' => 'Acceptance Admin', 'role' => UserRole::Admin, 'is_active' => true]);
-        $this->post(route('register.store'), ['name' => 'Acceptance Resident', 'email' => 'acceptance-resident@example.test',
+        $this->post(route('register.store'), ['first_name' => 'Acceptance', 'last_name' => 'Resident', 'birthdate' => '2000-02-29', 'address_street' => 'Sample Street', 'email' => 'acceptance-resident@example.test',
             'password' => 'Acceptance123!', 'password_confirmation' => 'Acceptance123!', 'contact_number' => '09123456789',
             'address' => 'Synthetic legacy account address'])->assertRedirect(route('verification.notice'));
         $resident = User::where('email', 'acceptance-resident@example.test')->sole();

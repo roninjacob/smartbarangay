@@ -17,6 +17,15 @@
         <p class="reservation-intro">{{ $resident->residency_status->label() }}. Review the resident's information and supporting evidence through your office procedure.</p>
         <dl class="reservation-summary">
             <div><dt>Birthdate</dt><dd>{{ $resident->profile?->birthdate?->format('F j, Y') ?: 'Not provided' }}</dd></div>
+            @if($resident->hasStructuredName())
+                <div><dt>First name</dt><dd>{{ $resident->first_name }}</dd></div>
+                <div><dt>Middle name</dt><dd>{{ $resident->middle_name ?: 'Not provided' }}</dd></div>
+                <div><dt>Last name</dt><dd>{{ $resident->last_name }}</dd></div>
+                <div><dt>Suffix</dt><dd>{{ $resident->suffix ?: 'Not provided' }}</dd></div>
+            @else
+                <div><dt>Personal information</dt><dd>Legacy full name retained. Resident can complete separate name fields in Profile / Account Settings.</dd></div>
+            @endif
+            <div><dt>House / Unit number</dt><dd>{{ $resident->profile?->house_unit_number ?: 'Not provided' }}</dd></div>
             <div><dt>Recorded address</dt><dd>{{ $resident->address ?: 'Not provided' }}</dd></div>
             <div><dt>Street</dt><dd>{{ $resident->profile?->address_street ?: 'Not provided' }}</dd></div>
             <div><dt>Zone / Purok</dt><dd>{{ $resident->profile?->address_zone_purok ?: 'Not provided' }}</dd></div>

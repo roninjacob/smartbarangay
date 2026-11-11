@@ -50,7 +50,7 @@ class ResidencyApprovalTest extends TestCase
 
     public function test_registration_cannot_self_approve_or_verify(): void
     {
-        $this->post(route('register.store'), ['name' => 'Synthetic Resident', 'email' => 'resident@example.test',
+        $this->post(route('register.store'), ['first_name' => 'Synthetic', 'last_name' => 'Resident', 'birthdate' => '2000-01-01', 'address_street' => 'Sample Street', 'email' => 'resident@example.test',
             'contact_number' => '09171234567', 'address' => 'Barangay Calayo',
             'password' => 'Resident123', 'password_confirmation' => 'Resident123',
             'residency_status' => 'approved', 'residency_reviewed_by' => 1, 'residency_revision' => 99])

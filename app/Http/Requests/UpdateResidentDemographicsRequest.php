@@ -31,9 +31,12 @@ class UpdateResidentDemographicsRequest extends FormRequest
 
     public function rules(): array
     {
-        $rules = ['birthdate' => ['present', 'nullable', 'string', 'date_format:Y-m-d', 'before_or_equal:'.now('Asia/Manila')->toDateString()]];
+        $structured = $this->user()->fresh()->hasStructuredName();
+        $rules = ['birthdate' => ['sometimes', $structured ? 'required' : 'nullable', 'string', 'date_format:Y-m-d', 'before_or_equal:'.now('Asia/Manila')->toDateString()]];
         foreach (ResidentProfile::TEXT_LENGTHS as $field => $length) {
-            $rules[$field] = ['present', 'nullable', 'string', 'max:'.$length];
+            $address = in_array($field, ['address_street', 'address_zone_purok'], true);
+            $rules[$field] = [$address ? 'sometimes' : 'present',
+                $structured && $field === 'address_street' ? 'required' : 'nullable', 'string', 'max:'.$length];
         }
         $rules['emergency_contact_number'][] = new PhilippineContactNumber;
 

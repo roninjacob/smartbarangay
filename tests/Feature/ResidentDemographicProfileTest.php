@@ -223,10 +223,10 @@ class ResidentDemographicProfileTest extends TestCase
         }
     }
 
-    public function test_registration_stays_short_and_describes_the_verified_profile_step(): void
+    public function test_registration_collects_formal_identity_and_defers_optional_demographics(): void
     {
-        $this->get(route('register'))->assertOk()->assertSee('verify your email, then complete your profile')
-            ->assertDontSee('name="birthdate"', false)->assertDontSee('name="civil_status"', false)
+        $this->get(route('register'))->assertOk()->assertSee('track your residency review')
+            ->assertSee('name="birthdate"', false)->assertSee('name="first_name"', false)->assertDontSee('name="civil_status"', false)
             ->assertDontSee('name="emergency_contact_name"', false);
     }
 

@@ -8,10 +8,12 @@ use App\Http\Requests\UpdateProfileRequest;
 use App\Http\Requests\UpdateResidentDemographicsRequest;
 use App\Models\User;
 use App\Services\ResidencyProfileChanges;
+use App\Services\ResidentIdentity;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -38,6 +40,18 @@ class ProfileController extends Controller
     {
         DB::transaction(function () use ($request) {
             $user = $this->lockedUser($request);
+            if ($user->role === UserRole::Resident && $request->formalIdentity()) {
+                $profile = $user->profile()->lockForUpdate()->first() ?? $user->profile()->make();
+                app(ResidentIdentity::class)->fill($user, $profile, $request->validated());
+                app(ResidencyProfileChanges::class)->record($user, $profile);
+                $profile->save();
+                $user->save();
+
+                return;
+            }
+            if ($user->role === UserRole::Resident && $user->hasStructuredName()) {
+                throw ValidationException::withMessages(['first_name' => 'Reload your profile and update the structured personal information.']);
+            }
             $user->fill($request->safe()->only(['name', 'contact_number', 'address']));
             app(ResidencyProfileChanges::class)->record($user, $user);
             $user->save();
@@ -83,6 +97,12 @@ class ProfileController extends Controller
             abort_unless($user->role === UserRole::Resident, 403);
             $profile = $user->profile()->lockForUpdate()->first() ?? $user->profile()->make();
             $profile->forceFill($request->validated());
+            if ($user->hasStructuredName()) {
+                Validator::make($profile->only(['birthdate', 'address_street']), [
+                    'birthdate' => ['required'], 'address_street' => ['required'],
+                ])->validate();
+                $user->address = ResidentIdentity::address($profile);
+            }
             app(ResidencyProfileChanges::class)->record($user, $profile);
             $profile->save();
             if ($user->isDirty()) {

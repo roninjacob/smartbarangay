@@ -32,29 +32,12 @@ Access QR-based verification after approval.
     <div class="alert alert-danger" role="alert">Please correct the highlighted fields to create your account.</div>
 @endif
 
-<p class="auth-action-hint">Create your account first, verify your email, then complete your profile in Profile / Account Settings. Your selected document will tell you which information is required.</p>
+<p class="auth-action-hint">Provide your personal information, verify your email, and track your residency review from your dashboard. Additional service-specific information can be completed later in Profile / Account Settings.</p>
 <form method="POST" action="{{ route('register.store') }}" data-auth-form>
     @csrf
     <div class="row g-3">
-        <div class="col-12">
-            <x-form-field name="name" label="Full Name" autocomplete="name" maxlength="255" />
-        </div>
-        <div class="col-md-6">
-            <x-form-field name="email" label="Email" type="email" autocomplete="email" maxlength="255" />
-        </div>
-        <div class="col-md-6">
-            <x-form-field name="contact_number" label="Contact Number" type="tel" autocomplete="tel"
-                maxlength="30" placeholder="0917 123 4567" />
-        </div>
-        <div class="col-12">
-            <label for="address" class="form-label">Address in Barangay Calayo</label>
-            <textarea id="address" name="address" rows="2" maxlength="1000" autocomplete="street-address"
-                @class(['form-control', 'is-invalid' => $errors->has('address')])
-                aria-invalid="{{ $errors->has('address') ? 'true' : 'false' }}"
-                aria-describedby="address-hint @error('address') address-error @enderror" required>{{ old('address') }}</textarea>
-            <div id="address-hint" class="form-text">House number, street or sitio within Barangay Calayo, Nasugbu, Batangas.</div>
-            @error('address')<div id="address-error" class="invalid-feedback">{{ $message }}</div>@enderror
-        </div>
+        <div class="col-12">@include('partials.resident-identity-fields')</div>
+        <div class="col-12"><x-form-field name="email" label="Email" type="email" autocomplete="email" maxlength="255" /></div>
         <div class="col-md-6">
             <x-form-field name="password" label="Password" type="password" autocomplete="new-password"
                 minlength="8" maxlength="72" hint="At least 8 characters, including letters and numbers." />

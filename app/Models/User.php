@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\ResidencyStatus;
 use App\Enums\UserRole;
+use App\Services\ResidentIdentity;
 use Carbon\CarbonInterface;
 use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
@@ -83,6 +84,18 @@ class User extends Authenticatable implements MustVerifyEmail
     public function profile(): HasOne
     {
         return $this->hasOne(ResidentProfile::class);
+    }
+
+    public function hasStructuredName(): bool
+    {
+        return filled($this->first_name) && filled($this->last_name);
+    }
+
+    public function getFullNameAttribute(): string
+    {
+        return $this->hasStructuredName()
+            ? ResidentIdentity::name($this->only(ResidentIdentity::NAME_FIELDS))
+            : (string) $this->name;
     }
 
     public function ownedProfilePicturePath(): ?string
