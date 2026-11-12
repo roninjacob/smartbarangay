@@ -61,7 +61,7 @@ For manual acceptance, register a synthetic account locally, complete email veri
 
 Residency remains an Admin evidence-review process. The form cannot prove that an entered address is a real Calayo residence. Legacy free-text addresses stay authoritative until explicit profile completion.
 
-The existing unverified-account cleanup preserves accounts with resident profiles. Formal registration now creates such a profile, so these abandoned accounts will be retained under that existing safeguard. Changing personal-data retention requires a separate reviewed policy.
+Phase 4 remediation applies the existing seven-day retention period to abandoned, unverified registration-only profiles. Protected operational and review history keeps the account and profile preserved. Cleanup defaults to dry-run, including the scheduled task. Actual deletion requires owner review and an explicit `--execute` invocation. The eligibility and rollout procedure are documented in [Unverified Resident account maintenance](unverified-account-cleanup.md).
 
 No new individual certificate placeholders are registered in this phase. The existing full-name, full-address and demographic mappings continue through their existing snapshot engine.
 

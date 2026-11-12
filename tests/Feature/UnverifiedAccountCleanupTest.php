@@ -2,7 +2,9 @@
 
 namespace Tests\Feature;
 
+use App\Enums\ResidencyStatus;
 use App\Enums\UserRole;
+use App\Http\Controllers\Auth\PasswordResetController;
 use App\Models\CheckinLog;
 use App\Models\QrTicket;
 use App\Models\Reservation;
@@ -12,6 +14,8 @@ use App\Models\Service;
 use App\Models\User;
 use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Console\Scheduling\Schedule as LaravelSchedule;
+use Illuminate\Database\Query\Builder;
+use Illuminate\Database\Query\Grammars\SQLiteGrammar;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
@@ -73,7 +77,7 @@ class UnverifiedAccountCleanupTest extends TestCase
         $newAdmin = $this->resident(0);
         $newAdmin->forceFill(['role' => UserRole::Admin])->save();
 
-        $this->artisan('smartbarangay:cleanup-unverified-users')
+        $this->artisan('smartbarangay:cleanup-unverified-users', ['--execute' => true])
             ->expectsOutput('Candidates: 2; eligible: 2; removed: 2; skipped: 0.')->assertSuccessful();
         foreach ([$old, $exact] as $user) {
             $this->assertDatabaseMissing('users', ['id' => $user->id]);
@@ -94,7 +98,7 @@ class UnverifiedAccountCleanupTest extends TestCase
         $actor = $this->resident();
         $history = ReservationStatusHistory::create(['reservation_id' => $reservation->id, 'changed_by' => $actor->id, 'to_status' => 'pending', 'changed_at' => now()]);
 
-        $this->artisan('smartbarangay:cleanup-unverified-users')
+        $this->artisan('smartbarangay:cleanup-unverified-users', ['--execute' => true])
             ->expectsOutput('Candidates: 3; eligible: 0; removed: 0; skipped: 3.')->assertSuccessful();
         foreach ([$owner, $verifier, $actor] as $user) {
             $this->assertDatabaseHas('users', ['id' => $user->id]);
@@ -131,7 +135,7 @@ class UnverifiedAccountCleanupTest extends TestCase
         foreach ([$user, $kept] as $account) {
             DB::table('sessions')->insert(['id' => 'session-'.$account->id, 'user_id' => $account->id, 'payload' => '', 'last_activity' => now()->timestamp]);
         }
-        $this->artisan('smartbarangay:cleanup-unverified-users')->assertSuccessful();
+        $this->artisan('smartbarangay:cleanup-unverified-users', ['--execute' => true])->assertSuccessful();
         $this->assertDatabaseMissing('password_reset_tokens', ['email' => $user->email]);
         $this->assertDatabaseMissing('sessions', ['user_id' => $user->id]);
         $this->assertDatabaseHas('password_reset_tokens', ['email' => $kept->email]);
@@ -143,7 +147,7 @@ class UnverifiedAccountCleanupTest extends TestCase
         $user = $this->resident(8);
         $link = URL::temporarySignedRoute('verification.verify', now()->addHour(), ['id' => $user->id, 'hash' => sha1($user->email)]);
         $this->actingAs($user)->get($link)->assertRedirect(route('resident.home'));
-        $this->artisan('smartbarangay:cleanup-unverified-users')
+        $this->artisan('smartbarangay:cleanup-unverified-users', ['--execute' => true])
             ->expectsOutput('Candidates: 0; eligible: 0; removed: 0; skipped: 0.')->assertSuccessful();
         $this->assertTrue($user->fresh()->hasVerifiedEmail());
     }
@@ -156,7 +160,7 @@ class UnverifiedAccountCleanupTest extends TestCase
                 User::whereKey($user->id)->update(['email_verified_at' => now()]);
             }
         });
-        $this->artisan('smartbarangay:cleanup-unverified-users')
+        $this->artisan('smartbarangay:cleanup-unverified-users', ['--execute' => true])
             ->expectsOutput('Candidates: 1; eligible: 0; removed: 0; skipped: 1.')->assertSuccessful();
         $this->assertTrue($user->fresh()->hasVerifiedEmail());
     }
@@ -164,7 +168,7 @@ class UnverifiedAccountCleanupTest extends TestCase
     public function test_chunking_processes_more_than_one_batch_without_skipping_accounts(): void
     {
         User::factory()->count(205)->create(['created_at' => now()->subDays(8), 'email_verified_at' => null]);
-        $this->artisan('smartbarangay:cleanup-unverified-users')
+        $this->artisan('smartbarangay:cleanup-unverified-users', ['--execute' => true])
             ->expectsOutput('Candidates: 205; eligible: 205; removed: 205; skipped: 0.')->assertSuccessful();
         $this->assertDatabaseCount('users', 0);
     }
@@ -186,7 +190,7 @@ class UnverifiedAccountCleanupTest extends TestCase
         $this->get($oldLink)->assertForbidden();
         $this->put('/email/change', ['email' => 'other@example.com', 'current_password' => 'password'])->assertStatus(429);
         $this->travel(2)->days();
-        $this->artisan('smartbarangay:cleanup-unverified-users')->assertSuccessful();
+        $this->artisan('smartbarangay:cleanup-unverified-users', ['--execute' => true])->assertSuccessful();
         $this->assertDatabaseMissing('users', ['id' => $user->id]);
     }
 
@@ -225,6 +229,220 @@ class UnverifiedAccountCleanupTest extends TestCase
         $this->assertSame('0 2 * * *', $cleanup->expression);
         $this->assertSame('Asia/Manila', $cleanup->timezone);
         $this->assertTrue($cleanup->withoutOverlapping);
+        $this->assertStringContainsString('--dry-run', $cleanup->command);
+        $this->assertStringNotContainsString('--execute', $cleanup->command);
+    }
+
+    private function registerProfileOnly(): User
+    {
+        $this->post(route('register.store'), [
+            'first_name' => 'Synthetic', 'middle_name' => null, 'last_name' => 'Resident',
+            'suffix' => null, 'birthdate' => '2000-01-01', 'contact_number' => '09171234567',
+            'house_unit_number' => '12', 'address_street' => 'Sample Street', 'address_zone_purok' => 'Purok 1',
+            'email' => 'abandoned@example.test', 'password' => 'Resident123!', 'password_confirmation' => 'Resident123!',
+        ])->assertSessionHasNoErrors()->assertRedirect(route('verification.notice'));
+
+        return User::where('email', 'abandoned@example.test')->sole();
+    }
+
+    public function test_registration_profile_is_eligible_after_retention_and_default_execution_is_read_only(): void
+    {
+        $user = $this->registerProfileOnly();
+        $this->artisan('smartbarangay:cleanup-unverified-users')->expectsOutputToContain('eligible: 0')->assertSuccessful();
+        $this->travel(7)->days();
+        $this->artisan('smartbarangay:cleanup-unverified-users')
+            ->expectsOutput('Dry run: no database records were modified.')
+            ->expectsOutputToContain('eligible: 1; removed: 0')->assertSuccessful();
+        $this->assertDatabaseHas('users', ['id' => $user->id]);
+        $this->assertDatabaseHas('resident_profiles', ['user_id' => $user->id]);
+        $this->artisan('smartbarangay:cleanup-unverified-users', ['--execute' => true])
+            ->expectsOutputToContain('eligible: 1; removed: 1')->assertSuccessful();
+        $this->assertDatabaseMissing('users', ['id' => $user->id]);
+        $this->assertDatabaseMissing('resident_profiles', ['user_id' => $user->id]);
+        $this->artisan('smartbarangay:cleanup-unverified-users', ['--execute' => true])
+            ->expectsOutput('Candidates: 0; eligible: 0; removed: 0; skipped: 0.')->assertSuccessful();
+    }
+
+    public function test_cleanup_releases_email_without_transferring_identity_or_old_verification_links(): void
+    {
+        $user = $this->registerProfileOnly();
+        $oldLink = URL::temporarySignedRoute('verification.verify', now()->addDays(10), ['id' => $user->id, 'hash' => sha1($user->email)]);
+        $this->post('/logout');
+        $this->post(route('password.email'), ['email' => $user->email])
+            ->assertSessionHas('status', PasswordResetController::SENT_MESSAGE);
+        $this->assertDatabaseCount('password_reset_tokens', 0);
+        $this->travel(8)->days();
+        $this->artisan('smartbarangay:cleanup-unverified-users', ['--execute' => true])->assertSuccessful();
+        $this->post('/logout');
+        $this->post(route('password.email'), ['email' => 'unknown@example.test'])
+            ->assertSessionHas('status', PasswordResetController::SENT_MESSAGE);
+        $replacement = $this->registerProfileOnly();
+        $this->assertNotSame($user->id, $replacement->id);
+        $this->assertNull($replacement->email_verified_at);
+        $this->assertSame(ResidencyStatus::Pending, $replacement->residency_status);
+        $this->get($oldLink)->assertForbidden();
+        $this->assertNull($replacement->fresh()->email_verified_at);
+    }
+
+    public function test_profile_only_data_is_removed_but_verification_and_residency_evidence_are_preserved(): void
+    {
+        $eligible = $this->resident();
+        $eligible->profile()->make()->forceFill(['birthdate' => '2000-01-01', 'occupation' => 'Synthetic occupation'])->save();
+        $protected = [];
+        foreach ([['email_verified_at' => now()], ['residency_status' => 'approved'],
+            ['residency_status' => 'needs_correction'], ['residency_status' => 'rejected'],
+            ['residency_revision' => 1], ['residency_reviewed_at' => now()], ['is_active' => false]] as $state) {
+            $user = $this->resident();
+            $user->forceFill($state)->save();
+            $user->profile()->make()->forceFill(['birthdate' => '2000-01-01'])->save();
+            $protected[] = $user;
+        }
+        $this->artisan('smartbarangay:cleanup-unverified-users', ['--execute' => true])->assertSuccessful();
+        $this->assertDatabaseMissing('users', ['id' => $eligible->id]);
+        foreach ($protected as $user) {
+            $this->assertDatabaseHas('users', ['id' => $user->id]);
+            $this->assertDatabaseHas('resident_profiles', ['user_id' => $user->id]);
+        }
+    }
+
+    public function test_review_history_and_material_change_audit_protect_even_pending_unverified_accounts(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+        $reviewed = $this->resident();
+        DB::table('residency_reviews')->insert(['user_id' => $reviewed->id, 'reviewed_by' => $admin->id,
+            'from_status' => 'approved', 'to_status' => 'pending', 'reviewed_at' => now()]);
+        $audited = $this->resident();
+        DB::table('audit_logs')->insert(['user_id' => $admin->id, 'action' => 'residency_profile_changed',
+            'target_id' => $audited->id, 'old_values' => '{}', 'new_values' => '{}', 'created_at' => now()]);
+        $accountReviewed = $this->resident();
+        DB::table('audit_logs')->insert(['user_id' => $admin->id, 'action' => 'updated_resident_account',
+            'target_id' => $accountReviewed->id, 'old_values' => '{}', 'new_values' => '{}', 'created_at' => now()]);
+        $this->artisan('smartbarangay:cleanup-unverified-users', ['--execute' => true])
+            ->expectsOutputToContain('eligible: 0; removed: 0; skipped: 3')->assertSuccessful();
+        $this->assertDatabaseHas('users', ['id' => $reviewed->id]);
+        $this->assertDatabaseHas('users', ['id' => $audited->id]);
+        $this->assertDatabaseHas('users', ['id' => $accountReviewed->id]);
+        $this->assertDatabaseCount('residency_reviews', 1);
+        $this->assertDatabaseCount('audit_logs', 2);
+    }
+
+    public function test_payment_document_and_qr_actor_attribution_survives_cleanup(): void
+    {
+        $owner = $this->resident(0, true);
+        $reservation = $this->reservation($owner);
+        $paymentActor = $this->resident();
+        $documentActor = $this->resident();
+        $qrActor = $this->resident();
+        DB::table('reservation_payments')->insert(['reservation_id' => $reservation->id, 'amount' => '10.00',
+            'paid_at' => now(), 'recorded_by' => $paymentActor->id]);
+        DB::table('reservation_documents')->insert(['reservation_id' => $reservation->id, 'template_revision' => str_repeat('a', 64),
+            'template_filename' => 'Synthetic.pdf', 'original_filename' => 'Synthetic.pdf', 'stored_path' => 'synthetic-unread-file',
+            'mime_type' => 'application/pdf', 'file_size' => 1, 'generated_by' => $documentActor->id, 'generated_at' => now()]);
+        DB::table('qr_tickets')->insert(['reservation_id' => $reservation->id, 'ticket_code' => (string) Str::uuid(),
+            'qr_payload' => (string) Str::uuid(), 'generated_at' => now(), 'used_at' => now(), 'used_by' => $qrActor->id]);
+        $before = [];
+        foreach (['reservations', 'reservation_payments', 'reservation_documents', 'qr_tickets'] as $table) {
+            $before[$table] = DB::table($table)->get()->toJson();
+        }
+        $this->artisan('smartbarangay:cleanup-unverified-users', ['--execute' => true])->assertSuccessful();
+        foreach ([$owner, $paymentActor, $documentActor, $qrActor] as $user) {
+            $this->assertDatabaseHas('users', ['id' => $user->id]);
+        }
+        foreach ($before as $table => $rows) {
+            $this->assertSame($rows, DB::table($table)->get()->toJson());
+        }
+    }
+
+    public function test_admin_review_between_candidate_scan_and_locked_recheck_prevents_deletion(): void
+    {
+        $user = $this->resident();
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+        Event::listen('eloquent.retrieved: '.User::class, function (User $candidate) use ($user, $admin) {
+            if ($candidate->id === $user->id && array_keys($candidate->getAttributes()) === ['id']) {
+                DB::table('residency_reviews')->insert(['user_id' => $user->id, 'reviewed_by' => $admin->id,
+                    'from_status' => 'pending', 'to_status' => 'approved', 'reviewed_at' => now()]);
+                User::whereKey($user->id)->update(['residency_status' => 'approved', 'residency_revision' => 1]);
+            }
+        });
+        $this->artisan('smartbarangay:cleanup-unverified-users', ['--execute' => true])->expectsOutputToContain('removed: 0')->assertSuccessful();
+        $this->assertSame(ResidencyStatus::Approved, $user->fresh()->residency_status);
+        $this->assertDatabaseCount('residency_reviews', 1);
+    }
+
+    public function test_unknown_restricting_business_reference_rolls_back_profile_and_authentication_deletion(): void
+    {
+        $user = $this->resident();
+        $user->profile()->make()->forceFill(['birthdate' => '2000-01-01'])->save();
+        Password::createToken($user);
+        DB::table('sessions')->insert(['id' => 'protected-session', 'user_id' => $user->id, 'payload' => '', 'last_activity' => now()->timestamp]);
+        DB::statement('CREATE TABLE synthetic_protected_history (user_id INTEGER REFERENCES users(id) ON DELETE RESTRICT)');
+        DB::table('synthetic_protected_history')->insert(['user_id' => $user->id]);
+        $this->artisan('smartbarangay:cleanup-unverified-users', ['--execute' => true])
+            ->expectsOutputToContain('removed: 0; skipped: 1')->assertSuccessful();
+        $this->assertDatabaseHas('users', ['id' => $user->id]);
+        $this->assertDatabaseHas('resident_profiles', ['user_id' => $user->id]);
+        $this->assertDatabaseCount('password_reset_tokens', 1);
+        $this->assertDatabaseCount('sessions', 1);
+        $this->assertDatabaseCount('synthetic_protected_history', 1);
+    }
+
+    public function test_conflicting_execution_flags_are_rejected_without_deleting_anything(): void
+    {
+        $user = $this->resident();
+        $this->artisan('smartbarangay:cleanup-unverified-users', ['--execute' => true, '--dry-run' => true])->assertFailed();
+        $this->assertDatabaseHas('users', ['id' => $user->id]);
+    }
+
+    public function test_both_modes_request_the_parent_user_lock_inside_the_transaction(): void
+    {
+        $user = $this->resident();
+        $grammar = new class(DB::connection()) extends SQLiteGrammar
+        {
+            public bool $lockedUserRead = false;
+
+            public function compileSelect(Builder $query)
+            {
+                if ($query->from === 'users' && $query->lock === true && $query->getConnection()->transactionLevel() > 0) {
+                    $this->lockedUserRead = true;
+                }
+
+                return parent::compileSelect($query);
+            }
+        };
+        DB::connection()->setQueryGrammar($grammar);
+        foreach (['--dry-run', '--execute'] as $mode) {
+            $grammar->lockedUserRead = false;
+            $this->artisan('smartbarangay:cleanup-unverified-users', [$mode => true])->assertSuccessful();
+            $this->assertTrue($grammar->lockedUserRead);
+        }
+        $this->assertDatabaseMissing('users', ['id' => $user->id]);
+    }
+
+    public function test_cleanup_queries_and_logs_exclude_personal_values_and_credentials(): void
+    {
+        $user = $this->registerProfileOnly();
+        $this->travel(8)->days();
+        Password::createToken($user);
+        Log::spy();
+        DB::connection()->enableQueryLog();
+        try {
+            $this->artisan('smartbarangay:cleanup-unverified-users', ['--execute' => true])->assertSuccessful();
+            foreach (DB::connection()->getQueryLog() as $query) {
+                foreach ([$user->email, $user->name, '2000-01-01', 'Sample Street'] as $privateValue) {
+                    $this->assertNotContains($privateValue, $query['bindings']);
+                }
+            }
+        } finally {
+            DB::connection()->disableQueryLog();
+            DB::connection()->flushQueryLog();
+        }
+        Log::shouldHaveReceived('info')->with('Unverified Resident cleanup account result.', [
+            'user_id' => $user->id, 'result' => 'removed', 'dry_run' => false,
+        ])->once();
+        Log::shouldHaveReceived('info')->with('Unverified Resident cleanup completed.', [
+            'candidates' => 1, 'eligible' => 1, 'removed' => 1, 'skipped' => 0, 'dry_run' => false,
+        ])->once();
+        Log::shouldHaveReceived('info')->twice();
     }
 
     public function test_email_delivery_failure_preserves_the_corrected_email_and_original_age(): void

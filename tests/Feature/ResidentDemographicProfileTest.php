@@ -297,7 +297,7 @@ class ResidentDemographicProfileTest extends TestCase
         $this->resident->forceFill(['email_verified_at' => null, 'created_at' => now()->subDays(9)])->save();
         $this->artisan('smartbarangay:cleanup-unverified-users', ['--dry-run' => true])
             ->expectsOutputToContain('eligible: 0')->assertSuccessful();
-        $this->artisan('smartbarangay:cleanup-unverified-users')->assertSuccessful();
+        $this->artisan('smartbarangay:cleanup-unverified-users', ['--execute' => true])->assertSuccessful();
         $this->assertDatabaseHas('users', ['id' => $this->resident->id]);
         $this->assertDatabaseCount('resident_profiles', 1);
     }

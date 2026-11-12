@@ -9,7 +9,7 @@ Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
 
-Schedule::command('smartbarangay:cleanup-unverified-users')
+Schedule::command('smartbarangay:cleanup-unverified-users --dry-run')
     ->dailyAt('02:00')->timezone('Asia/Manila')->withoutOverlapping();
 
 Artisan::command('smartbarangay:cleanup-document-previews', function () {
