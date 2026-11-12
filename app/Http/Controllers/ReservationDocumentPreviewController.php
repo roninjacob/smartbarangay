@@ -9,6 +9,7 @@ use App\Services\ReservationDocumentPreview;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Exception\TooManyRequestsHttpException;
 
 class ReservationDocumentPreviewController extends Controller
 {
@@ -25,19 +26,28 @@ class ReservationDocumentPreviewController extends Controller
         if ($record->document()->exists()) {
             return redirect()->route($role.'.reservations.generated.show', $record);
         }
+        if ($request->isMethod('HEAD')) {
+            return response('', 200, ['Cache-Control' => 'private, no-store']);
+        }
         $artifact = null;
         $error = null;
+        $status = 200;
+        $headers = [];
         try {
             $artifact = app(CanonicalDocumentPreview::class)->create($record, $request->user());
         } catch (ValidationException $exception) {
             $error = collect($exception->errors())->flatten()->first();
+        } catch (TooManyRequestsHttpException $exception) {
+            $error = $exception->getMessage();
+            $status = 429;
+            $headers = $exception->getHeaders();
         }
 
         return response()->view('reservations.document-preview', [
             'roleLabel' => ucfirst($role), 'navigation' => config('navigation.'.$role), 'dashboardDate' => now('Asia/Manila'),
             'pageTitle' => 'Preview Document', 'pageHeading' => 'Preview Document', 'pageSection' => 'Reservation Details',
             'reservation' => $record, 'artifact' => $artifact, 'previewError' => $error, 'documentRole' => $role, 'backUrl' => route($role.'.reservations.show', $record),
-        ])->header('Cache-Control', 'private, no-store');
+        ], $status, $headers)->header('Cache-Control', 'private, no-store');
     }
 
     public function pdf(Request $request, string $reservation, ReservationDocumentPreview $preview): Response
