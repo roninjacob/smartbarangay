@@ -121,6 +121,8 @@ class IotDeviceApiTest extends TestCase
     #[DataProvider('invalidAuthentication')]
     public function test_invalid_authentication_is_redacted(string $field, string $value): void
     {
+        // Keep +/-91 outside the 90-second window even across a wall-clock second boundary.
+        $this->travelTo(now()->startOfSecond());
         [$device, $key] = $this->device();
         if ($field === 'X-SB-Timestamp' && in_array($value, ['-91', '+91'])) {
             $value = (string) (now()->timestamp + (int) $value);
