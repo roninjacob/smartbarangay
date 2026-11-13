@@ -318,6 +318,8 @@ class IotDeviceApiTest extends TestCase
 
     public function test_backend_failure_is_redacted_even_with_debug_enabled(): void
     {
+        config(['cache.stores.file' => ['driver' => 'array']]);
+        Cache::forgetDriver('file');
         Log::spy();
         [$device, $key] = $this->device();
         $this->mock(IotDeviceAuthentication::class)->shouldReceive('authenticate')
@@ -325,7 +327,9 @@ class IotDeviceApiTest extends TestCase
         $response = $this->sendProbe($this->headers($device, $key));
         $response->assertStatus(503)->assertExactJson(['ok' => false, 'error' => 'service_unavailable']);
         $this->assertStringNotContainsString('synthetic-private-detail', $response->getContent());
-        Log::shouldNotHaveReceived('error');
+        Log::shouldHaveReceived('error')->once()->with('IoT backend failure.', \Mockery::on(fn ($context) => $context['category'] === 'unexpected_failure' && $context['endpoint'] === 'api/iot/v1/probe'
+            && Str::isUuid($context['correlation_id']) && count($context) === 3
+            && ! str_contains(json_encode($context), 'synthetic-private-detail')));
     }
 
     public function test_human_login_and_cookies_cannot_authenticate_a_device(): void

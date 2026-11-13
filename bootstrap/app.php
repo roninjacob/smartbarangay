@@ -4,6 +4,7 @@ use App\Http\Middleware\EnsureAccountIsActive;
 use App\Http\Middleware\EnsureUserHasRole;
 use App\Http\Middleware\LimitIotRequestBody;
 use App\Http\Middleware\SecurityHeaders;
+use App\Services\IotErrorReporting;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -37,9 +38,19 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         // Device errors never expose debug traces, request headers or SQL bindings.
-        $exceptions->dontReportWhen(fn (Throwable $exception) => request()->is('api/iot/*', 'admin/iot-scanner/*', 'admin/iot-dashboard/data'));
+        $exceptions->dontReportWhen(function (Throwable $exception) {
+            if (request()->is('api/iot/*', 'admin/iot-scanner/*', 'admin/iot-dashboard/data')) {
+                app(IotErrorReporting::class)->report($exception, request());
+
+                return true; // Never send the original exception or its context to a logger.
+            }
+
+            return false;
+        });
         $exceptions->render(function (Throwable $exception, Request $request) {
             if ($request->is('api/iot/*', 'admin/iot-scanner/*', 'admin/iot-dashboard/data')) {
+                // Laravel normally ignores HttpExceptions before reporting callbacks.
+                app(IotErrorReporting::class)->report($exception, $request);
                 $status = $exception instanceof AuthenticationException ? 401
                     : ($exception instanceof ValidationException ? 422
                     : ($exception instanceof HttpExceptionInterface ? $exception->getStatusCode() : 503));
