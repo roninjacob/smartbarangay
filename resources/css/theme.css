@@ -1,20 +1,3 @@
-/* Bootstrap handles native components; these tokens adapt the existing civic UI. */
-:root[data-bs-theme="dark"] {
-    --civic-blue: #8dbbff;
-    --civic-dark: #bdd6ff;
-    --community-green: #8ed6b0;
-    --page-background: #111923;
-    --surface: #1b2634;
-    --main-text: #e6edf5;
-    --muted-text: #acbacb;
-    --border-color: #354456;
-    --bs-body-color: var(--main-text);
-    --bs-body-bg: var(--page-background);
-    --bs-secondary-color: var(--muted-text);
-    --bs-border-color: var(--border-color);
-    --bs-link-color: #8dbbff;
-    --bs-link-hover-color: #bdd6ff;
-}
 
 .user-preferences { overflow-wrap: anywhere; }
 .user-preferences .dashboard-panel { border-radius: 20px; }
@@ -27,10 +10,9 @@
 [data-bs-theme="dark"] .app-eyebrow,[data-bs-theme="dark"] .app-note,[data-bs-theme="dark"] .notification-body time,[data-bs-theme="dark"] .report-empty { color: var(--muted-text); }
 
 [data-bs-theme="dark"] .form-text,[data-bs-theme="dark"] .account-details dt { color: var(--muted-text); }
-[data-bs-theme="dark"] .notification-list { background: var(--surface); }
 [data-bs-theme="dark"] .notification-item.is-unread { background: #22364e; }
 [data-bs-theme="dark"] .is-current .step-number { background: #285fa7; }
-[data-bs-theme="dark"] .profile-placeholder,[data-bs-theme="dark"] .resident-avatar,[data-bs-theme="dark"] .service-empty-icon,[data-bs-theme="dark"] .requirement-label,[data-bs-theme="dark"] .reservation-notice,[data-bs-theme="dark"] .reservation-option:has(input:checked),[data-bs-theme="dark"] .qr-camera-frame { background: #283d53; color: #c6dcff; border-color: var(--border-color); }
+[data-bs-theme="dark"] .profile-placeholder,[data-bs-theme="dark"] .resident-avatar,[data-bs-theme="dark"] .service-empty-icon,[data-bs-theme="dark"] .requirement-label,[data-bs-theme="dark"] .qr-camera-frame { background: #283d53; color: #c6dcff; border-color: var(--border-color); }
 
 [data-bs-theme="dark"] .notification-symbol,[data-bs-theme="dark"] .notification-read,[data-bs-theme="dark"] .notification-unread { background: #283d53; color: #bdd6ff; border-color: var(--border-color); }
 [data-bs-theme="dark"] .report-line text { fill: var(--main-text); }

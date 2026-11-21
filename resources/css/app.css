@@ -1,15 +1,12 @@
 @import '@fontsource-variable/plus-jakarta-sans';
 @import './document-designer.css';
 @import 'bootstrap/dist/css/bootstrap.min.css';
+@import './tokens.css';
 @import './services.css';
 @import './reservations.css';
 @import './reservation-activity.css';
-@import './notifications.css';
 @import './reports.css';
 @import './users.css';
-@import './request-status.css';
-@import './profile.css';
-@import './qr-tickets.css';
 @import './qr-verification.css';
 @import './document-builder.css';
 @import './theme.css';
@@ -23,33 +20,16 @@
 @import './auth.css';
 @import './app-shell.css';
 @import './dashboard.css';
+@import './modules-reservations.css';
+@import './modules-account.css';
 @import './buttons.css';
 
-/* SmartBarangay civic identity, shared by the account pages and the application shell. */
-:root {
-    --civic-blue: #1F5EA8;
-    --civic-dark: #174A85;
-    --community-green: #2F855A;
-    --warm-gold: #F2B84B;
-    --page-background: #F6F8FB;
-    --surface: #FFFFFF;
-    --main-text: #1F2937;
-    --muted-text: #6B7280;
-    --border-color: #E5E7EB;
-    --danger: #DC3545;
-    --bs-body-font-family: "Segoe UI", Arial, sans-serif;
-    --bs-body-color: var(--main-text);
-    --bs-body-bg: var(--page-background);
-    --bs-primary-rgb: 31, 94, 168;
-    --bs-link-color: var(--civic-blue);
-    --bs-link-hover-color: var(--civic-dark);
-}
 
 html, body { min-height: 100%; }
 body { margin: 0; }
 a { text-underline-offset: 3px; }
 button, a, input, textarea { touch-action: manipulation; }
-:focus-visible { outline: 3px solid var(--civic-blue); outline-offset: 3px; }
+:focus-visible { outline: 3px solid var(--ds-focus); outline-offset: 3px; }
 
 .skip-link {
     position: fixed;
@@ -79,32 +59,6 @@ button, a, input, textarea { touch-action: manipulation; }
 .form-control.is-invalid { border-color: var(--danger); }
 .form-text { color: #5D6878; font-size: 11px; line-height: 1.5; margin-top: 7px; }
 .invalid-feedback { font-size: 12px; }
-.btn {
-    --bs-btn-border-radius: 10px;
-    padding: 12px 18px;
-    font-size: 13px;
-    font-weight: 600;
-}
-.btn-primary {
-    --bs-btn-bg: var(--civic-blue);
-    --bs-btn-border-color: var(--civic-blue);
-    --bs-btn-hover-bg: var(--civic-dark);
-    --bs-btn-hover-border-color: var(--civic-dark);
-    --bs-btn-active-bg: var(--civic-dark);
-    --bs-btn-active-border-color: var(--civic-dark);
-    --bs-btn-disabled-bg: var(--civic-blue);
-    --bs-btn-disabled-border-color: var(--civic-blue);
-    --bs-btn-focus-shadow-rgb: 31, 94, 168;
-}
-.btn-outline-primary {
-    --bs-btn-color: var(--civic-blue);
-    --bs-btn-border-color: #C4D5E9;
-    --bs-btn-hover-bg: #EDF3FA;
-    --bs-btn-hover-color: var(--civic-dark);
-    --bs-btn-hover-border-color: var(--civic-blue);
-    --bs-btn-active-bg: var(--civic-blue);
-    --bs-btn-active-border-color: var(--civic-blue);
-}
 .alert { font-size: 13px; border-radius: 10px; line-height: 1.5; }
 .back-link { display: inline-block; margin-bottom: 26px; font-size: 12px; font-weight: 600; text-decoration: none; }
 .back-link span { margin-right: 5px; }

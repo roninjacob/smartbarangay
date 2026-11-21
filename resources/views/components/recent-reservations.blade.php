@@ -1,7 +1,7 @@
 @props(['reservations', 'admin' => false])
 <section class="card dashboard-panel recent-panel" aria-labelledby="recent-reservations-heading">
     <div class="dashboard-panel-heading">
-        <h2 id="recent-reservations-heading">Recent reservations</h2>
+        <h2 id="recent-reservations-heading"><span class="panel-icon" aria-hidden="true"><x-app-icon name="document"/></span>Recent reservations</h2>
         <a class="panel-link" href="{{ route($admin ? 'admin.reservations.index' : 'resident.reservations.index') }}">View all <x-app-icon name="arrow"/></a>
     </div>
     @if($reservations->isEmpty())
@@ -16,7 +16,7 @@
     @elseif(! $admin)
         <div class="resident-recent-cards">
             @foreach($reservations as $reservation)
-                <article class="resident-recent-card" aria-labelledby="recent-request-{{ $reservation->id }}">
+                <article class="resident-recent-card tone-{{ $reservation->status->value }}" aria-labelledby="recent-request-{{ $reservation->id }}">
                     <div class="resident-recent-top">
                         <span class="reservation-reference">Request #{{ $reservation->id }} · {{ $reservation->created_at->timezone('Asia/Manila')->format('M j, Y') }}</span>
                         <x-reservation-status :status="$reservation->status"/>
@@ -49,7 +49,7 @@
                             <td data-label="Service"><span class="reservation-service">{{ $reservation->service->name }}</span></td>
                             <td class="recent-appointment" data-label="Appointment"><time datetime="{{ $reservation->appointment->date->toDateString() }}">{{ $reservation->appointment->date->format('M j, Y') }}</time><span class="reservation-reference">{{ \Illuminate\Support\Carbon::parse($reservation->appointment->start_time)->format('g:i A') }} &ndash; {{ \Illuminate\Support\Carbon::parse($reservation->appointment->end_time)->format('g:i A') }}</span></td>
                             <td data-label="Status"><x-reservation-status :status="$reservation->status"/></td>
-                            <td class="recent-action"><a class="recent-open" href="{{ route('admin.reservations.show', $reservation) }}" aria-label="View request #{{ $reservation->id }}"><span class="recent-action-label visually-hidden">View</span><x-app-icon name="arrow"/></a></td>
+                            <td class="recent-action"><a class="recent-open" href="{{ route('admin.reservations.show', $reservation) }}" aria-label="View request #{{ $reservation->id }}"><span class="recent-action-label">View</span><x-app-icon name="arrow"/></a></td>
                         </tr>
                     @endforeach
                 </tbody>

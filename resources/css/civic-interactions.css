@@ -1,5 +1,4 @@
 /* Presentation only. Official certificate/print routes do not opt into these effects. */
-.civic-ui.civic-refined { --interaction-blue:#245ee0; --interaction-soft:#edf4ff; }
 .civic-ui.civic-refined .btn { position:relative; }
 .civic-ui.civic-refined .btn:not(:disabled):active { transform:translateY(1px); }
 .civic-ui.civic-refined .btn:focus-visible { outline-offset:4px; }
@@ -17,12 +16,6 @@
 .civic-ui.civic-refined .app-account-modal .modal-body dl>div { padding:16px; background:var(--interaction-soft); border-radius:12px; min-width:0; }
 .civic-ui.civic-refined .app-account-modal dd { overflow-wrap:anywhere; }
 .civic-ui.civic-refined .table-responsive:focus-visible { outline:2px solid var(--interaction-blue); outline-offset:4px; }
-.civic-ui.civic-refined .reservation-option { position:relative; }
-.civic-ui.civic-refined .reservation-option:has(input:checked) { border-color:var(--interaction-blue); background:var(--interaction-soft); box-shadow:0 0 0 2px #245ee012; }
-.civic-ui.civic-refined .reservation-option:has(input:disabled) { opacity:.65; }
-.civic-ui.civic-refined .reservation-options input { accent-color:var(--interaction-blue); }
-.civic-ui.civic-refined .request-progress .is-current { background:var(--interaction-soft); border-radius:14px; box-shadow:inset 0 0 0 1px #719cf247; }
-.civic-ui.civic-refined .request-progress .is-current small { color:var(--civic-dark); font-weight:650; }
 .civic-ui.civic-refined .service-back-link { display:inline-flex; align-items:center; gap:8px; padding:8px 12px; border-radius:10px; text-decoration:none; }
 .civic-ui.civic-refined .service-back-link:hover { background:var(--interaction-soft); }
 .civic-toast-region { position:fixed; z-index:1090; right:24px; bottom:24px; width:380px; max-width:calc(100% - 48px); pointer-events:none; }
@@ -47,13 +40,11 @@
 .civic-ui.civic-refined [data-preview-state="loading"] [data-pdf-status] { display:flex; align-items:center; justify-content:center; gap:12px; min-height:100px; background:var(--interaction-soft); border-radius:14px; }
 .civic-ui.civic-refined [data-preview-state="error"] [data-pdf-status] { padding:20px; border:1px solid var(--border-color); border-left:3px solid #ad7133; border-radius:12px; }
 .civic-ui.civic-refined .civic-preview-retry { margin:12px 0; }
-[data-bs-theme="dark"] .civic-ui.civic-refined { --interaction-soft:#1c334f; }
 [data-bs-theme="dark"] .civic-ui.civic-refined .requirement-delete-modal .modal-header { background:linear-gradient(120deg,#422732,var(--surface)); }
 @media (prefers-reduced-motion:no-preference) {
-    .civic-ui.civic-refined .btn,.civic-ui.civic-refined .reservation-option { transition:background-color 160ms ease,border-color 160ms ease,box-shadow 160ms ease,transform 160ms ease; }
+    .civic-ui.civic-refined .btn { transition:background-color 160ms ease,border-color 160ms ease,box-shadow 160ms ease,transform 160ms ease; }
     .civic-ui.civic-refined .modal.fade .modal-dialog { transition:transform 220ms ease-out; transform:translateY(12px); }
     .civic-ui.civic-refined .modal.show .modal-dialog { transform:none; }
-    .civic-ui.civic-refined .civic-enter { animation:civic-enter 320ms ease-out both; }
     .civic-ui.civic-refined [aria-busy="true"] button[type="submit"]::before,
     .civic-ui.civic-refined [data-preview-state="loading"] [data-pdf-status]::before { animation:civic-spin 850ms linear infinite; }
     @keyframes civic-enter { from { opacity:.6; transform:translateY(8px); } to { opacity:1; transform:none; } }
@@ -71,9 +62,6 @@
     .civic-filter-chips { padding-inline:16px; }
     .civic-toast-region { right:16px; bottom:20px; max-width:calc(100% - 32px); }
     .app-role-resident~.civic-toast-region,body:has(.app-role-resident) .civic-toast-region { bottom:calc(90px + env(safe-area-inset-bottom)); }
-}
-@media (prefers-reduced-motion:reduce) {
-    .civic-ui.civic-refined .civic-enter { animation:none!important; transform:none!important; }
 }
 @media print {
     .civic-toast-region,.civic-filter-toggle,.civic-preview-retry,.civic-upload-actions { display:none!important; }
@@ -102,7 +90,7 @@
 .civic-ui.civic-refined .app-main details[open]>summary { border-bottom-left-radius:4px; border-bottom-right-radius:4px; }
 .civic-ui.civic-refined .report-chart-data { padding:8px; border:1px solid var(--border-color); border-radius:10px; }
 @media(prefers-reduced-motion:no-preference) {
-    .civic-ui.civic-refined .app-main details[open]>.report-chart-data { animation:civic-enter 220ms ease-out; }
+    .civic-ui.civic-refined .app-main details[open]>.report-chart-data { animation:civic-enter var(--ds-dur) var(--ds-ease); }
 }
 @media print {
     .chart-tools,.chart-explorer,.module-shortcuts,.chart-active-point { display:none!important; }

@@ -1,38 +1,9 @@
 /* Milestone 4: shared presentation only. PDF canvas, print geometry and business rules are untouched. */
 body.civic-ui {
-    --civic-blue: #225FE5;
-    --civic-dark: #204DAD;
-    --community-green: #327554;
-    --page-background: #F6F8FA;
-    --surface: #FFF;
-    --main-text: #182A38;
-    --muted-text: #5F707E;
-    --border-color: #E4EBEF;
-    --sb-soft: #EDF3FF;
-    --sb-mint: #E7F3EB;
-    --sb-shadow: 0 4px 20px rgb(24 42 56 / 3%);
-    --sb-radius: 20px;
-    --bs-body-color: var(--main-text);
-    --bs-body-bg: var(--page-background);
-    --bs-primary-rgb: 34,95,229;
-    font-family: 'Segoe UI Variable','Segoe UI',system-ui,sans-serif;
     color: var(--main-text);
     background: var(--page-background);
     font-size: 15px;
     line-height: 1.65;
-}
-[data-bs-theme=dark] body.civic-ui {
-    --civic-blue: #9CC1FF;
-    --civic-dark: #C0D6FF;
-    --community-green: #A1DAB9;
-    --page-background: #121D28;
-    --surface: #1B2937;
-    --main-text: #E9F0F6;
-    --muted-text: #AFBECC;
-    --border-color: #364757;
-    --sb-soft: #233C5B;
-    --sb-mint: #203D33;
-    --sb-shadow: 0 4px 20px rgb(0 0 0 / 8%);
 }
 .civic-ui :is(h1,h2,h3) {
     letter-spacing: -.035em;
@@ -223,12 +194,6 @@ body.civic-ui {
     padding: 34px;
     max-width: 1500px;
 }
-.civic-ui .profile-card {
-    background: var(--surface);
-    border: 1px solid var(--border-color);
-    border-radius: var(--sb-radius);
-    box-shadow: var(--sb-shadow);
-}
 .civic-ui .table-responsive {
     position: relative;
     max-width: 100%;
@@ -257,57 +222,16 @@ body.civic-ui {
     font-size: 15px;
     line-height: 1.8;
 }
-.civic-ui .reservation-steps {
-    gap: 10px;
-}
-.civic-ui .reservation-steps li {
-    border: 1px solid var(--border-color);
-    border-radius: 13px;
-    background: var(--surface);
-    padding: 14px 12px;
-    font-size: 12px;
-}
-.civic-ui .reservation-steps .is-current {
-    border-color: var(--civic-blue);
-    background: var(--sb-soft);
-    color: var(--civic-dark);
-}
-.civic-ui .reservation-steps .is-complete {
-    border-color: var(--border-color);
-    background: var(--sb-mint);
-}
 .civic-ui .step-number {
     flex-basis: 25px;
     width: 25px;
     height: 25px;
     font-size: 12px;
 }
-.civic-ui .reservation-option {
-    border-radius: 16px;
-    padding: 20px;
-    transition: background-color .16s,border-color .16s,box-shadow .16s;
-}
-.civic-ui .reservation-option:hover {
-    border-color: var(--civic-blue);
-}
-.civic-ui .reservation-option:has(input:checked) {
-    background: var(--sb-soft);
-    border-color: var(--civic-blue);
-    box-shadow: 0 0 0 1px var(--civic-blue);
-}
-.civic-ui .reservation-option:has(input:disabled) {
-    opacity: .65;
-    cursor: not-allowed;
-}
 .civic-ui .reservation-step-label {
     font-size: 10px;
     letter-spacing: .1em;
     color: var(--civic-dark);
-}
-.civic-ui .reservation-notice {
-    border-radius: 12px;
-    background: var(--sb-soft);
-    font-size: 14px;
 }
 .civic-ui .reservation-summary>div {
     padding-block: 14px;
@@ -320,22 +244,6 @@ body.civic-ui {
 .civic-ui .reservation-summary dd {
     font-size: 14px;
     font-weight: 550;
-}
-.civic-ui .resident-reservation-row {
-    margin: 0 22px 18px;
-    border: 1px solid var(--border-color);
-    border-radius: 17px;
-    background: var(--surface);
-    padding: 23px;
-}
-.civic-ui .reservation-row-service h3 {
-    font-size: 19px;
-}
-.civic-ui .reservation-row-facts dt {
-    font-size: 12px;
-}
-.civic-ui .reservation-row-facts dd {
-    font-size: 14px;
 }
 .civic-ui .reservation-details-link {
     border-radius: 12px;
@@ -371,9 +279,6 @@ body.civic-ui {
     border: 0;
     background: var(--sb-soft);
     color: var(--civic-dark);
-}
-.civic-ui .profile-card {
-    padding: 27px;
 }
 .civic-ui .profile-placeholder {
     background: var(--sb-soft);
@@ -441,30 +346,12 @@ body.civic-ui {
     .civic-ui .reservation-panel {
         padding: 23px 20px;
     }
-    .civic-ui .reservation-steps {
-        gap: 8px;
-    }
-    .civic-ui .reservation-steps li {
-        padding: 12px 9px;
-        font-size: 11px;
-        gap: 8px;
-    }
-    .civic-ui .reservation-option {
-        padding: 18px 15px;
-    }
     .civic-ui .reservation-intro {
         font-size: 14px;
     }
     .civic-ui .reservation-summary>div {
         gap: 6px;
         grid-template-columns: minmax(0,1fr);
-    }
-    .civic-ui .resident-reservation-row {
-        margin: 0 15px 15px;
-        padding: 20px;
-    }
-    .civic-ui .reservation-row-facts {
-        gap: 16px;
     }
     .civic-ui .service-catalog-card {
         padding: 20px;
@@ -483,9 +370,6 @@ body.civic-ui {
     }
     .civic-ui .modal-footer {
         padding: 14px 20px 20px;
-    }
-    .civic-ui .profile-card {
-        padding: 22px;
     }
     .civic-ui .brand-name {
         font-size: 21px;
@@ -575,40 +459,6 @@ body.civic-ui {
 }
 
 /* Resident-first Reservation Management worklist, matching the approved reference. */
-.civic-ui .reservation-overview {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 24px;
-    margin-bottom: 32px;
-}
-.civic-ui .reservation-overview-card {
-    background: var(--surface);
-    border: 1px solid var(--border-color);
-    border-radius: 27px;
-    padding: 30px 34px;
-    box-shadow: var(--sb-shadow);
-    min-width: 0;
-}
-.civic-ui .reservation-overview-card h2 {
-    font-size: 15px;
-    color: var(--muted-text);
-    font-weight: 400;
-    letter-spacing: 0;
-    margin: 0 0 25px;
-}
-.civic-ui .reservation-overview-card>div {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 17px;
-}
-.civic-ui .reservation-overview-card strong {
-    font-size: 44px;
-    font-weight: 750;
-    letter-spacing: -.05em;
-    line-height: 1;
-    font-variant-numeric: tabular-nums;
-}
 .civic-ui .worklist-attention {
     border-radius: 10px;
     background: #FCF1D9;
@@ -617,7 +467,6 @@ body.civic-ui {
     font-size: 11px;
     font-weight: 650;
 }
-.civic-ui .reservation-worklist { border-radius: 27px; }
 .civic-ui .worklist-heading {
     display: flex;
     align-items: center;
@@ -652,16 +501,6 @@ body.civic-ui {
 }
 .civic-ui .worklist-search-button:hover { color: var(--civic-blue); background: var(--sb-soft); }
 .civic-ui .worklist-clear { padding-inline: 24px; }
-.civic-ui .reservation-worklist>.table-responsive { max-height: 650px; }
-.civic-ui .reservation-worklist-table { min-width: 930px; table-layout: fixed; }
-.civic-ui .reservation-worklist-table thead th { position: sticky; top: 0; z-index: 1; font-size: 13px; padding: 19px 22px; }
-.civic-ui .reservation-worklist-table thead th:nth-child(1) { width: 28%; }
-.civic-ui .reservation-worklist-table thead th:nth-child(2) { width: 19%; }
-.civic-ui .reservation-worklist-table thead th:nth-child(3) { width: 20%; }
-.civic-ui .reservation-worklist-table thead th:nth-child(4) { width: 18%; }
-.civic-ui .reservation-worklist-table thead th:nth-child(5) { width: 15%; }
-.civic-ui .reservation-worklist-table tbody :is(td,th) { padding: 26px 22px; font-size: 15px; width: auto; }
-.civic-ui .reservation-worklist-table :is(th,td):first-child { padding-left: 30px; }
 .civic-ui .worklist-person { display: flex; align-items: center; gap: 15px; }
 .civic-ui .worklist-person>div { min-width: 0; }
 .civic-ui .worklist-person .resident-avatar { width: 44px; height: 44px; flex-basis: 44px; font-size: 12px; }
@@ -672,37 +511,17 @@ body.civic-ui {
 .civic-ui .worklist-mobile-label { display: none; }
 [data-bs-theme=dark] .civic-ui .worklist-attention { background: #3B321F; color: #F3D18C; }
 @media(max-width:1199.98px) {
-    .civic-ui .reservation-overview { gap: 16px; }
-    .civic-ui .reservation-overview-card { padding: 25px; }
     .civic-ui .worklist-heading { padding: 27px 25px 22px; }
     .civic-ui .worklist-filters { padding: 0 25px 25px; }
 }
 @media(max-width:767.98px) {
-    .civic-ui .reservation-overview { gap: 9px; margin-bottom: 23px; }
-    .civic-ui .reservation-overview-card { padding: 18px 13px; border-radius: 17px; }
-    .civic-ui .reservation-overview-card h2 { font-size: 12px; line-height: 1.5; margin-bottom: 16px; min-height: 36px; }
-    .civic-ui .reservation-overview-card strong { font-size: 31px; }
     .civic-ui .worklist-attention { font-size: 9px; padding: 5px 7px; }
-    .civic-ui .reservation-overview-card>div { gap: 9px; }
     .civic-ui .worklist-heading { padding: 25px 21px 21px; }
     .civic-ui .worklist-heading h2 { font-size: 23px; }
     .civic-ui .worklist-filters { grid-template-columns: minmax(0,1fr) auto; padding: 0 20px 25px; gap: 11px; }
     .civic-ui .worklist-search { grid-column: 1 / -1; }
     .civic-ui .worklist-filters :is(.form-control,.form-select,.worklist-clear) { min-height: 48px; font-size: 13px; border-radius: 12px; }
     .civic-ui .worklist-clear { padding-inline: 16px; }
-    .civic-ui .reservation-worklist>.table-responsive { max-height: none; }
-    .civic-ui .reservation-worklist-table { display: block; min-width: 0; }
-    .civic-ui .reservation-worklist-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
-    .civic-ui .reservation-worklist-table tbody { display: block; }
-    .civic-ui .reservation-worklist-table tbody tr { display: grid; grid-template-columns: minmax(0,1fr); gap: 17px; padding: 23px 21px; border-top: 1px solid var(--border-color); }
-    .civic-ui .reservation-worklist-table tbody tr>:is(td,th) { display: block; width: auto; padding: 0; border: 0; }
     .civic-ui .worklist-mobile-label { display: block; font-size: 12px; color: var(--muted-text); margin-bottom: 5px; }
     .civic-ui .worklist-person-name { font-size: 16px; }
-    .civic-ui .reservation-worklist-table td { font-size: 14px; }
-}
-@media(max-width:359.98px) {
-    .civic-ui .reservation-overview { grid-template-columns: minmax(0,1fr); }
-    .civic-ui .reservation-overview-card { display: flex; justify-content: space-between; align-items: center; gap: 14px; padding: 18px; }
-    .civic-ui .reservation-overview-card h2 { min-height: 0; margin: 0; }
-    .civic-ui .reservation-overview-card strong { font-size: 28px; }
 }

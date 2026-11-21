@@ -59,7 +59,7 @@ class ReservationController extends Controller
             })
             ->latest()->orderByDesc('id')->paginate(10)->appends($filters);
 
-        return view('admin.reservations.index', [...$this->shellData('Reservation Management'),
+        return view('admin.reservations.index', [...$this->shellData('Reservations'),
             'overview' => $overview, 'reservations' => $reservations, 'filters' => $filters, 'statuses' => ReservationStatus::cases()]);
     }
 
@@ -79,7 +79,7 @@ class ReservationController extends Controller
                 ? $reservation->statusHistories()->where('to_status', ReservationStatus::Rejected)->orderByDesc('changed_at')->orderByDesc('id')->value('resident_message') : null,
             'checkin' => $reservation->checkinLogs()->where('verification_result', CheckinLog::ARRIVAL)->with('verifier')->first(),
             'checkinVerified' => app(CheckInReservations::class)->hasEvidence(request()->session()->get(CheckInReservations::SESSION_KEY), request()->user(), $reservation),
-            ...$this->shellData('Reservation Details'), 'reservation' => $reservation,
+            ...$this->shellData('Request #'.$reservation->id), 'reservation' => $reservation,
             'paymentStatus' => app(ReservationPayments::class)->status($reservation),
             'completionBlockReason' => $reservation->status === ReservationStatus::ReadyForPickup
                 ? app(ReservationPayments::class)->completionBlockReason($reservation) : null,

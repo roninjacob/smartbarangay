@@ -33,7 +33,7 @@ document.querySelectorAll('[data-reservation-status]').forEach((select) => {
             }
             const button = select.form.querySelector('button[type="submit"]');
             button.disabled = true;
-            button.textContent = 'Savingâ€¦';
+            button.textContent = 'Saving…';
         });
         dialog.querySelector('[data-ready-continue]').addEventListener('click', () => {
             if (reason) {

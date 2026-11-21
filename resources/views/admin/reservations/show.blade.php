@@ -1,124 +1,159 @@
 @extends('layouts.authenticated')
+@section('breadcrumbs')<li><a href="{{ route('admin.reservations.index') }}">Reservations</a></li>@endsection
 @section('dashboard')
-<div class="reservation-wizard">
-    <a href="{{ route('admin.reservations.index') }}" class="service-back-link reservation-details-back"><x-app-icon name="arrow"/>Back to reservations</a>
-    <nav class="request-section-nav" aria-label="Reservation sections">
-        <a href="#admin-request-heading">Request information</a>
-        <a href="#payment-heading">Payment</a>
-        @if($reservation->qrTicket)<a href="#qr-lifecycle-heading">QR ticket</a>@endif
-        @if($reservation->status->canPrepareDocument() || $reservation->document?->mime_type === 'application/pdf')<a href="#certificate-heading">Certificate</a>@endif
-        <a href="#processing-heading">Process request</a>
-    </nav>
-    <div class="request-next-step mb-4">
-        <strong>Current task</strong>
-        @if($residentExplanation)<p><strong>Explanation shared with the Resident:</strong> {{ $residentExplanation }}</p>@endif
-        <p>{{ match($reservation->status) {
-            \App\Enums\ReservationStatus::Pending => 'Review the submitted requirements, then move this request to Under Review.',
-            \App\Enums\ReservationStatus::UnderReview => 'Check the recorded information and supporting files before approving or rejecting.',
-            \App\Enums\ReservationStatus::Approved => 'Review and finalize the certificate, or record manual preparation before marking Ready for Pickup.',
-            \App\Enums\ReservationStatus::ReadyForPickup => 'Review arrival and payment details, then mark Completed when the transaction is finished.',
-            default => 'This request is closed. Its recorded information remains available below.',
-        } }}</p>
-        @if($reservation->status === \App\Enums\ReservationStatus::Approved)<a class="btn btn-primary" href="#certificate-heading">Prepare certificate</a>
-        @elseif($reservation->status === \App\Enums\ReservationStatus::ReadyForPickup && $completionBlockReason)<a class="btn btn-primary" href="#payment-heading">Review payment</a>
-        @else<a class="btn btn-outline-primary" href="#processing-heading">Review processing actions</a>
-        @endif
-    </div>
-    @if($errors->any())<div class="alert alert-danger" role="alert"><strong>Please check your request.</strong><ul class="mb-0">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
-    <section class="card dashboard-panel reservation-panel reservation-detail" aria-labelledby="admin-request-heading">
-        <div class="reservation-detail-header"><div><span class="reservation-step-label">REQUEST #{{ $reservation->id }}</span><h2 id="admin-request-heading">{{ $reservation->service->name }}</h2></div><x-reservation-status :status="$reservation->status"/></div>
-        @if($reservation->service->description)<p class="reservation-service-description">{{ $reservation->service->description }}</p>@endif
-        <h3 class="h6 mt-4">Resident and reservation information</h3>
-        <dl class="reservation-summary">
-            <div><dt>Service Fee</dt><dd>{{ \App\Support\ServiceFee::format($reservation->fee_snapshot) }}</dd></div>
-            <div><dt>Resident</dt><dd>{{ $reservation->resident_snapshot ? $reservation->resident_snapshot['resident_name'] : $reservation->user->name }}</dd></div>
-            <div><dt>Email</dt><dd>{{ $reservation->user->email }}</dd></div>
-            @if($reservation->resident_snapshot ? ($reservation->resident_snapshot['resident_contact'] ?? null) : $reservation->user->contact_number)<div><dt>Contact</dt><dd>{{ $reservation->resident_snapshot ? $reservation->resident_snapshot['resident_contact'] : $reservation->user->contact_number }}</dd></div>@endif
-            <div><dt>Schedule</dt><dd>{{ $reservation->appointment->date->format('l, F j, Y') }}<br>{{ \Illuminate\Support\Carbon::parse($reservation->appointment->start_time)->format('g:i A') }} – {{ \Illuminate\Support\Carbon::parse($reservation->appointment->end_time)->format('g:i A') }}</dd></div>
-            <div><dt>Submitted</dt><dd>{{ $reservation->created_at->timezone('Asia/Manila')->format('F j, Y, g:i A') }}</dd></div>
-            <div><dt>Last updated</dt><dd>{{ $reservation->updated_at->timezone('Asia/Manila')->format('F j, Y, g:i A') }}</dd></div>
-            @if($reservation->qrTicket)
-                <div><dt>QR ticket issued</dt><dd>{{ $reservation->qrTicket->generated_at->timezone('Asia/Manila')->format('F j, Y, g:i A') }}</dd></div>
-            @endif
-        </dl>
-        @include('reservations.appointment-note')
-        @include('resident.reservations.historical-requirements')
-        @include('resident.reservations.document-information')
-        @if($documentPreviewAvailable && ! $reservation->status->canPrepareDocument())<a class="btn btn-outline-primary mt-3" href="{{ route('admin.reservations.document-preview.show', $reservation) }}">Preview Document</a>@endif
-        @include('resident.reservations.attachments', ['attachmentRoute' => 'admin.reservations.attachments.download'])
+@php
+    use App\Enums\ReservationStatus;
+    $status = $reservation->status;
+    $residentName = $reservation->resident_snapshot ? $reservation->resident_snapshot['resident_name'] : $reservation->user->name;
+    $contact = $reservation->resident_snapshot ? ($reservation->resident_snapshot['resident_contact'] ?? null) : $reservation->user->contact_number;
+    $date = $reservation->appointment->date;
+    $timeRange = \Illuminate\Support\Carbon::parse($reservation->appointment->start_time)->format('g:i A').' – '.\Illuminate\Support\Carbon::parse($reservation->appointment->end_time)->format('g:i A');
+@endphp
+<a href="{{ route('admin.reservations.index') }}" class="rv-back reservation-details-back"><x-app-icon name="arrow"/>Back to reservations</a>
+@if($errors->any())<div class="alert alert-danger" role="alert"><strong>Please check your request.</strong><ul class="mb-0">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
+
+<div class="rv-detail-grid">
+    {{-- Summary --}}
+    <section class="rv-summary tone-{{ $status->value }}" aria-labelledby="admin-request-heading">
+        <div class="rv-summary-top">
+            <div>
+                <span class="rv-summary-ref">Request #{{ $reservation->id }}</span>
+                <h2 id="admin-request-heading">{{ $reservation->service->name }}</h2>
+                @if($reservation->service->description)<p class="rv-summary-desc">{{ $reservation->service->description }}</p>@endif
+            </div>
+            <x-reservation-status :status="$status"/>
+        </div>
+        <div class="rv-summary-row">
+            <div class="rv-person"><x-resident-avatar :user="$reservation->user" :initials="true"/><div><span class="rv-person-name">{{ $residentName }}</span><span class="reservation-reference">{{ $reservation->user->email }}</span></div></div>
+            <div class="rv-date">
+                <span class="rv-date-block" aria-hidden="true"><span class="rv-date-month">{{ $date->format('M') }}</span><span class="rv-date-day">{{ $date->format('j') }}</span></span>
+                <span class="rv-date-text"><strong>{{ $date->format('l, F j, Y') }}</strong><span>{{ $timeRange }}</span></span>
+            </div>
+        </div>
+        <x-status-stepper :status="$status"/>
     </section>
-    @if($reservation->qrTicket)
-        <section class="card dashboard-panel reservation-panel mt-4" aria-labelledby="qr-lifecycle-heading">
-            <h2 id="qr-lifecycle-heading">QR Ticket</h2>
-            <dl class="reservation-summary mb-0">
-                <div><dt>Status</dt><dd>{{ $reservation->qrTicket->isUsed() || $reservation->status === \App\Enums\ReservationStatus::Completed ? 'Used / Historical' : ($reservation->status->canReceiveQrTicket() ? 'Active' : 'Unavailable') }}</dd></div>
-                @if($reservation->qrTicket->isUsed())
-                    <div><dt>Completed</dt><dd><time datetime="{{ $reservation->qrTicket->used_at->toIso8601String() }}">{{ $reservation->qrTicket->used_at->timezone('Asia/Manila')->format('F j, Y, g:i A') }}</time></dd></div>
-                    <div><dt>Processed by</dt><dd>{{ $reservation->qrTicket->usedBy?->name ?? 'Former account' }}</dd></div>
-                @endif
-            </dl>
-            <p class="app-note mt-3 mb-0">{{ $reservation->qrTicket->isUsed() || $reservation->status === \App\Enums\ReservationStatus::Completed ? 'This ticket cannot be reused. Its original credential is retained as a historical record.' : 'Scanning verifies this ticket only. It becomes used when an Admin completes the reservation.' }}</p>
-            @if($reservation->status === \App\Enums\ReservationStatus::Completed && ! $reservation->qrTicket->isUsed())<p class="app-note mt-2 mb-0">QR usage metadata was not recorded for this earlier completion. Refer to the status history below.</p>@endif
-        </section>
-    @endif
-    @include('admin.reservations.document-preparation')
-    @include('admin.reservations.check-in')
-    @include('reservations.followups')
-    <section class="card dashboard-panel reservation-panel mt-4" aria-labelledby="payment-heading">
-        @include('reservations.payment-status', ['admin' => true])
-    </section>
-    <section class="card dashboard-panel reservation-panel mt-4" aria-labelledby="processing-heading">
-        <h2 id="processing-heading">Process this request</h2>
-        @if($completionBlockReason)
-            <p class="alert alert-warning mb-0" role="alert">{{ $completionBlockReason }}</p>
-        @elseif(count($transitions) === 0)
-            <p class="mb-0 text-secondary">This request is {{ strtolower($reservation->status->label()) }}. No further status changes are available.</p>
-        @else
-            @if($reservation->status === \App\Enums\ReservationStatus::ReadyForPickup && $paymentStatus === \App\Enums\PaymentStatus::FeeNotRecorded)
-                <p class="app-note">This historical reservation has no recorded fee and retains the legacy completion workflow.</p>
-            @endif
-            <p class="text-secondary">Choose the next allowed status. Each change is recorded with your name and timestamp.</p>
-            <form method="POST" action="{{ route('admin.reservations.status', $reservation) }}" data-service-submit @if($reservation->status === \App\Enums\ReservationStatus::Approved) data-ready-modal @endif>
-                @csrf @method('PATCH')
-                <input type="hidden" name="expected_status" value="{{ $reservation->status->value }}">
-                <label class="form-label" for="next-status">Next status</label>
-                <select id="next-status" name="status" class="form-select" required data-reservation-status><option value="">Choose a status</option>@foreach($transitions as $next)<option value="{{ $next->value }}" @selected(old('status') === $next->value)>{{ $next->label() }}</option>@endforeach</select>
-                @if($reservation->status === \App\Enums\ReservationStatus::Approved)
-                    <div class="mt-3" data-ready-confirmation data-certificate-prepared="{{ $hasPreparedCertificate ? '1' : '0' }}" @if(old('status') !== 'ready_for_pickup') hidden @endif>
-                        @if(! $hasPreparedCertificate)
-                            <div class="alert alert-warning" role="alert">No prepared certificate/document was found for this request. The resident may arrive without a system-generated certificate. Do you want to continue? Enter a reason below, such as “Existing certificate was prepared manually.”</div>
-                        @endif
-                        <div class="form-check"><input class="form-check-input" type="checkbox" id="confirm-ready" name="confirm_ready" value="1" data-ready-accepted><label class="form-check-label" for="confirm-ready">Mark this request as Ready for Pickup?</label></div>
-                        @error('confirm_ready')<p class="text-danger mb-0" role="alert">{{ $message }}</p>@enderror
+
+    {{-- Actions sidebar (moves under the summary on smaller screens) --}}
+    <aside class="rv-detail-aside" aria-label="Request actions">
+        <section class="card dashboard-panel rv-actions-card rv-section" aria-labelledby="processing-heading">
+            <div class="dashboard-panel-heading"><h2 id="processing-heading"><span class="panel-icon" aria-hidden="true"><x-app-icon name="status"/></span>Process this request</h2></div>
+            <div class="rv-side-block">
+                <div class="rv-callout tone-{{ $status->value }}">
+                    <span class="rv-callout-icon" aria-hidden="true"><x-app-icon name="bell"/></span>
+                    <div>
+                        <strong>Current task</strong>
+                        <p>{{ match($status) {
+                            ReservationStatus::Pending => 'Review the submitted requirements, then move this request to Under Review.',
+                            ReservationStatus::UnderReview => 'Check the recorded information and supporting files before approving or rejecting.',
+                            ReservationStatus::Approved => 'Review and finalize the certificate, or record manual preparation before marking Ready for Pickup.',
+                            ReservationStatus::ReadyForPickup => 'Review arrival and payment details, then mark Completed when the transaction is finished.',
+                            default => 'This request is closed. Its recorded information remains available.',
+                        } }}</p>
+                        @if($residentExplanation)<p><strong>Explanation shared with the Resident:</strong> {{ $residentExplanation }}</p>@endif
+                        @if($status === ReservationStatus::Approved)<a class="btn btn-sm btn-primary" href="#certificate-heading">Prepare certificate</a>
+                        @elseif($status === ReservationStatus::ReadyForPickup && $completionBlockReason)<a class="btn btn-sm btn-primary" href="#payment-heading">Review payment</a>@endif
                     </div>
-                    <noscript><p class="app-note mt-3">Before marking Ready for Pickup, confirm the action below. If no prepared certificate exists, a reason is required.</p><div class="form-check"><input class="form-check-input" type="checkbox" id="confirm-ready-noscript" name="confirm_ready" value="1"><label class="form-check-label" for="confirm-ready-noscript">Mark this request as Ready for Pickup?</label></div></noscript>
-                @endif
-                <div class="mt-3" data-rejection-message>
-                    <label class="form-label" for="resident-message">Resident explanation for rejection</label>
-                    <textarea id="resident-message" name="resident_message" class="form-control" rows="3" maxlength="1000" aria-describedby="resident-message-help">{{ old('resident_message') }}</textarea>
-                    <p id="resident-message-help" class="form-text">Required when rejecting. The Resident can read this explanation. Do not include internal notes or another person's private information.</p>
                 </div>
-                <label class="form-label mt-3" for="processing-notes">Processing note</label>
-                <textarea class="form-control" id="processing-notes" name="notes" rows="3" maxlength="2000" aria-describedby="notes-help" data-reservation-notes>{{ old('notes') }}</textarea>
-                <p id="notes-help" class="form-text">A reason is required for rejection or when marking Ready for Pickup without a prepared certificate. Notes are visible to Admin users.</p>
-                <button type="submit" class="btn btn-primary mt-3" data-saving-label="Saving…">{{ $reservation->status === \App\Enums\ReservationStatus::ReadyForPickup ? 'Mark Completed' : 'Update status' }}</button>
-            </form>
-            @if($reservation->status === \App\Enums\ReservationStatus::Approved)
-                <div class="modal fade" id="ready-confirmation-modal" tabindex="-1" aria-labelledby="ready-modal-heading" aria-hidden="true">
-                    <div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-header"><h3 class="modal-title h5" id="ready-modal-heading">Mark this request as Ready for Pickup?</h3><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
-                        <div class="modal-body">
-                            @if(! $hasPreparedCertificate)
-                                <p class="alert alert-warning">No prepared certificate/document was found for this request. Confirm that the certificate was prepared manually before continuing.</p>
-                                <label class="form-label" for="ready-reason">Reason</label><textarea id="ready-reason" class="form-control" rows="3" maxlength="2000" required placeholder="Existing certificate was prepared manually." data-ready-reason></textarea>
-                                <p class="form-text">The reason will be recorded in the request's status history.</p>
-                            @else<p>The prepared certificate is available. This status change will be recorded in history.</p>@endif
+            </div>
+            <div class="rv-side-block">
+                @if($completionBlockReason)
+                    <p class="alert alert-warning mb-0" role="alert">{{ $completionBlockReason }}</p>
+                @elseif(count($transitions) === 0)
+                    <p class="mb-0 app-note">This request is {{ strtolower($status->label()) }}. No further status changes are available.</p>
+                @else
+                    @if($status === ReservationStatus::ReadyForPickup && $paymentStatus === \App\Enums\PaymentStatus::FeeNotRecorded)
+                        <p class="app-note">This historical reservation has no recorded fee and retains the legacy completion workflow.</p>
+                    @endif
+                    <form method="POST" action="{{ route('admin.reservations.status', $reservation) }}" data-service-submit @if($status === ReservationStatus::Approved) data-ready-modal @endif>
+                        @csrf @method('PATCH')
+                        <input type="hidden" name="expected_status" value="{{ $status->value }}">
+                        <label class="form-label" for="next-status">Next status</label>
+                        <select id="next-status" name="status" class="form-select" required data-reservation-status><option value="">Choose a status</option>@foreach($transitions as $next)<option value="{{ $next->value }}" @selected(old('status') === $next->value)>{{ $next->label() }}</option>@endforeach</select>
+                        @if($status === ReservationStatus::Approved)
+                            <div class="mt-3" data-ready-confirmation data-certificate-prepared="{{ $hasPreparedCertificate ? '1' : '0' }}" @if(old('status') !== 'ready_for_pickup') hidden @endif>
+                                @if(! $hasPreparedCertificate)
+                                    <div class="alert alert-warning" role="alert">No prepared certificate/document was found for this request. The resident may arrive without a system-generated certificate. Do you want to continue? Enter a reason below, such as “Existing certificate was prepared manually.”</div>
+                                @endif
+                                <div class="form-check"><input class="form-check-input" type="checkbox" id="confirm-ready" name="confirm_ready" value="1" data-ready-accepted><label class="form-check-label" for="confirm-ready">Mark this request as Ready for Pickup?</label></div>
+                                @error('confirm_ready')<p class="text-danger mb-0" role="alert">{{ $message }}</p>@enderror
+                            </div>
+                            <noscript><p class="app-note mt-3">Before marking Ready for Pickup, confirm the action below. If no prepared certificate exists, a reason is required.</p><div class="form-check"><input class="form-check-input" type="checkbox" id="confirm-ready-noscript" name="confirm_ready" value="1"><label class="form-check-label" for="confirm-ready-noscript">Mark this request as Ready for Pickup?</label></div></noscript>
+                        @endif
+                        <div class="mt-3" data-rejection-message>
+                            <label class="form-label" for="resident-message">Resident explanation for rejection</label>
+                            <textarea id="resident-message" name="resident_message" class="form-control" rows="3" maxlength="1000" aria-describedby="resident-message-help">{{ old('resident_message') }}</textarea>
+                            <p id="resident-message-help" class="form-text">Required when rejecting. The Resident reads this explanation, so leave out internal notes and other people's private information.</p>
                         </div>
-                        <div class="modal-footer"><button class="btn btn-outline-secondary" type="button" data-bs-dismiss="modal">Cancel</button><button class="btn btn-primary" type="button" data-ready-continue>{{ $hasPreparedCertificate ? 'Confirm Ready for Pickup' : 'Continue Anyway' }}</button></div>
-                    </div></div>
+                        <label class="form-label mt-3" for="processing-notes">Processing note</label>
+                        <textarea class="form-control" id="processing-notes" name="notes" rows="3" maxlength="2000" aria-describedby="notes-help" data-reservation-notes>{{ old('notes') }}</textarea>
+                        <p id="notes-help" class="form-text">Required for rejection, or for Ready for Pickup without a prepared certificate. Visible to Admin users only. Each change is recorded with your name and time.</p>
+                        <button type="submit" class="btn btn-primary w-100 mt-2" data-saving-label="Saving…">{{ $status === ReservationStatus::ReadyForPickup ? 'Mark Completed' : 'Update status' }}</button>
+                    </form>
+                    @if($status === ReservationStatus::Approved)
+                        <div class="modal fade" id="ready-confirmation-modal" tabindex="-1" aria-labelledby="ready-modal-heading" aria-hidden="true">
+                            <div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-header"><h3 class="modal-title h5" id="ready-modal-heading">Mark this request as Ready for Pickup?</h3><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+                                <div class="modal-body">
+                                    @if(! $hasPreparedCertificate)
+                                        <p class="alert alert-warning">No prepared certificate/document was found for this request. Confirm that the certificate was prepared manually before continuing.</p>
+                                        <label class="form-label" for="ready-reason">Reason</label><textarea id="ready-reason" class="form-control" rows="3" maxlength="2000" required placeholder="Existing certificate was prepared manually." data-ready-reason></textarea>
+                                        <p class="form-text">The reason will be recorded in the request's status history.</p>
+                                    @else<p>The prepared certificate is available. This status change will be recorded in history.</p>@endif
+                                </div>
+                                <div class="modal-footer"><button class="btn btn-outline-secondary" type="button" data-bs-dismiss="modal">Cancel</button><button class="btn btn-primary" type="button" data-ready-continue>{{ $hasPreparedCertificate ? 'Confirm Ready for Pickup' : 'Continue Anyway' }}</button></div>
+                            </div></div>
+                        </div>
+                    @endif
+                @endif
+            </div>
+            @if($reservation->qrTicket)
+                <div class="rv-side-block" aria-labelledby="qr-lifecycle-heading">
+                    <h3 id="qr-lifecycle-heading"><x-app-icon name="qr"/>QR Ticket</h3>
+                    <dl class="rv-facts">
+                        <div><dt>Status</dt><dd>{{ $reservation->qrTicket->isUsed() || $status === ReservationStatus::Completed ? 'Used / Historical' : ($status->canReceiveQrTicket() ? 'Active' : 'Unavailable') }}</dd></div>
+                        <div><dt>QR ticket issued</dt><dd>{{ $reservation->qrTicket->generated_at->timezone('Asia/Manila')->format('F j, Y, g:i A') }}</dd></div>
+                        @if($reservation->qrTicket->isUsed())
+                            <div><dt>Completed</dt><dd><time datetime="{{ $reservation->qrTicket->used_at->toIso8601String() }}">{{ $reservation->qrTicket->used_at->timezone('Asia/Manila')->format('F j, Y, g:i A') }}</time></dd></div>
+                            <div><dt>Processed by</dt><dd>{{ $reservation->qrTicket->usedBy?->name ?? 'Former account' }}</dd></div>
+                        @endif
+                    </dl>
+                    <p class="app-note mt-2 mb-0">{{ $reservation->qrTicket->isUsed() || $status === ReservationStatus::Completed ? 'This ticket cannot be reused. Its original credential is kept as a historical record.' : 'Scanning verifies this ticket only. It becomes used when an Admin completes the reservation.' }}</p>
+                    @if($status === ReservationStatus::Completed && ! $reservation->qrTicket->isUsed())<p class="app-note mt-2 mb-0">QR usage metadata was not recorded for this earlier completion. Refer to the activity below.</p>@endif
                 </div>
             @endif
-        @endif
-    </section>
-    @include('admin.reservations.activity-timeline')
+            <div class="rv-side-block">@include('reservations.payment-status', ['admin' => true])</div>
+        </section>
+        @include('admin.reservations.check-in')
+        @include('reservations.followups')
+    </aside>
+
+    {{-- Details --}}
+    <div class="rv-detail-main">
+        <section class="card dashboard-panel rv-section" aria-labelledby="request-info-heading">
+            <div class="dashboard-panel-heading"><h2 id="request-info-heading"><span class="panel-icon is-indigo" aria-hidden="true"><x-app-icon name="account"/></span>Resident and reservation information</h2></div>
+            <div class="rv-section-body">
+                <dl class="rv-facts">
+                    <div><dt>Service Fee</dt><dd>{{ \App\Support\ServiceFee::format($reservation->fee_snapshot) }}</dd></div>
+                    <div><dt>Resident</dt><dd>{{ $residentName }}</dd></div>
+                    <div><dt>Email</dt><dd>{{ $reservation->user->email }}</dd></div>
+                    @if($contact)<div><dt>Contact</dt><dd>{{ $contact }}</dd></div>@endif
+                    <div><dt>Schedule</dt><dd>{{ $date->format('M j, Y') }} · {{ $timeRange }}</dd></div>
+                    <div><dt>Submitted</dt><dd>{{ $reservation->created_at->timezone('Asia/Manila')->format('F j, Y, g:i A') }}</dd></div>
+                    <div><dt>Last updated</dt><dd>{{ $reservation->updated_at->timezone('Asia/Manila')->format('F j, Y, g:i A') }}</dd></div>
+                </dl>
+                @include('reservations.appointment-note')
+                @include('resident.reservations.document-information')
+                @if($documentPreviewAvailable && ! $status->canPrepareDocument())<a class="btn btn-outline-primary mt-3" href="{{ route('admin.reservations.document-preview.show', $reservation) }}">Preview Document</a>@endif
+            </div>
+        </section>
+        <section class="card dashboard-panel rv-section" aria-labelledby="requirements-heading">
+            <div class="dashboard-panel-heading"><h2 id="requirements-heading"><span class="panel-icon is-gold" aria-hidden="true"><x-app-icon name="document"/></span>Requirements and attachments</h2></div>
+            <div class="rv-section-body">
+                @include('resident.reservations.historical-requirements')
+                @include('resident.reservations.attachments', ['attachmentRoute' => 'admin.reservations.attachments.download'])
+            </div>
+        </section>
+        @include('admin.reservations.document-preparation')
+        @include('admin.reservations.activity-timeline')
+    </div>
 </div>
 @endsection

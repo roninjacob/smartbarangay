@@ -1,28 +1,6 @@
 /* System-wide button system. Imported last so it normalises earlier per-module button rules.
    Component rules with higher specificity (for example the larger auth form buttons) still apply. */
 
-.civic-ui {
-    --sb-btn-blue: #1F5EA8;
-    --sb-btn-blue-dark: #174A85;
-    --sb-btn-blue-darker: #133E70;
-    --sb-btn-tint: #EAF1FA;
-    --sb-btn-tint-border: #C9DAEE;
-    --sb-btn-ink: #0F1B2D;
-    --sb-btn-surface: #FFFFFF;
-    --sb-btn-border: #D5DDE7;
-    --sb-btn-focus: #1F5EA8;
-}
-[data-bs-theme="dark"] .civic-ui {
-    --sb-btn-blue: #2D67B3;
-    --sb-btn-blue-dark: #3874C4;
-    --sb-btn-blue-darker: #285FA7;
-    --sb-btn-tint: #1D3047;
-    --sb-btn-tint-border: #2E4A6B;
-    --sb-btn-ink: #E6EDF5;
-    --sb-btn-surface: #1B2634;
-    --sb-btn-border: #3A4A5E;
-    --sb-btn-focus: #8DBBFF;
-}
 
 /* Size and shape */
 .civic-ui .btn {
@@ -40,55 +18,53 @@
 }
 .civic-ui .btn-lg { min-height: 48px; padding: 11px 22px; border-radius: 10px; font-size: 16px; }
 .civic-ui .btn-sm { min-height: 34px; padding: 5px 12px; border-radius: 10px; font-size: 13px; gap: 6px; }
-.civic-ui .btn.rounded-pill { border-radius: 10px !important; }
 @media (pointer: coarse) {
     /* Comfortable touch targets on phones and tablets. */
     .civic-ui .btn:not(.btn-sm) { min-height: 44px; }
 }
 
 /* Focus */
-.civic-ui .btn:focus-visible { outline: 3px solid var(--sb-btn-focus); outline-offset: 2px; box-shadow: none; }
-.civic-ui :is(.lp-dark, .lp-cta, .bg-dark, .bg-primary) .btn:focus-visible { --sb-btn-focus: #FFFFFF; }
+.civic-ui .btn:focus-visible { outline: 3px solid var(--ds-focus); outline-offset: 2px; box-shadow: none; }
 
 /* Primary: solid civic blue, darker with a 1px lift on hover */
 .civic-ui .btn-primary {
-    --bs-btn-bg: var(--sb-btn-blue);
-    --bs-btn-border-color: var(--sb-btn-blue);
-    --bs-btn-hover-bg: var(--sb-btn-blue-dark);
-    --bs-btn-hover-border-color: var(--sb-btn-blue-dark);
-    --bs-btn-active-bg: var(--sb-btn-blue-darker);
-    --bs-btn-active-border-color: var(--sb-btn-blue-darker);
-    --bs-btn-disabled-bg: var(--sb-btn-blue);
-    --bs-btn-disabled-border-color: var(--sb-btn-blue);
-    background: var(--sb-btn-blue);
-    border-color: var(--sb-btn-blue);
+    --bs-btn-bg: var(--ds-solid);
+    --bs-btn-border-color: var(--ds-solid);
+    --bs-btn-hover-bg: var(--ds-solid-hover);
+    --bs-btn-hover-border-color: var(--ds-solid-hover);
+    --bs-btn-active-bg: var(--ds-solid-active);
+    --bs-btn-active-border-color: var(--ds-solid-active);
+    --bs-btn-disabled-bg: var(--ds-solid);
+    --bs-btn-disabled-border-color: var(--ds-solid);
+    background: var(--ds-solid);
+    border-color: var(--ds-solid);
     color: #FFFFFF;
     box-shadow: 0 1px 2px rgb(15 27 45 / 10%);
 }
 [data-bs-theme="dark"] .civic-ui .btn-primary { border-color: #477FCB; }
-.civic-ui .btn-primary:hover { background: var(--sb-btn-blue-dark); border-color: var(--sb-btn-blue-dark); color: #FFFFFF; box-shadow: 0 6px 16px rgb(31 94 168 / 24%); transform: translateY(-1px); }
+.civic-ui .btn-primary:hover { background: var(--ds-solid-hover); border-color: var(--ds-solid-hover); color: #FFFFFF; box-shadow: 0 6px 16px rgb(31 94 168 / 24%); transform: translateY(-1px); }
 .civic-ui.civic-refined .btn-primary:not(:disabled):active,
-.civic-ui .btn-primary:active { background: var(--sb-btn-blue-darker); border-color: var(--sb-btn-blue-darker); color: #FFFFFF; box-shadow: none; transform: none; }
+.civic-ui .btn-primary:active { background: var(--ds-solid-active); border-color: var(--ds-solid-active); color: #FFFFFF; box-shadow: none; transform: none; }
 
 /* Outline primary: soft tinted */
 .civic-ui .btn-outline-primary {
-    --bs-btn-color: var(--sb-btn-blue-dark);
+    --bs-btn-color: var(--ds-solid-hover);
     --bs-btn-active-color: #FFFFFF;
-    background: var(--sb-btn-tint);
-    border-color: var(--sb-btn-tint-border);
-    color: var(--sb-btn-blue-dark);
+    background: var(--ds-tint);
+    border-color: var(--ds-tint-border);
+    color: var(--ds-solid-hover);
 }
 [data-bs-theme="dark"] .civic-ui .btn-outline-primary { color: #B6D3FF; }
-.civic-ui .btn-outline-primary:hover { background: var(--sb-btn-blue); border-color: var(--sb-btn-blue); color: #FFFFFF; }
+.civic-ui .btn-outline-primary:hover { background: var(--ds-solid); border-color: var(--ds-solid); color: #FFFFFF; }
 [data-bs-theme="dark"] .civic-ui .btn-outline-primary:hover { color: #FFFFFF; }
 
 /* Secondary: clean neutral outline */
-.civic-ui :is(.btn-outline-secondary, .btn-secondary) { background: var(--sb-btn-surface); border-color: var(--sb-btn-border); color: var(--sb-btn-ink); }
-.civic-ui :is(.btn-outline-secondary, .btn-secondary):hover { background: var(--sb-btn-tint); border-color: var(--sb-btn-tint-border); color: var(--sb-btn-ink); }
+.civic-ui :is(.btn-outline-secondary, .btn-secondary) { background: var(--ds-surface); border-color: var(--ds-border-strong); color: var(--ds-ink); }
+.civic-ui :is(.btn-outline-secondary, .btn-secondary):hover { background: var(--ds-tint); border-color: var(--ds-tint-border); color: var(--ds-ink); }
 
 /* Ghost: header and low-emphasis actions */
-.civic-ui .btn-ghost { background: transparent; border: 1px solid transparent; color: var(--sb-btn-ink); }
-.civic-ui .btn-ghost:hover { background: var(--sb-btn-tint); color: var(--sb-btn-ink); }
+.civic-ui .btn-ghost { background: transparent; border: 1px solid transparent; color: var(--ds-ink); }
+.civic-ui .btn-ghost:hover { background: var(--ds-tint); color: var(--ds-ink); }
 
 /* Light and outline-light: for dark or coloured bands */
 .civic-ui .btn-light { background: #FFFFFF; border-color: #FFFFFF; color: #133E70; box-shadow: 0 1px 2px rgb(0 0 0 / 12%); }
@@ -104,18 +80,18 @@
 .civic-ui .btn.disabled { opacity: .55; box-shadow: none; transform: none; cursor: not-allowed; }
 
 @media (prefers-reduced-motion: reduce) {
-    .civic-ui .btn, .civic-ui .btn:hover { transform: none !important; }
+    .civic-ui .btn:hover, .civic-ui .btn:active { transform: none; }
 }
 
 /* Light/dark toggle (public and account pages): 40px square icon button, the icon shows the mode it switches to. */
 .civic-ui .theme-toggle {
     position: relative; display: inline-grid; place-items: center; flex: 0 0 auto;
-    width: 40px; height: 40px; padding: 0; border: 1px solid var(--sb-btn-border); border-radius: 10px;
-    background: var(--sb-btn-surface); color: var(--sb-btn-ink); cursor: pointer;
+    width: 40px; height: 40px; padding: 0; border: 1px solid var(--ds-border-strong); border-radius: 10px;
+    background: var(--ds-surface); color: var(--ds-ink); cursor: pointer;
 }
-.civic-ui .theme-toggle:hover { background: var(--sb-btn-tint); border-color: var(--sb-btn-tint-border); }
-.civic-ui .theme-toggle:focus-visible { outline: 3px solid var(--sb-btn-focus); outline-offset: 2px; }
-.civic-ui .theme-toggle svg { grid-area: 1 / 1; width: 20px; height: 20px; transition: transform .25s ease, opacity .2s ease; }
+.civic-ui .theme-toggle:hover { background: var(--ds-tint); border-color: var(--ds-tint-border); }
+.civic-ui .theme-toggle:focus-visible { outline: 3px solid var(--ds-focus); outline-offset: 2px; }
+.civic-ui .theme-toggle svg { grid-area: 1 / 1; width: 20px; height: 20px; transition: transform var(--ds-dur) var(--ds-ease), opacity var(--ds-dur) var(--ds-ease); }
 .civic-ui .theme-toggle .theme-toggle-sun { opacity: 0; transform: rotate(-45deg) scale(.6); }
 .civic-ui .theme-toggle[aria-pressed="true"] .theme-toggle-moon { opacity: 0; transform: rotate(45deg) scale(.6); }
 .civic-ui .theme-toggle[aria-pressed="true"] .theme-toggle-sun { opacity: 1; transform: none; }

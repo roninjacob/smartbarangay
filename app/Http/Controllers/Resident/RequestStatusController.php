@@ -21,7 +21,7 @@ class RequestStatusController extends Controller
         $owned = $request->user()->reservations()->whereKey($reservation)->firstOrFail();
         $owned->load(['service', 'schedule']);
 
-        return view('resident.request-status.show', [...$this->shellData('Request Progress'), 'reservation' => $owned,
+        return view('resident.request-status.show', [...$this->shellData('Request #'.$owned->id), 'reservation' => $owned,
             // Processing notes and actor details are Admin-only. Do not even select them for Resident views.
             'histories' => $owned->statusHistories()->select(['id', 'reservation_id', 'from_status', 'to_status', 'changed_at', 'resident_message'])
                 ->selectRaw('CASE WHEN to_status = ? AND changed_by = ? THEN notes ELSE NULL END AS cancellation_reason', [ReservationStatus::Cancelled->value, $request->user()->id])

@@ -1,26 +1,10 @@
-import { nextCycleIndex } from './landing-helpers';
+import { cycleStatusChip, prefersReducedMotion, readStatuses } from './motion';
 
 // Progressive enhancements; Laravel remains responsible for validation and authentication.
 
 // Decorative status chip on the account pages' brand panel. Static under reduced motion.
 const statusChip = document.querySelector('[data-auth-page] [data-au-status-cycle]');
-if (statusChip && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    let statuses = [];
-    try { statuses = JSON.parse(statusChip.dataset.auStatusCycle || '[]'); } catch { statuses = []; }
-    let index = 0;
-    if (statuses.length > 1) {
-        window.setInterval(() => {
-            if (document.hidden) return;
-            index = nextCycleIndex(index, statuses.length);
-            statusChip.classList.add('is-changing');
-            window.setTimeout(() => {
-                statusChip.textContent = statuses[index].label;
-                statusChip.dataset.tone = statuses[index].tone;
-                statusChip.classList.remove('is-changing');
-            }, 220);
-        }, 2600);
-    }
-}
+if (statusChip && !prefersReducedMotion()) cycleStatusChip(statusChip, readStatuses(statusChip, 'auStatusCycle'));
 
 document.querySelectorAll('[data-password-toggle]').forEach((button) => {
     const input = document.getElementById(button.dataset.passwordToggle);

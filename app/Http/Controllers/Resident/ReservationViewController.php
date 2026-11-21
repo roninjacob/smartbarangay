@@ -48,7 +48,7 @@ class ReservationViewController extends Controller
         $ownedReservation->load(['service.serviceRequirements', 'schedule', 'attachments.requirementSnapshot', 'requirementSnapshots', 'documentAnswers', 'document.generator', 'payment', 'qrTicket']);
 
         return view('resident.reservations.show', [
-            ...$this->shellData('Reservation Details'), 'reservation' => $ownedReservation,
+            ...$this->shellData('Request #'.$ownedReservation->id), 'reservation' => $ownedReservation,
             'residentMessage' => $ownedReservation->status === ReservationStatus::Rejected
                 ? $ownedReservation->statusHistories()->where('to_status', ReservationStatus::Rejected)->orderByDesc('changed_at')->orderByDesc('id')->value('resident_message') : null,
             'paymentStatus' => app(ReservationPayments::class)->status($ownedReservation),

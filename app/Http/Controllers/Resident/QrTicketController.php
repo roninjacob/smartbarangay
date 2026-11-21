@@ -27,7 +27,7 @@ class QrTicketController extends Controller
             ->with(['reservation.service', 'reservation.schedule'])->firstOrFail();
 
         return response()->view('resident.qr-tickets.show', [
-            ...$this->shellData('QR Ticket Details'), 'ticket' => $ticket, 'reservation' => $ticket->reservation,
+            ...$this->shellData('QR Ticket'), 'ticket' => $ticket, 'reservation' => $ticket->reservation,
         ])->header('Cache-Control', 'private, no-store')->header('Referrer-Policy', 'no-referrer');
     }
 

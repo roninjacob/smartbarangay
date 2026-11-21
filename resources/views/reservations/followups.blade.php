@@ -11,8 +11,9 @@
     $pastAppointment = $appointmentEnd && $appointmentEnd->isPast();
     $reviewBlock = $isOffice ? $followupService->attendanceBlock($reservation) : null;
 @endphp
-<section class="dashboard-panel reservation-panel mt-4 p-3 p-md-4 text-break" aria-labelledby="followup-heading">
-    <h2 class="h5" id="followup-heading">Appointment &amp; cancellation follow-up</h2>
+<section class="card dashboard-panel rv-section text-break" aria-labelledby="followup-heading">
+    <div class="dashboard-panel-heading"><h2 id="followup-heading"><span class="panel-icon is-gold" aria-hidden="true"><x-app-icon name="calendar"/></span>Appointment &amp; cancellation follow-up</h2></div>
+    <div class="rv-section-body">
     @if($errors->has('followup') || $errors->has('decision_message') || $errors->has('confirm_review') || $errors->has('confirm_request') || $errors->has('confirm_missed'))
         <div class="alert alert-danger" role="alert">{{ $errors->first() }}</div>
     @endif
@@ -33,7 +34,7 @@
             <label class="form-label" for="missed-notes">Office attendance review note (Admin only)</label>
             <textarea id="missed-notes" class="form-control" name="notes" rows="2" maxlength="1000" required></textarea>
             <div class="form-check my-3"><input id="confirm-missed" class="form-check-input" type="checkbox" name="confirm_missed" value="1" required><label class="form-check-label" for="confirm-missed">I confirmed the appointment was missed; absence of a scan alone is not proof.</label></div>
-            <button class="btn btn-outline-secondary" type="submit">Record missed appointment</button>
+            <button class="btn btn-outline-secondary w-100" type="submit">Record missed appointment</button>
         </form>
     @endif
     @if($isOffice && $reservation->status === \App\Enums\ReservationStatus::ReadyForPickup && $pastAppointment && ! $attendanceReview && $reviewBlock)<p class="app-note">Attendance review: {{ $reviewBlock }}</p>@endif
@@ -53,7 +54,7 @@
             </form>
         @endif
     @elseif(! $isOffice && ! $cancellationBlock)
-        <h3 class="h6 mt-4">Need to stop this request?</h3><p class="app-note">Processing has started. Request cancellation and wait for the office decision. Submitting this form does not cancel the reservation.</p>
+        <h3 class="rv-subheading">Need to stop this request?</h3><p class="app-note">Processing has started. Request cancellation and wait for the office decision. Submitting this form does not cancel the reservation.</p>
         <form method="POST" action="{{ route('resident.reservations.cancellation-requests.store', $reservation) }}" data-service-submit>
             @csrf
             <label for="followup-reason" class="form-label">Reason for cancellation</label><textarea class="form-control" id="followup-reason" name="reason" maxlength="1000" rows="3" required>{{ is_string(old('reason')) ? old('reason') : '' }}</textarea>
@@ -65,8 +66,9 @@
         <p class="app-note mt-3">{{ $cancellationBlock }}</p>
     @endif
     @if($cancellationReviews->where('status', '!=', 'pending')->isNotEmpty())
-        <h3 class="h6 mt-4">Recent cancellation decisions</h3>
-        @foreach($cancellationReviews->where('status', '!=', 'pending') as $review)<div class="border rounded-3 p-3 mt-2"><strong>{{ ucfirst($review->status) }}</strong> · {{ $review->reviewed_at->timezone('Asia/Manila')->format('M j, Y g:i A') }}<p class="mb-0 mt-2">{{ $review->decision_message }}</p></div>@endforeach
+        <h3 class="rv-subheading">Recent cancellation decisions</h3>
+        @foreach($cancellationReviews->where('status', '!=', 'pending') as $review)<div class="rv-note"><strong>{{ ucfirst($review->status) }}</strong> · {{ $review->reviewed_at->timezone('Asia/Manila')->format('M j, Y g:i A') }}<p class="mb-0 mt-2">{{ $review->decision_message }}</p></div>@endforeach
     @endif
     <p class="app-note mt-3 mb-0">Rescheduling requires office coordination. Existing appointment snapshots are not edited. Cancellation, arrival, payment and completion are separate actions.</p>
+    </div>
 </section>

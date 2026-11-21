@@ -1,13 +1,13 @@
-import { countUpValue, headerIsCondensed, nextCycleIndex } from './landing-helpers';
+import { headerIsCondensed } from './landing-helpers';
+import { countUp, cycleStatusChip, prefersReducedMotion, readStatuses } from './motion';
 
 // Presentation-only behaviour for the public landing page. Content is fully visible without JS;
 // under prefers-reduced-motion nothing animates and values are shown as rendered by the server.
 const root = document.querySelector('[data-landing]');
 
 if (root) {
-    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
     const canObserve = 'IntersectionObserver' in window;
-    const animate = canObserve && !reduced.matches;
+    const animate = canObserve && !prefersReducedMotion();
     if (animate) root.classList.add('lp-motion');
 
     // Header: transparent at the top, solid and compact after scrolling.
@@ -52,46 +52,21 @@ if (root) {
 
         // Count up the real service count once it is in view.
         root.querySelectorAll('[data-lp-count]').forEach((el) => {
-            const target = Number(el.dataset.lpCount);
-            if (!Number.isFinite(target) || target <= 0) return;
-            el.textContent = '0';
             const counter = new IntersectionObserver(([entry]) => {
                 if (!entry.isIntersecting) return;
                 counter.disconnect();
-                const startedAt = performance.now();
-                const tick = (now) => {
-                    const progress = (now - startedAt) / 900;
-                    el.textContent = String(countUpValue(target, progress));
-                    if (progress < 1) requestAnimationFrame(tick);
-                };
-                requestAnimationFrame(tick);
+                countUp(el, Number(el.dataset.lpCount));
             });
             counter.observe(el);
         });
 
-        // Cycle the decorative status chip in the hero preview.
+        // Cycle the decorative status chip in the hero preview; the progress bars follow it.
         const chip = root.querySelector('[data-lp-status-cycle]');
         const steps = [...root.querySelectorAll('.lp-card-progress li')];
-        let statuses = [];
-        try { statuses = JSON.parse(chip?.dataset.lpStatusCycle || '[]'); } catch { statuses = []; }
-        if (chip && statuses.length > 1) {
-            let index = 0;
-            const show = () => {
-                chip.classList.add('is-changing');
-                window.setTimeout(() => {
-                    chip.textContent = statuses[index].label;
-                    chip.dataset.tone = statuses[index].tone;
-                    steps.forEach((step, i) => step.classList.toggle('is-done', i <= index));
-                    chip.classList.remove('is-changing');
-                }, 220);
-            };
-            steps.forEach((step, i) => step.classList.toggle('is-done', i === 0));
-            window.setInterval(() => {
-                if (document.hidden) return;
-                index = nextCycleIndex(index, statuses.length);
-                show();
-            }, 2600);
-        }
+        steps.forEach((step, i) => step.classList.toggle('is-done', i === 0));
+        cycleStatusChip(chip, readStatuses(chip, 'lpStatusCycle'), (index) => {
+            steps.forEach((step, i) => step.classList.toggle('is-done', i <= index));
+        });
 
         // Cursor spotlight on service cards, for precise pointers only.
         if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) {

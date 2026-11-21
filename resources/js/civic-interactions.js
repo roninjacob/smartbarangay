@@ -3,7 +3,6 @@ import { filePresentation } from './civic-interaction-helpers';
 
 // Presentation enhancements never run inside the dedicated official print view.
 if (!document.querySelector('[data-print-document]')) {
-    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 
     // Report detail rows become labelled records on phones; headers and values stay authoritative.
     document.querySelectorAll('.report-table table,.collection-table table').forEach((table) => {
@@ -25,18 +24,6 @@ if (!document.querySelector('[data-print-document]')) {
         table.classList.add('friendly-records');
     });
 
-    // Content stays visible without JS and when IntersectionObserver is unavailable.
-    if ('IntersectionObserver' in window && !reducedMotion.matches) {
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(({ target, isIntersecting }) => {
-                if (!isIntersecting) return;
-                target.classList.add('civic-enter');
-                target.addEventListener('animationend', () => target.classList.remove('civic-enter'), { once: true });
-                observer.unobserve(target);
-            });
-        }, { threshold: 0.12 });
-        document.querySelectorAll('.app-page-heading,.reservation-progress').forEach((element) => observer.observe(element));
-    }
 
     // Only routine profile/preferences success becomes a persistent dismissible toast.
     document.querySelectorAll('[data-routine-toast]').forEach((feedback) => {

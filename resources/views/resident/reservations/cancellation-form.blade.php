@@ -1,15 +1,17 @@
 @if($reservation->status->canBeCancelledByResident())
-<section class="dashboard-panel reservation-panel mt-4" aria-labelledby="cancellation-heading">
-    <h2 id="cancellation-heading">Cancel this reservation</h2>
-    <p class="reservation-intro">You can cancel while your request is Pending. Cancellation stops processing and preserves your request history.</p>
+<section class="card dashboard-panel rv-section" aria-labelledby="cancellation-heading">
+    <div class="dashboard-panel-heading"><h2 id="cancellation-heading"><span class="panel-icon is-red" aria-hidden="true"><x-app-icon name="status"/></span>Cancel this reservation</h2></div>
+    <div class="rv-section-body">
+    <p class="app-note">You can cancel while your request is Pending. Cancellation stops processing and keeps your request history.</p>
     <form method="POST" action="{{ route('resident.reservations.cancel', $reservation) }}" data-reservation-cancel>
         @csrf
-        <label for="cancellation-reason" class="form-label">Cancellation reason <span class="service-required">(required)</span></label>
+        <label for="cancellation-reason" class="form-label">Cancellation reason <span class="rv-tag is-required">Required</span></label>
         <textarea id="cancellation-reason" name="reason" @class(['form-control', 'is-invalid' => $errors->has('reason')]) rows="3" maxlength="2000" required aria-describedby="cancellation-help{{ $errors->has('reason') ? ' cancellation-error' : '' }}">{{ is_string(old('reason')) ? old('reason') : '' }}</textarea>
         <div id="cancellation-help" class="form-text">Explain why you no longer need this reservation. Maximum 2,000 characters.</div>
         @error('reason')<div class="invalid-feedback" id="cancellation-error">{{ $message }}</div>@enderror
-        <button class="btn btn-outline-danger mt-3 reservation-details-link" type="submit">Cancel reservation</button>
+        <button class="btn btn-outline-danger w-100 mt-3" type="submit">Cancel reservation</button>
     </form>
+    </div>
 </section>
 <div class="modal fade" id="reservation-cancel-confirmation" tabindex="-1" aria-labelledby="cancel-confirmation-heading" aria-describedby="cancel-confirmation-description" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered"><section class="modal-content">

@@ -34,8 +34,8 @@
 <section class="dash-stats" aria-label="Your reservation summary">
     <x-dashboard-stat label="Total reservations" :value="$totalReservations" icon="document"/>
     <x-dashboard-stat label="In progress" :value="$inProgress" icon="status" note="Pending, under review or approved" tone="gold"/>
-    <x-dashboard-stat label="Ready for pickup" :value="$readyCount" icon="services" tone="green"/>
-    <x-dashboard-stat label="Completed" :value="$counts[\App\Enums\ReservationStatus::Completed->value]" icon="check" tone="violet"/>
+    <x-dashboard-stat label="Ready for pickup" :value="$readyCount" icon="services" tone="teal"/>
+    <x-dashboard-stat label="Completed" :value="$counts[\App\Enums\ReservationStatus::Completed->value]" icon="check" tone="indigo"/>
 </section>
 
 <div class="dash-grid">
@@ -64,7 +64,7 @@
         </section>
         <x-dashboard-statuses :statuses="$statuses" :counts="$counts" :total="$totalReservations"/>
         <section class="card dashboard-panel" aria-labelledby="quick-actions-heading">
-            <div class="dashboard-panel-heading"><h2 id="quick-actions-heading">Quick access</h2></div>
+            <div class="dashboard-panel-heading"><h2 id="quick-actions-heading"><span class="panel-icon is-gold" aria-hidden="true"><x-app-icon name="dashboard"/></span>Quick access</h2></div>
             <div class="quick-tiles">
                 @if($canSubmit)<a class="quick-tile" href="{{ route('resident.reservations.create') }}"><span class="quick-tile-icon"><x-app-icon name="plus"/></span>New reservation</a>@endif
                 <a class="quick-tile" href="{{ route('resident.reservations.index') }}"><span class="quick-tile-icon"><x-app-icon name="document"/></span>My reservations</a>

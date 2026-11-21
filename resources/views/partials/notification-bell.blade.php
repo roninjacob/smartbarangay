@@ -1,6 +1,6 @@
 @php($notificationRoute = auth()->user()->role->value.'.notifications.')
 <div class="dropdown notification-dropdown">
-    <button class="notification-bell btn" type="button" id="notification-bell" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false" aria-controls="notification-preview" aria-label="Notifications, {{ $notificationUnreadCount }} unread">
+    <button class="notification-bell btn" type="button" id="notification-bell" data-bs-toggle="dropdown" data-bs-display="static" data-bs-auto-close="outside" aria-expanded="false" aria-controls="notification-preview" aria-label="Notifications, {{ $notificationUnreadCount }} unread">
         <x-app-icon name="bell"/>
         @if($notificationUnreadCount > 0)<span class="notification-count" aria-hidden="true">{{ $notificationUnreadCount > 99 ? '99+' : $notificationUnreadCount }}</span>@endif
     </button>

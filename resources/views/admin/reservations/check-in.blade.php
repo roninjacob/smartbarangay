@@ -1,13 +1,14 @@
-<section class="card dashboard-panel reservation-panel mt-4" aria-labelledby="checkin-heading">
-    <h2 id="checkin-heading">Resident Check-In</h2>
+<section class="card dashboard-panel rv-section" aria-labelledby="checkin-heading">
+    <div class="dashboard-panel-heading"><h2 id="checkin-heading"><span class="panel-icon is-teal" aria-hidden="true"><x-app-icon name="qr"/></span>Resident Check-In</h2></div>
+    <div class="rv-section-body">
     @if($checkin)
-        <p class="mb-2"><span class="badge text-bg-success">Checked In</span> <span class="text-secondary">Already checked in</span></p>
-        <dl class="reservation-summary mb-0">
+        <p class="mb-2"><span class="reservation-status tone-approved"><span aria-hidden="true"></span>Checked In</span> <span class="app-note">Already checked in</span></p>
+        <dl class="rv-facts">
             <div><dt>Arrival</dt><dd>{{ $checkin->verified_at->timezone('Asia/Manila')->format('F j, Y, g:i A') }} · Philippine time</dd></div>
             <div><dt>Recorded by</dt><dd>{{ $checkin->verifier?->name ?? 'Former account' }}</dd></div>
         </dl>
     @elseif($reservation->status !== \App\Enums\ReservationStatus::ReadyForPickup)
-        <p class="mb-0 text-secondary">{{ $reservation->status === \App\Enums\ReservationStatus::Completed ? 'Transaction already completed.' : 'Check-in unavailable. This reservation must be Ready for Pickup.' }}</p>
+        <p class="mb-0 app-note">{{ $reservation->status === \App\Enums\ReservationStatus::Completed ? 'Transaction already completed.' : 'Check-in unavailable. This reservation must be Ready for Pickup.' }}</p>
     @elseif($checkinVerified)
         @if($reservation->hasAppointmentSnapshot() && app(\App\Services\ReservationFollowups::class)->appointmentEnd($reservation)->isPast())
             <div class="alert alert-info">This is a late visit. Confirm that the office is accepting this arrival before recording check-in. A previous missed-appointment review remains in history.</div>
@@ -17,10 +18,11 @@
         <form method="POST" action="{{ route('admin.reservations.check-in.store', $reservation) }}" data-service-submit>
             @csrf
             <div class="form-check mb-3"><input class="form-check-input" id="confirm-checkin" type="checkbox" name="confirm_checkin" value="1" required><label class="form-check-label" for="confirm-checkin">I confirm this Resident has arrived.</label></div>
-            <button class="btn btn-primary" type="submit">Confirm Check-In</button>
+            <button class="btn btn-primary w-100" type="submit">Confirm Check-In</button>
         </form>
     @else
-        <p class="mb-2">Not checked in. Scan and verify this QR ticket before confirming arrival.</p>
-        <a class="btn btn-outline-primary" href="{{ route('admin.qr-verification.index') }}">Verify QR for Check-In</a>
+        <p class="mb-3">Not checked in. Scan and verify this QR ticket before confirming arrival.</p>
+        <a class="btn btn-outline-primary w-100" href="{{ route('admin.qr-verification.index') }}">Verify QR for Check-In</a>
     @endif
+    </div>
 </section>

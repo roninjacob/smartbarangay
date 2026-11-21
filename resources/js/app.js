@@ -22,5 +22,6 @@ import './civic-interactions';
 import './landing';
 import './theme-toggle';
 import './app-shell';
+import './scrollbar-lock';
 
 import './report-interactions';

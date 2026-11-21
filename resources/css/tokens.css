@@ -1,0 +1,189 @@
+/* SmartBarangay design tokens: the single source of truth for colour, type, radius, shadow and motion.
+   Every other stylesheet reads these variables; none of them defines its own palette. */
+
+/* Metric-matched fallback so the Plus Jakarta Sans swap does not reflow text (values measured against Arial). */
+@font-face {
+    font-family: "Plus Jakarta Sans Fallback";
+    src: local("Arial"), local("ArialMT");
+    size-adjust: 104%;
+    ascent-override: 99.81%;
+    descent-override: 21.35%;
+    line-gap-override: 0%;
+}
+
+:root {
+    /* Brand */
+    --ds-blue: #1F5EA8;
+    --ds-blue-dark: #174A85;
+    --ds-blue-deep: #12396A;
+    --ds-blue-bright: #3B7DD8;
+    --ds-green: #2F855A;
+    --ds-green-dark: #1F6B45;
+    --ds-gold: #E0A93B;
+    --ds-gold-dark: #8A5A07;
+    --ds-teal: #166154;
+    --ds-teal-bright: #1C9A86;
+    --ds-indigo: #4F3BB0;
+    --ds-danger: #B42318;
+    --ds-danger-bright: #D64545;
+
+    /* Neutrals and surfaces */
+    --ds-ink: #0F1B2D;
+    --ds-text: #334155;
+    --ds-muted: #556377;
+    --ds-page: #F3F7FC;
+    --ds-page-gradient: linear-gradient(180deg, #EAF2FC 0, #F3F7FC 360px, #F5F8FB 100%);
+    --ds-surface: #FFFFFF;
+    --ds-soft: #F6F8FB;
+    --ds-border: #E2E8F0;
+    --ds-border-strong: #D3DCE7;
+    --ds-input-border: #C9D3DF;
+    --ds-hover: #F2F6FB;
+
+    /* Tints (status and accent backgrounds) */
+    --ds-tint: #EAF1FA;
+    --ds-tint-border: #C9DAEE;
+    --ds-tint-green: #E2F3EA;
+    --ds-tint-gold: #FBF1DC;
+    --ds-tint-teal: #DDF3EF;
+    --ds-tint-indigo: #EEEAFB;
+    --ds-tint-red: #FDECEC;
+    --ds-tint-gray: #EEF1F5;
+
+    /* Solid controls */
+    --ds-solid: #1F5EA8;
+    --ds-solid-hover: #174A85;
+    --ds-solid-active: #133E70;
+    --ds-focus: #1F5EA8;
+
+    /* Glass (solid rgba: no backdrop-filter, which seams under animation) */
+    --ds-glass: rgb(255 255 255 / 86%);
+    --ds-glass-border: rgb(255 255 255 / 90%);
+    --ds-glass-on-brand: rgb(255 255 255 / 14%);
+    --ds-glass-on-brand-border: rgb(255 255 255 / 28%);
+
+    /* Brand gradient used by heroes and brand panels */
+    --ds-brand-gradient: linear-gradient(135deg, #1F5EA8 0%, #174A85 60%, #12396A 100%);
+    --ds-brand-gradient-warm: linear-gradient(135deg, #1F5EA8 0%, #1D5B8E 52%, #1F6B5A 100%);
+
+    /* Shape and depth */
+    --ds-radius-sm: 10px;
+    --ds-radius: 12px;
+    --ds-radius-lg: 16px;
+    --ds-radius-xl: 20px;
+    --ds-shadow: 0 1px 2px rgb(15 27 45 / 4%), 0 6px 20px rgb(15 27 45 / 5%);
+    --ds-shadow-lift: 0 2px 4px rgb(15 27 45 / 5%), 0 18px 40px rgb(31 94 168 / 14%);
+
+    /* Type */
+    --ds-font: "Plus Jakarta Sans Variable", "Plus Jakarta Sans Fallback", "Segoe UI", system-ui, -apple-system, Arial, sans-serif;
+
+    /* Motion: one easing, short UI durations, reveals capped at 500ms */
+    --ds-ease: cubic-bezier(.2, .7, .2, 1);
+    --ds-dur-fast: 150ms;
+    --ds-dur: 200ms;
+    --ds-dur-slow: 300ms;
+    --ds-dur-reveal: 500ms;
+
+    /* Layout */
+    --ds-sidebar-width: 264px;
+    --ds-topbar-height: 64px;
+
+    /* Legacy names still read by older module stylesheets; they follow the tokens above. */
+    --civic-blue: var(--ds-blue);
+    --civic-dark: var(--ds-blue-dark);
+    --community-green: var(--ds-green);
+    --warm-gold: var(--ds-gold);
+    --page-background: var(--ds-page);
+    --surface: var(--ds-surface);
+    --main-text: var(--ds-ink);
+    --muted-text: var(--ds-muted);
+    --border-color: var(--ds-border);
+    --danger: #DC3545;
+    --sb-soft: var(--ds-tint);
+    --sb-mint: var(--ds-tint-green);
+    --sb-shadow: var(--ds-shadow);
+    --sb-radius: var(--ds-radius-lg);
+    --interaction-blue: var(--ds-blue);
+    --interaction-soft: var(--ds-tint);
+
+    /* Bootstrap */
+    --bs-body-font-family: var(--ds-font);
+    --bs-body-color: var(--ds-text);
+    --bs-body-bg: var(--ds-page);
+    --bs-primary-rgb: 31, 94, 168;
+    --bs-link-color: var(--ds-blue);
+    --bs-link-hover-color: var(--ds-blue-dark);
+    --bs-border-color: var(--ds-border);
+    --bs-secondary-color: var(--ds-muted);
+}
+
+:root[data-bs-theme="dark"] {
+    --ds-blue: #8DBBFF;
+    --ds-blue-dark: #BDD6FF;
+    --ds-blue-bright: #6FA8FF;
+    --ds-green: #8ED6B0;
+    --ds-green-dark: #9FDDBA;
+    --ds-gold: #F3C96B;
+    --ds-gold-dark: #F3C96B;
+    --ds-teal: #86DCC7;
+    --ds-teal-bright: #4CC3AD;
+    --ds-indigo: #C9BBFF;
+    --ds-danger: #FFB4AD;
+    --ds-danger-bright: #F07167;
+
+    --ds-ink: #EEF3F9;
+    --ds-text: #CAD5E2;
+    --ds-muted: #A9B7C8;
+    --ds-page: #0B1422;
+    --ds-page-gradient: linear-gradient(180deg, #0F1D33 0, #0B1422 360px, #0A121E 100%);
+    --ds-surface: #132034;
+    --ds-soft: #101B2C;
+    --ds-border: #233550;
+    --ds-border-strong: #31476A;
+    --ds-input-border: #3A4F6E;
+    --ds-hover: #182A43;
+
+    --ds-tint: #1B3150;
+    --ds-tint-border: #2E4A6B;
+    --ds-tint-green: #143626;
+    --ds-tint-gold: #3A2E14;
+    --ds-tint-teal: #12362F;
+    --ds-tint-indigo: #282248;
+    --ds-tint-red: #3A1D1B;
+    --ds-tint-gray: #1E2B3D;
+
+    --ds-solid: #2D67B3;
+    --ds-solid-hover: #3874C4;
+    --ds-solid-active: #285FA7;
+    --ds-focus: #8DBBFF;
+
+    --ds-glass: rgb(19 32 52 / 88%);
+    --ds-glass-border: rgb(255 255 255 / 10%);
+
+    --ds-brand-gradient: linear-gradient(135deg, #173F70 0%, #112E52 60%, #0C2240 100%);
+    --ds-brand-gradient-warm: linear-gradient(135deg, #173F70 0%, #123A52 55%, #10372F 100%);
+
+    --ds-shadow: 0 1px 2px rgb(0 0 0 / 30%), 0 8px 24px rgb(0 0 0 / 24%);
+    --ds-shadow-lift: 0 2px 4px rgb(0 0 0 / 30%), 0 18px 40px rgb(0 0 0 / 40%);
+
+    --danger: #F07167;
+    --bs-primary-rgb: 141, 187, 255;
+}
+
+/* Always reserve the scrollbar track so short and long pages share the same width (no horizontal jump).
+   overflow-y: scroll is used because scrollbar-gutter on the root is not honoured by every engine. */
+html { overflow-y: scroll; }
+body.civic-ui { font-family: var(--ds-font); color: var(--ds-text); background: var(--ds-page); }
+
+/* Reduced motion: the one global switch for every stylesheet.
+   !important is deliberate here (and for Bootstrap's .visually-hidden): it must beat component-level transitions. */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 1ms !important;
+        animation-delay: 0ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 1ms !important;
+        transition-delay: 0ms !important;
+        scroll-behavior: auto !important;
+    }
+}

@@ -4,8 +4,9 @@
     $notificationRoute = auth()->user()->role->value.'.notifications.';
     $category = $content['category'] ?? 'status_update';
     $icon = match($category) { 'success', 'completion', 'confirmation' => 'check', 'payment' => 'document', 'action_required', 'important_status' => 'bell', default => 'status' };
+    $tone = match($category) { 'success', 'completion', 'confirmation' => 'tone-success', 'payment' => 'tone-payment', 'action_required', 'important_status' => 'tone-attention', default => '' };
 @endphp
-<article class="notification-item {{ $unread ? 'is-unread' : '' }} {{ $compact ? 'is-compact' : '' }}">
+<article @class(['notification-item', $tone, 'is-unread' => $unread, 'is-compact' => $compact])>
     <span class="notification-symbol" aria-hidden="true"><x-app-icon :name="$icon"/></span>
     <div class="notification-body">
         <div class="notification-title"><h2>{{ $content['title'] ?? 'Notification' }}</h2>@if($unread)<span class="notification-unread">Unread</span>@else<span class="notification-read">Read</span>@endif</div>

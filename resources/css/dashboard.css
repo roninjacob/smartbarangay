@@ -1,232 +1,249 @@
-/* Dashboards and the shared building blocks used across module pages:
-   panels, tables, status pills, stat cards, empty states and the account modal.
-   Tokens (--sh-*) come from app-shell.css. */
+/* Shared building blocks (panels, tables, status colours, stat cards, empty states, modal) and the dashboards.
+   Selectors use :where() so module stylesheets can still adjust them. Tokens come from tokens.css. */
 
 .min-w-0 { min-width: 0; }
 .app-icon { width: 21px; height: 21px; flex: 0 0 21px; }
 
+/* ---------- Status colour system: one definition per status, read by pills, bars, steppers and timelines ---------- */
+:where(.status-pending, .tone-pending) { --st-bg: var(--ds-tint-gold); --st-fg: var(--ds-gold-dark); --st-solid: var(--ds-gold); }
+:where(.status-under_review, .tone-under_review) { --st-bg: var(--ds-tint); --st-fg: var(--ds-blue-dark); --st-solid: var(--ds-blue-bright); }
+:where(.status-approved, .tone-approved) { --st-bg: var(--ds-tint-green); --st-fg: var(--ds-green-dark); --st-solid: var(--ds-green); }
+:where(.status-ready_for_pickup, .tone-ready_for_pickup) { --st-bg: var(--ds-tint-teal); --st-fg: var(--ds-teal); --st-solid: var(--ds-teal-bright); }
+:where(.status-completed, .tone-completed) { --st-bg: var(--ds-tint-indigo); --st-fg: var(--ds-indigo); --st-solid: #6C55D4; }
+:where(.status-rejected, .tone-rejected) { --st-bg: var(--ds-tint-red); --st-fg: var(--ds-danger); --st-solid: var(--ds-danger-bright); }
+:where(.status-cancelled, .tone-cancelled) { --st-bg: var(--ds-tint-gray); --st-fg: var(--ds-muted); --st-solid: #94A3B8; }
+
+:where(.civic-ui.civic-refined) .reservation-status { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; background: var(--st-bg, var(--ds-tint-gray)); color: var(--st-fg, var(--ds-muted)); font-size: .75rem; font-weight: 700; line-height: 1.4; white-space: nowrap; }
+:where(.civic-ui.civic-refined) .reservation-status > span { width: 6px; height: 6px; flex: 0 0 6px; border-radius: 50%; background: var(--st-solid, currentColor); }
+
 /* ---------- Shared text helpers (also used by module pages) ---------- */
-:where(.civic-ui.civic-refined) .app-note { color: var(--sh-muted); font-size: .8125rem; line-height: 1.65; }
-:where(.civic-ui.civic-refined) .app-eyebrow { display: block; margin-bottom: 6px; color: var(--sh-muted); font-size: .6875rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
-:where(.civic-ui.civic-refined) .panel-description { margin: 4px 0 0; color: var(--sh-muted); font-size: .875rem; line-height: 1.55; }
-:where(.civic-ui.civic-refined) .panel-link { display: inline-flex; align-items: center; gap: 6px; color: var(--sh-blue); font-size: .875rem; font-weight: 700; text-decoration: none; white-space: nowrap; }
-:where(.civic-ui.civic-refined) .panel-link:hover { color: var(--sh-blue-dark); text-decoration: underline; }
+:where(.civic-ui.civic-refined) .app-note { color: var(--ds-muted); font-size: .8125rem; line-height: 1.65; }
+:where(.civic-ui.civic-refined) .app-eyebrow { display: block; margin-bottom: 6px; color: var(--ds-muted); font-size: .6875rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+:where(.civic-ui.civic-refined) .panel-description { margin: 4px 0 0; color: var(--ds-muted); font-size: .875rem; line-height: 1.55; }
+:where(.civic-ui.civic-refined) .panel-link { display: inline-flex; align-items: center; gap: 6px; color: var(--ds-blue); font-size: .875rem; font-weight: 700; text-decoration: none; white-space: nowrap; }
+:where(.civic-ui.civic-refined) .panel-link:hover { color: var(--ds-blue-dark); text-decoration: underline; }
 :where(.civic-ui.civic-refined) .panel-link .app-icon { width: 16px; height: 16px; flex: 0 0 16px; }
-:where(.civic-ui.civic-refined) .panel-count { color: var(--sh-muted); font-size: .8125rem; font-weight: 600; white-space: nowrap; }
-:where(.civic-ui.civic-refined) .reservation-reference { display: block; margin-top: 3px; color: var(--sh-muted); font-size: .75rem; font-weight: 500; }
-:where(.civic-ui.civic-refined) .reservation-service { display: block; color: var(--sh-ink); font-weight: 600; overflow-wrap: anywhere; }
-.reservation-resident { display: block; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+:where(.civic-ui.civic-refined) .panel-count { color: var(--ds-muted); font-size: .8125rem; font-weight: 600; white-space: nowrap; }
+:where(.civic-ui.civic-refined) .reservation-reference { display: block; margin-top: 3px; color: var(--ds-muted); font-size: .75rem; font-weight: 500; }
+:where(.civic-ui.civic-refined) .reservation-service { display: block; color: var(--ds-ink); font-weight: 600; overflow-wrap: anywhere; }
 
 /* ---------- Panels ---------- */
-:where(.civic-ui.civic-refined) .dashboard-panel { position: relative; min-width: 0; border: 1px solid var(--sh-border); border-radius: 16px; background: var(--sh-surface); box-shadow: var(--sh-shadow); color: var(--sh-text); }
-:where(.civic-ui.civic-refined) .dashboard-panel-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 18px 22px; border-bottom: 1px solid var(--sh-border); }
-:where(.civic-ui.civic-refined) .dashboard-panel-heading h2 { margin: 0; color: var(--sh-ink); font-size: 1.0625rem; font-weight: 800; letter-spacing: -0.015em; line-height: 1.3; }
+:where(.civic-ui.civic-refined) .dashboard-panel { position: relative; min-width: 0; border: 1px solid var(--ds-border); border-radius: var(--ds-radius-lg); background: var(--ds-surface); box-shadow: var(--ds-shadow); color: var(--ds-text); }
+:where(.civic-ui.civic-refined) .dashboard-panel-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 22px; border-bottom: 1px solid var(--ds-border); }
+:where(.civic-ui.civic-refined) .dashboard-panel-heading h2 { display: flex; align-items: center; gap: 10px; margin: 0; color: var(--ds-ink); font-size: 1.0625rem; font-weight: 800; letter-spacing: -0.015em; line-height: 1.3; }
 :where(.civic-ui.civic-refined) .dashboard-panel-heading > div { min-width: 0; }
+/* Coloured icon tile in a panel heading: .panel-icon plus a tone (blue default, green, gold, teal, indigo). */
+:where(.civic-ui.civic-refined) .panel-icon { --pi-bg: var(--ds-tint); --pi-fg: var(--ds-blue); display: inline-grid; place-items: center; width: 32px; height: 32px; flex: 0 0 32px; border-radius: 9px; background: var(--pi-bg); color: var(--pi-fg); }
+:where(.civic-ui.civic-refined) .panel-icon .app-icon { width: 17px; height: 17px; flex: 0 0 17px; }
+:where(.civic-ui.civic-refined) .panel-icon.is-green { --pi-bg: var(--ds-tint-green); --pi-fg: var(--ds-green-dark); }
+:where(.civic-ui.civic-refined) .panel-icon.is-gold { --pi-bg: var(--ds-tint-gold); --pi-fg: var(--ds-gold-dark); }
+:where(.civic-ui.civic-refined) .panel-icon.is-teal { --pi-bg: var(--ds-tint-teal); --pi-fg: var(--ds-teal); }
+:where(.civic-ui.civic-refined) .panel-icon.is-indigo { --pi-bg: var(--ds-tint-indigo); --pi-fg: var(--ds-indigo); }
+:where(.civic-ui.civic-refined) .panel-icon.is-red { --pi-bg: var(--ds-tint-red); --pi-fg: var(--ds-danger); }
 
-/* ---------- Tables (dashboard tables and module .table inside the app) ---------- */
-:where(.civic-ui.civic-refined) .app-main :is(.table, .dashboard-table) { --bs-table-bg: transparent; --bs-table-color: var(--sh-text); --bs-table-border-color: var(--sh-border); margin-bottom: 0; font-size: .875rem; }
+/* ---------- Tables (dashboard tables and module .table inside the app) ----------
+   Specificity is kept at one class plus elements: above Bootstrap's base .table rules,
+   below module rules (for example schedule cards), which can restyle cells freely. */
+:where(.civic-ui.civic-refined .app-main) :is(.table, .dashboard-table) { --bs-table-bg: transparent; --bs-table-color: var(--ds-text); --bs-table-border-color: var(--ds-border); margin-bottom: 0; font-size: .875rem; }
 :where(.civic-ui.civic-refined) .dashboard-table { min-width: 560px; }
-:where(.civic-ui.civic-refined) .app-main :is(.table, .dashboard-table) thead th { position: sticky; top: 0; z-index: 1; padding: 12px 16px; border-bottom: 1px solid var(--sh-border); background: color-mix(in srgb, var(--sh-page) 70%, var(--sh-surface)); color: var(--sh-muted); font-size: .75rem; font-weight: 700; letter-spacing: .02em; white-space: nowrap; }
-:where(.civic-ui.civic-refined) .app-main :is(.table, .dashboard-table) tbody :is(th, td) { height: 56px; padding: 12px 16px; border-color: var(--sh-border); vertical-align: middle; line-height: 1.5; }
-:where(.civic-ui.civic-refined) .app-main :is(.table, .dashboard-table) :is(thead, tbody) tr > :first-child { padding-left: 22px; }
-:where(.civic-ui.civic-refined) .app-main :is(.table, .dashboard-table) :is(thead, tbody) tr > :last-child { padding-right: 22px; }
-:where(.civic-ui.civic-refined) .app-main :is(.table, .dashboard-table) tbody tr:last-child > * { border-bottom: 0; }
-:where(.civic-ui.civic-refined) .app-main :is(.table, .dashboard-table) tbody tr > * { transition: background-color .15s ease; }
-:where(.civic-ui.civic-refined) .app-main :is(.table, .dashboard-table) tbody tr:is(:hover, :focus-within) > * { background: var(--sh-hover); }
-:where(.civic-ui.civic-refined) .dashboard-table tbody th { font-weight: 500; }
-:where(.civic-ui.civic-refined) .table-sm tbody :is(th, td) { height: auto; padding-block: 8px; }
-
-/* ---------- Status pills (tones match the landing page chips) ---------- */
-:where(.civic-ui.civic-refined) .reservation-status { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border: 1px solid transparent; border-radius: 999px; background: #EEF1F5; color: #475467; font-size: .75rem; font-weight: 700; line-height: 1.4; white-space: nowrap; }
-:where(.civic-ui.civic-refined) .reservation-status > span { width: 6px; height: 6px; flex: 0 0 6px; border-radius: 50%; background: currentColor; }
-:where(.civic-ui.civic-refined) .status-pending { background: #FBF1DC; color: #8A5A07; }
-:where(.civic-ui.civic-refined) .status-under_review { background: #E3EDFA; color: #174A85; }
-:where(.civic-ui.civic-refined) .status-approved { background: #E2F3EA; color: #1F6B45; }
-:where(.civic-ui.civic-refined) .status-ready_for_pickup { background: #DDF3EF; color: #166154; }
-:where(.civic-ui.civic-refined) .status-completed { background: #EEF1F5; color: #475467; }
-:where(.civic-ui.civic-refined) .status-rejected { background: #FDECEC; color: #A8231B; }
-:where(.civic-ui.civic-refined) .status-cancelled { background: #F1F2F4; color: #5B6370; }
-[data-bs-theme="dark"] :where(.civic-ui.civic-refined) .status-pending { background: #3A2E14; color: #F3C96B; }
-[data-bs-theme="dark"] :where(.civic-ui.civic-refined) .status-under_review { background: #1D3047; color: #A9CBFF; }
-[data-bs-theme="dark"] :where(.civic-ui.civic-refined) .status-approved { background: #183A2A; color: #8ED6B0; }
-[data-bs-theme="dark"] :where(.civic-ui.civic-refined) .status-ready_for_pickup { background: #15372F; color: #86DCC7; }
-[data-bs-theme="dark"] :where(.civic-ui.civic-refined) :is(.status-completed, .status-cancelled) { background: #243142; color: #C3CEDC; }
-[data-bs-theme="dark"] :where(.civic-ui.civic-refined) .status-rejected { background: #3A1D1B; color: #FFB4AD; }
+:where(.civic-ui.civic-refined .app-main) :is(.table, .dashboard-table) > thead > tr > th { position: sticky; top: 0; z-index: 1; padding: 12px 16px; border-bottom: 1px solid var(--ds-tint-border); background: var(--ds-tint); color: var(--ds-blue-dark); font-size: .75rem; font-weight: 700; letter-spacing: .02em; white-space: nowrap; }
+:where(.civic-ui.civic-refined .app-main) :is(.table, .dashboard-table) > tbody > tr > :is(th, td) { padding: 16px; border-color: var(--ds-border); vertical-align: middle; line-height: 1.5; }
+:where(.civic-ui.civic-refined .app-main) :is(.table, .dashboard-table) > :is(thead, tbody) > tr > :where(:first-child) { padding-left: 22px; }
+:where(.civic-ui.civic-refined .app-main) :is(.table, .dashboard-table) > :is(thead, tbody) > tr > :where(:last-child) { padding-right: 22px; }
+:where(.civic-ui.civic-refined .app-main) :is(.table, .dashboard-table) > tbody > tr:where(:last-child) > * { border-bottom: 0; }
+:where(.civic-ui.civic-refined .app-main) :is(.table, .dashboard-table) > tbody > tr:where(:hover, :focus-within) > * { background: var(--ds-hover); }
+:where(.civic-ui.civic-refined) .dashboard-table > tbody > tr > th { font-weight: 500; }
+:where(.civic-ui.civic-refined .app-main) .table-sm > tbody > tr > :is(th, td) { padding-block: 8px; }
 
 /* ---------- Empty states (dashboard and module pages) ---------- */
 :where(.civic-ui.civic-refined) :is(.dashboard-empty, .service-empty) { padding: 40px 24px 44px; text-align: center; }
-:where(.civic-ui.civic-refined) :is(.empty-icon, .service-empty-icon) { display: inline-grid; place-items: center; width: 52px; height: 52px; margin: 0 auto 14px; border: 1px solid var(--sh-border); border-radius: 14px; background: var(--sh-tint); color: var(--sh-blue); }
-:where(.civic-ui.civic-refined) :is(.empty-icon, .service-empty-icon) .app-icon { width: 24px; height: 24px; flex: 0 0 24px; }
-:where(.civic-ui.civic-refined) :is(.dashboard-empty, .service-empty) h3 { margin: 0 0 6px; color: var(--sh-ink); font-size: 1.0625rem; font-weight: 800; }
-:where(.civic-ui.civic-refined) :is(.dashboard-empty, .service-empty) p { max-width: 380px; margin: 0 auto 16px; color: var(--sh-muted); font-size: .875rem; line-height: 1.6; }
+:where(.civic-ui.civic-refined) :is(.empty-icon, .service-empty-icon) { display: inline-grid; place-items: center; width: 56px; height: 56px; margin: 0 auto 14px; border-radius: 16px; background: linear-gradient(140deg, var(--ds-tint), var(--ds-tint-green)); color: var(--ds-blue); box-shadow: inset 0 0 0 1px var(--ds-tint-border); }
+:where(.civic-ui.civic-refined) :is(.empty-icon, .service-empty-icon) .app-icon { width: 26px; height: 26px; flex: 0 0 26px; }
+:where(.civic-ui.civic-refined) :is(.dashboard-empty, .service-empty) h3 { margin: 0 0 6px; color: var(--ds-ink); font-size: 1.0625rem; font-weight: 800; }
+:where(.civic-ui.civic-refined) :is(.dashboard-empty, .service-empty) p { max-width: 380px; margin: 0 auto 16px; color: var(--ds-muted); font-size: .875rem; line-height: 1.6; }
 :where(.civic-ui.civic-refined) :is(.dashboard-empty, .service-empty) p:last-child { margin-bottom: 0; }
 
-/* ---------- Stat cards ---------- */
-:where(.civic-ui.civic-refined) .dashboard-stat { height: 100%; border: 1px solid var(--sh-border); border-radius: 16px; background: var(--sh-surface); box-shadow: var(--sh-shadow); color: var(--sh-text); }
+/* ---------- Stat cards: tone sets the accent bar, glow and icon tile ---------- */
+:where(.civic-ui.civic-refined) .dashboard-stat { --stat-fg: var(--ds-blue); --stat-bg: var(--ds-tint); --stat-solid: var(--ds-blue-bright); position: relative; overflow: hidden; height: 100%; border: 1px solid var(--ds-border); border-radius: var(--ds-radius-lg); background: radial-gradient(140px 90px at 100% 0%, color-mix(in srgb, var(--stat-solid) 12%, transparent), transparent 70%), var(--ds-surface); box-shadow: var(--ds-shadow); color: var(--ds-text); }
+:where(.civic-ui.civic-refined) .dashboard-stat::before { content: ""; position: absolute; inset: 0 0 auto; height: 3px; background: linear-gradient(90deg, var(--stat-solid), color-mix(in srgb, var(--stat-solid) 35%, transparent)); }
+:where(.civic-ui.civic-refined) .stat-gold { --stat-fg: var(--ds-gold-dark); --stat-bg: var(--ds-tint-gold); --stat-solid: var(--ds-gold); }
+:where(.civic-ui.civic-refined) .stat-green { --stat-fg: var(--ds-green-dark); --stat-bg: var(--ds-tint-green); --stat-solid: var(--ds-green); }
+:where(.civic-ui.civic-refined) .stat-teal { --stat-fg: var(--ds-teal); --stat-bg: var(--ds-tint-teal); --stat-solid: var(--ds-teal-bright); }
+:where(.civic-ui.civic-refined) :is(.stat-indigo, .stat-violet) { --stat-fg: var(--ds-indigo); --stat-bg: var(--ds-tint-indigo); --stat-solid: #6C55D4; }
 :where(.civic-ui.civic-refined) .dashboard-stat .card-body { display: flex; align-items: flex-start; gap: 14px; padding: 18px; }
-:where(.civic-ui.civic-refined) .stat-icon { display: grid; place-items: center; width: 44px; height: 44px; flex: 0 0 44px; border-radius: 12px; background: #E7EFFA; color: #1F5EA8; }
+:where(.civic-ui.civic-refined) .stat-icon { display: grid; place-items: center; width: 44px; height: 44px; flex: 0 0 44px; border-radius: var(--ds-radius); background: var(--stat-bg); color: var(--stat-fg); }
 :where(.civic-ui.civic-refined) .stat-icon .app-icon { width: 22px; height: 22px; flex: 0 0 22px; }
-:where(.civic-ui.civic-refined) .stat-gold .stat-icon { background: #FBF1DC; color: #8A5A07; }
-:where(.civic-ui.civic-refined) .stat-green .stat-icon { background: #E2F3EA; color: #1F6B45; }
-:where(.civic-ui.civic-refined) .stat-violet .stat-icon { background: #EEEAFB; color: #5B3FB5; }
-[data-bs-theme="dark"] :where(.civic-ui.civic-refined) .stat-icon { background: #1D3047; color: #A9CBFF; }
-[data-bs-theme="dark"] :where(.civic-ui.civic-refined) .stat-gold .stat-icon { background: #3A2E14; color: #F3C96B; }
-[data-bs-theme="dark"] :where(.civic-ui.civic-refined) .stat-green .stat-icon { background: #183A2A; color: #8ED6B0; }
-[data-bs-theme="dark"] :where(.civic-ui.civic-refined) .stat-violet .stat-icon { background: #2A2347; color: #C9BBFF; }
 :where(.civic-ui.civic-refined) .stat-text { min-width: 0; }
-:where(.civic-ui.civic-refined) .dashboard-stat h2 { margin: 2px 0 4px; color: var(--sh-muted); font-size: .8125rem; font-weight: 700; line-height: 1.35; }
-:where(.civic-ui.civic-refined) .stat-value { margin: 0; color: var(--sh-ink); font-size: 1.875rem; font-weight: 800; letter-spacing: -0.03em; line-height: 1.1; font-variant-numeric: tabular-nums; }
-:where(.civic-ui.civic-refined) .stat-note { margin-top: 6px; color: var(--sh-muted); font-size: .75rem; line-height: 1.45; }
+:where(.civic-ui.civic-refined) .dashboard-stat h2 { margin: 2px 0 4px; color: var(--ds-muted); font-size: .8125rem; font-weight: 700; line-height: 1.35; }
+:where(.civic-ui.civic-refined) .stat-value { margin: 0; color: var(--ds-ink); font-size: 1.875rem; font-weight: 800; letter-spacing: -0.03em; line-height: 1.1; font-variant-numeric: tabular-nums; }
+:where(.civic-ui.civic-refined) .stat-note { margin-top: 6px; color: var(--ds-muted); font-size: .75rem; line-height: 1.45; }
 
-/* ---------- Dashboard layout ---------- */
-:where(.civic-ui.civic-refined) .dash-hero { position: relative; isolation: isolate; overflow: hidden; display: grid; gap: 24px; align-items: center; margin-bottom: 24px; padding: 28px 32px; border-radius: 20px; color: #DCE8F7; box-shadow: 0 20px 44px rgb(23 74 133 / 22%); }
-:where(.civic-ui.civic-refined) .dash-hero-bg { position: absolute; inset: 0; z-index: -1; pointer-events: none;
-    background: radial-gradient(28rem 18rem at 100% 0%, rgb(255 255 255 / 16%), transparent 70%), radial-gradient(24rem 18rem at 0% 120%, rgb(47 133 90 / 42%), transparent 70%), radial-gradient(14rem 10rem at 70% 90%, rgb(224 169 59 / 18%), transparent 70%), linear-gradient(135deg, #1F5EA8 0%, #174A85 60%, #12396A 100%); }
-:where(.civic-ui.civic-refined) .dash-hero-bg::after { content: ""; position: absolute; inset: 0; background-image: radial-gradient(rgb(255 255 255 / 16%) 1px, transparent 1.4px); background-size: 20px 20px;
-    -webkit-mask-image: linear-gradient(100deg, transparent 35%, #000); mask-image: linear-gradient(100deg, transparent 35%, #000); }
-[data-bs-theme="dark"] :where(.civic-ui.civic-refined) .dash-hero-bg { background: radial-gradient(28rem 18rem at 100% 0%, rgb(141 187 255 / 14%), transparent 70%), radial-gradient(24rem 18rem at 0% 120%, rgb(47 133 90 / 32%), transparent 70%), linear-gradient(135deg, #173F70 0%, #112E52 60%, #0C2240 100%); }
+/* ---------- Dashboard hero (admin: brand blue; resident: blue to green) ---------- */
+:where(.civic-ui.civic-refined) .dash-hero { position: relative; isolation: isolate; overflow: hidden; display: grid; gap: 24px; align-items: center; margin-bottom: 24px; padding: 28px 32px; border-radius: var(--ds-radius-xl); color: #DCE8F7; box-shadow: 0 20px 44px rgb(23 74 133 / 22%); }
+:where(.civic-ui.civic-refined) .dash-hero-bg { position: absolute; inset: 0; z-index: -1; pointer-events: none; background: radial-gradient(28rem 18rem at 100% 0%, rgb(255 255 255 / 16%), transparent 70%), radial-gradient(24rem 18rem at 0% 120%, rgb(47 133 90 / 42%), transparent 70%), radial-gradient(14rem 10rem at 70% 90%, rgb(224 169 59 / 18%), transparent 70%), var(--ds-brand-gradient); }
+:where(.civic-ui.civic-refined) .app-role-resident .dash-hero-bg { background: radial-gradient(26rem 18rem at 100% 0%, rgb(224 169 59 / 26%), transparent 70%), radial-gradient(24rem 18rem at 0% 120%, rgb(47 133 90 / 55%), transparent 70%), var(--ds-brand-gradient-warm); }
+/* Even dot texture across the whole hero (no partial mask, so no seam behind the glass card). */
+:where(.civic-ui.civic-refined) .dash-hero-bg::after { content: ""; position: absolute; inset: 0; opacity: .5; background-image: radial-gradient(rgb(255 255 255 / 22%) 1px, transparent 1.4px); background-size: 20px 20px; }
 [data-bs-theme="dark"] :where(.civic-ui.civic-refined) .dash-hero { box-shadow: 0 20px 44px rgb(0 0 0 / 35%); }
 :where(.civic-ui.civic-refined) .dash-hero-date { margin: 0 0 6px; color: #BFD3EE; font-size: .8125rem; font-weight: 600; }
 :where(.civic-ui.civic-refined) .dash-hero h2 { margin: 0 0 6px; color: #FFF; font-size: clamp(1.5rem, 2.6vw, 2rem); font-weight: 800; letter-spacing: -0.03em; line-height: 1.2; overflow-wrap: anywhere; }
 :where(.civic-ui.civic-refined) .dash-hero-copy > p:not(.dash-hero-date) { margin: 0; color: #DCE8F7; font-size: .9875rem; }
 :where(.civic-ui.civic-refined) .dash-hero-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; }
 :where(.civic-ui.civic-refined) .dash-hero-actions .app-icon { width: 18px; height: 18px; flex: 0 0 18px; }
-:where(.civic-ui.civic-refined) .dash-hero-card { display: grid; justify-items: start; gap: 2px; min-width: 0; padding: 18px 20px; border: 1px solid rgb(255 255 255 / 28%); border-radius: 16px; background: rgb(255 255 255 / 12%); color: #FFF; text-decoration: none;
-    -webkit-backdrop-filter: blur(14px) saturate(140%); backdrop-filter: blur(14px) saturate(140%); box-shadow: 0 16px 36px rgb(5 20 45 / 25%); }
+/* Glass card: solid rgba (no backdrop-filter), so it never splits while the hero animates. */
+:where(.civic-ui.civic-refined) .dash-hero-card { display: grid; justify-items: start; gap: 2px; min-width: 0; padding: 18px 20px; border: 1px solid var(--ds-glass-on-brand-border); border-radius: var(--ds-radius-lg); background: var(--ds-glass-on-brand); color: #FFF; text-decoration: none; box-shadow: 0 16px 36px rgb(5 20 45 / 25%); }
 :where(.civic-ui.civic-refined) .dash-hero-card strong { color: #FFF; font-size: 2.5rem; font-weight: 800; letter-spacing: -0.04em; line-height: 1; font-variant-numeric: tabular-nums; }
-:where(.civic-ui.civic-refined) .dash-hero-card > span:not(.dash-hero-card-icon):not(.reservation-status) { color: #E3ECF8; font-size: .9375rem; font-weight: 700; }
+:where(.civic-ui.civic-refined) .dash-hero-card > span:not(.dash-hero-card-icon, .reservation-status) { color: #E3ECF8; font-size: .9375rem; font-weight: 700; }
 :where(.civic-ui.civic-refined) .dash-hero-card small { color: #BFD3EE; font-size: .75rem; }
-:where(.civic-ui.civic-refined) .dash-hero-card-icon { display: grid; place-items: center; width: 36px; height: 36px; margin-bottom: 8px; border-radius: 10px; background: #FFF; color: #1F5EA8; }
+:where(.civic-ui.civic-refined) .dash-hero-card-icon { display: grid; place-items: center; width: 36px; height: 36px; margin-bottom: 8px; border-radius: var(--ds-radius-sm); background: #FFF; color: #1F5EA8; }
 :where(.civic-ui.civic-refined) .dash-hero-card-icon .app-icon { width: 19px; height: 19px; flex: 0 0 19px; }
-:where(.civic-ui.civic-refined) a.dash-hero-card:hover { background: rgb(255 255 255 / 18%); }
+:where(.civic-ui.civic-refined) a.dash-hero-card:hover { background: rgb(255 255 255 / 20%); }
 :where(.civic-ui.civic-refined) a.dash-hero-card:focus-visible { outline: 3px solid #FFF; outline-offset: 3px; }
 :where(.civic-ui.civic-refined) .dash-hero-latest { gap: 8px; }
 :where(.civic-ui.civic-refined) .dash-hero-latest .dash-hero-latest-name { font-size: 1.0625rem; letter-spacing: -0.01em; line-height: 1.3; overflow-wrap: anywhere; }
 :where(.civic-ui.civic-refined) .dash-hero-latest-date { display: inline-flex; align-items: center; gap: 6px; color: #DCE8F7; font-size: .8125rem; font-weight: 600; }
 :where(.civic-ui.civic-refined) .dash-hero-latest-date .app-icon { width: 15px; height: 15px; flex: 0 0 15px; }
-@media (min-width: 768px) {
-    :where(.civic-ui.civic-refined) .dash-hero { grid-template-columns: minmax(0, 1fr) minmax(220px, 300px); padding: 32px 36px; }
-}
+@media (min-width: 768px) { :where(.civic-ui.civic-refined) .dash-hero { grid-template-columns: minmax(0, 1fr) minmax(220px, 300px); padding: 32px 36px; } }
 
+/* ---------- Dashboard layout ---------- */
 :where(.civic-ui.civic-refined) .dash-stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-bottom: 24px; }
 @media (min-width: 1200px) { :where(.civic-ui.civic-refined) .dash-stats { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 :where(.civic-ui.civic-refined) .dash-group { margin-bottom: 24px; }
 :where(.civic-ui.civic-refined) .dash-group .dash-stats { margin-bottom: 8px; }
-:where(.civic-ui.civic-refined) .dash-group-title { margin: 0 0 12px; color: var(--sh-ink); font-size: 1rem; font-weight: 800; letter-spacing: -0.01em; }
-:where(.civic-ui.civic-refined) .dash-group-note { margin: 0; color: var(--sh-muted); font-size: .75rem; }
+:where(.civic-ui.civic-refined) .dash-group-title { display: flex; align-items: center; gap: 8px; margin: 0 0 12px; color: var(--ds-ink); font-size: 1rem; font-weight: 800; letter-spacing: -0.01em; }
+:where(.civic-ui.civic-refined) .dash-group-title::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--ds-green); box-shadow: 0 0 0 4px var(--ds-tint-green); }
+:where(.civic-ui.civic-refined) .dash-group-note { margin: 0; color: var(--ds-muted); font-size: .75rem; }
 :where(.civic-ui.civic-refined) .dash-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; align-items: start; }
-:where(.civic-ui.civic-refined) .dash-side { display: grid; gap: 20px; min-width: 0; }
-:where(.civic-ui.civic-refined) .dash-main { min-width: 0; }
+:where(.civic-ui.civic-refined) .dash-main, :where(.civic-ui.civic-refined) .dash-side { min-width: 0; }
+:where(.civic-ui.civic-refined) .dash-side { display: grid; gap: 20px; }
 @media (min-width: 1400px) { :where(.civic-ui.civic-refined) .dash-grid { grid-template-columns: minmax(0, 2.2fr) minmax(300px, 1fr); } }
-@media (min-width: 768px) and (max-width: 1399.98px) { :where(.civic-ui.civic-refined) .dash-side { grid-template-columns: repeat(2, minmax(0, 1fr)); } :where(.civic-ui.civic-refined) .dash-side > .dash-tip { grid-column: 1 / -1; } }
+@media (min-width: 768px) and (max-width: 1399.98px) {
+    :where(.civic-ui.civic-refined) .dash-side { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    :where(.civic-ui.civic-refined) .dash-side > .dash-tip { grid-column: 1 / -1; }
+}
 
-/* Recent reservations */
-:where(.civic-ui.civic-refined) .recent-panel .table-responsive { overflow-y: hidden; border-radius: 0 0 16px 16px; }
+/* Recent reservations (admin table; resident cards) */
+:where(.civic-ui.civic-refined) .recent-panel .table-responsive { overflow-y: hidden; border-radius: 0 0 var(--ds-radius-lg) var(--ds-radius-lg); }
 :where(.civic-ui.civic-refined) .recent-person { display: flex; align-items: center; gap: 12px; min-width: 0; }
 :where(.civic-ui.civic-refined) .recent-person .resident-avatar { width: 36px; height: 36px; flex: 0 0 36px; font-size: .75rem; }
-:where(.civic-ui.civic-refined) .recent-resident-name { display: block; color: var(--sh-ink); font-weight: 700; }
-:where(.civic-ui.civic-refined) .recent-appointment time { display: block; color: var(--sh-ink); font-weight: 600; }
-:where(.civic-ui.civic-refined) .recent-open { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 8px; color: var(--sh-blue); font-size: .8125rem; font-weight: 700; text-decoration: none; white-space: nowrap; }
-:where(.civic-ui.civic-refined) .recent-open:hover { background: var(--sh-tint); color: var(--sh-blue-dark); }
-:where(.civic-ui.civic-refined) .recent-open .app-icon { width: 16px; height: 16px; flex: 0 0 16px; }
-:where(.civic-ui.civic-refined) .recent-action { text-align: right; }
-:where(.civic-ui.civic-refined) .recent-reservations-table :is(.reservation-reference, .recent-resident-name, .recent-appointment time, .recent-appointment .reservation-reference) { white-space: nowrap; }
+:where(.civic-ui.civic-refined) .recent-resident-name { display: block; color: var(--ds-ink); font-weight: 700; }
+:where(.civic-ui.civic-refined) .recent-appointment time { display: block; color: var(--ds-ink); font-weight: 600; }
+:where(.civic-ui.civic-refined) .recent-reservations-table :is(.reservation-reference, .recent-resident-name, .recent-appointment time) { white-space: nowrap; }
 :where(.civic-ui.civic-refined) .recent-reservations-table td[data-label="Service"] { min-width: 150px; }
+:where(.civic-ui.civic-refined) .recent-action { text-align: right; }
+:where(.civic-ui.civic-refined) .recent-open { display: inline-grid; place-items: center; width: 34px; height: 34px; border: 1px solid var(--ds-border); border-radius: 9px; color: var(--ds-blue); text-decoration: none; }
+:where(.civic-ui.civic-refined) .recent-open:hover { border-color: var(--ds-blue); background: var(--ds-tint); color: var(--ds-blue-dark); }
+:where(.civic-ui.civic-refined) .recent-open .app-icon { width: 16px; height: 16px; flex: 0 0 16px; }
+:where(.civic-ui.civic-refined) .recent-action-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 @media (max-width: 767.98px) {
     /* Phones: each reservation becomes a card. */
     :where(.civic-ui.civic-refined) .recent-reservations-table { min-width: 0; }
     :where(.civic-ui.civic-refined) .recent-reservations-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
     :where(.civic-ui.civic-refined) .recent-reservations-table tbody { display: grid; gap: 10px; padding: 12px; }
-    :where(.civic-ui.civic-refined) .recent-reservations-table tbody tr { display: grid; grid-template-columns: 1fr auto; gap: 8px 12px; padding: 14px; border: 1px solid var(--sh-border); border-radius: 12px; }
-    :where(.civic-ui.civic-refined) .app-main .recent-reservations-table tbody tr > * { display: block; height: auto; padding: 0 !important; border: 0; background: transparent !important; }
-    :where(.civic-ui.civic-refined) .recent-reservations-table tbody th { grid-column: 1 / -1; }
-    :where(.civic-ui.civic-refined) .recent-reservations-table td[data-label="Service"] { grid-column: 1 / -1; }
-    :where(.civic-ui.civic-refined) .recent-reservations-table td.recent-action { grid-column: 1 / -1; text-align: left; }
+    :where(.civic-ui.civic-refined) .recent-reservations-table tbody tr { display: grid; grid-template-columns: 1fr auto; gap: 8px 12px; padding: 14px; border: 1px solid var(--ds-border); border-radius: var(--ds-radius); }
+    :where(.civic-ui.civic-refined) .app-main .recent-panel .recent-reservations-table tbody tr > :is(th, td) { display: block; height: auto; padding: 0; border: 0; background: transparent; }
+    :where(.civic-ui.civic-refined) .recent-reservations-table :is(tbody th, td[data-label="Service"], td.recent-action) { grid-column: 1 / -1; }
+    :where(.civic-ui.civic-refined) .recent-reservations-table td.recent-action { text-align: left; }
+    :where(.civic-ui.civic-refined) .recent-reservations-table .recent-open { display: inline-flex; gap: 6px; width: auto; height: auto; padding: 6px 10px; font-size: .8125rem; font-weight: 700; }
+    :where(.civic-ui.civic-refined) .recent-reservations-table .recent-action-label { position: static; width: auto; height: auto; overflow: visible; clip: auto; }
 }
 
 :where(.civic-ui.civic-refined) .resident-recent-cards { display: grid; gap: 12px; padding: 16px; }
 @media (min-width: 768px) { :where(.civic-ui.civic-refined) .resident-recent-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-:where(.civic-ui.civic-refined) .resident-recent-card { display: flex; flex-direction: column; gap: 8px; min-width: 0; padding: 16px; border: 1px solid var(--sh-border); border-radius: 14px; background: var(--sh-surface); }
-:where(.civic-ui.civic-refined) .resident-recent-card:hover { border-color: var(--sh-border-strong); background: var(--sh-hover); }
+:where(.civic-ui.civic-refined) .resident-recent-card { display: flex; flex-direction: column; gap: 8px; min-width: 0; padding: 16px; border: 1px solid var(--ds-border); border-left: 3px solid var(--st-solid, var(--ds-border)); border-radius: var(--ds-radius); background: var(--ds-surface); }
+:where(.civic-ui.civic-refined) .resident-recent-card:hover { border-color: var(--ds-border-strong); border-left-color: var(--st-solid, var(--ds-border-strong)); background: var(--ds-hover); }
 :where(.civic-ui.civic-refined) .resident-recent-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
 :where(.civic-ui.civic-refined) .resident-recent-top .reservation-reference { margin: 0; }
-:where(.civic-ui.civic-refined) .resident-recent-card h3 { margin: 0; color: var(--sh-ink); font-size: 1rem; font-weight: 800; overflow-wrap: anywhere; }
-:where(.civic-ui.civic-refined) .resident-recent-card p { flex: 1; margin: 0; color: var(--sh-muted); font-size: .875rem; line-height: 1.55; }
-:where(.civic-ui.civic-refined) .resident-recent-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; padding-top: 10px; border-top: 1px solid var(--sh-border); }
-:where(.civic-ui.civic-refined) .resident-recent-appointment { display: inline-flex; align-items: center; gap: 6px; color: var(--sh-text); font-size: .8125rem; font-weight: 600; }
-:where(.civic-ui.civic-refined) .resident-recent-appointment .app-icon { width: 15px; height: 15px; flex: 0 0 15px; color: var(--sh-blue); }
+:where(.civic-ui.civic-refined) .resident-recent-card h3 { margin: 0; color: var(--ds-ink); font-size: 1rem; font-weight: 800; overflow-wrap: anywhere; }
+:where(.civic-ui.civic-refined) .resident-recent-card p { flex: 1; margin: 0; color: var(--ds-muted); font-size: .875rem; line-height: 1.55; }
+:where(.civic-ui.civic-refined) .resident-recent-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; padding-top: 10px; border-top: 1px solid var(--ds-border); }
+:where(.civic-ui.civic-refined) .resident-recent-appointment { display: inline-flex; align-items: center; gap: 6px; color: var(--ds-text); font-size: .8125rem; font-weight: 600; }
+:where(.civic-ui.civic-refined) .resident-recent-appointment .app-icon { width: 15px; height: 15px; flex: 0 0 15px; color: var(--ds-green); }
 
-/* Requests by status: horizontal bars */
+/* Requests by status: horizontal bars in the status colours */
 :where(.civic-ui.civic-refined) .status-bars { display: grid; gap: 14px; padding: 18px 22px 22px; }
 :where(.civic-ui.civic-refined) .status-bar { display: grid; grid-template-columns: 1fr auto; gap: 6px 12px; align-items: center; }
-:where(.civic-ui.civic-refined) .status-bar dt { color: var(--sh-text); font-size: .875rem; font-weight: 600; }
-:where(.civic-ui.civic-refined) .status-bar dd { margin: 0; color: var(--sh-ink); font-size: .9375rem; font-weight: 800; font-variant-numeric: tabular-nums; }
-:where(.civic-ui.civic-refined) .status-bar-track { grid-column: 1 / -1; display: block; height: 8px; overflow: hidden; border-radius: 999px; background: color-mix(in srgb, var(--sh-border) 70%, transparent); }
-:where(.civic-ui.civic-refined) .status-bar-track > span { display: block; width: var(--bar); height: 100%; border-radius: inherit; background: var(--bar-color, #1F5EA8); transform-origin: left center; }
-:where(.civic-ui.civic-refined) .status-bar-pending { --bar-color: #E0A93B; }
-:where(.civic-ui.civic-refined) .status-bar-under_review { --bar-color: #3B7DD8; }
-:where(.civic-ui.civic-refined) .status-bar-approved { --bar-color: #2F855A; }
-:where(.civic-ui.civic-refined) .status-bar-ready_for_pickup { --bar-color: #1C9A86; }
-:where(.civic-ui.civic-refined) .status-bar-completed { --bar-color: #64748B; }
-:where(.civic-ui.civic-refined) .status-bar-rejected { --bar-color: #D64545; }
-:where(.civic-ui.civic-refined) .status-bar-cancelled { --bar-color: #9AA4B2; }
+:where(.civic-ui.civic-refined) .status-bar dt { color: var(--ds-text); font-size: .875rem; font-weight: 600; }
+:where(.civic-ui.civic-refined) .status-bar dd { margin: 0; color: var(--ds-ink); font-size: .9375rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+:where(.civic-ui.civic-refined) .status-bar-track { grid-column: 1 / -1; display: block; height: 8px; overflow: hidden; border-radius: 999px; background: var(--st-bg, var(--ds-tint-gray)); }
+:where(.civic-ui.civic-refined) .status-bar-track > span { display: block; width: var(--bar); height: 100%; border-radius: inherit; background: var(--st-solid, var(--ds-blue)); transform-origin: left center; }
 
 /* Quick access tiles */
 :where(.civic-ui.civic-refined) .quick-tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; padding: 16px; }
-:where(.civic-ui.civic-refined) .quick-tile { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; min-height: 92px; padding: 14px; border: 1px solid var(--sh-border); border-radius: 12px; color: var(--sh-ink); font-size: .875rem; font-weight: 700; line-height: 1.3; text-decoration: none; transition: transform .2s ease; }
-:where(.civic-ui.civic-refined) .quick-tile:hover { border-color: var(--sh-blue); background: var(--sh-hover); color: var(--sh-ink); transform: translateY(-2px); }
-:where(.civic-ui.civic-refined) .quick-tile:focus-visible { outline: 3px solid var(--sh-blue); outline-offset: 2px; }
-:where(.civic-ui.civic-refined) .quick-tile-icon { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 10px; background: var(--sh-tint); color: var(--sh-blue); }
+:where(.civic-ui.civic-refined) .quick-tile { --qt-bg: var(--ds-tint); --qt-fg: var(--ds-blue); display: flex; flex-direction: column; align-items: flex-start; gap: 10px; min-height: 92px; padding: 14px; border: 1px solid var(--ds-border); border-radius: var(--ds-radius); color: var(--ds-ink); font-size: .875rem; font-weight: 700; line-height: 1.3; text-decoration: none; transition: transform var(--ds-dur) var(--ds-ease); }
+:where(.civic-ui.civic-refined) .quick-tile:nth-child(2) { --qt-bg: var(--ds-tint-green); --qt-fg: var(--ds-green-dark); }
+:where(.civic-ui.civic-refined) .quick-tile:nth-child(3) { --qt-bg: var(--ds-tint-gold); --qt-fg: var(--ds-gold-dark); }
+:where(.civic-ui.civic-refined) .quick-tile:nth-child(4) { --qt-bg: var(--ds-tint-indigo); --qt-fg: var(--ds-indigo); }
+:where(.civic-ui.civic-refined) .quick-tile:hover { border-color: var(--qt-fg); background: var(--ds-hover); color: var(--ds-ink); transform: translateY(-2px); }
+:where(.civic-ui.civic-refined) .quick-tile:focus-visible { outline: 3px solid var(--ds-focus); outline-offset: 2px; }
+:where(.civic-ui.civic-refined) .quick-tile-icon { display: grid; place-items: center; width: 36px; height: 36px; border-radius: var(--ds-radius-sm); background: var(--qt-bg); color: var(--qt-fg); }
 :where(.civic-ui.civic-refined) .quick-tile-icon .app-icon { width: 19px; height: 19px; flex: 0 0 19px; }
 
-/* Contextual tip (resident) */
-:where(.civic-ui.civic-refined) .dash-tip { display: flex; gap: 14px; padding: 18px; border: 1px solid #D6E3F3; border-radius: 16px; background: #F2F7FD; color: var(--sh-text); }
-:where(.civic-ui.civic-refined) .dash-tip.is-ready { border-color: #BFE3CF; background: #EEF8F2; }
-[data-bs-theme="dark"] :where(.civic-ui.civic-refined) .dash-tip { border-color: #2E4A6B; background: #16283D; }
-[data-bs-theme="dark"] :where(.civic-ui.civic-refined) .dash-tip.is-ready { border-color: #2C5A40; background: #142A1F; }
-:where(.civic-ui.civic-refined) .dash-tip-icon { display: grid; place-items: center; width: 40px; height: 40px; flex: 0 0 40px; border-radius: 12px; background: var(--sh-surface); color: var(--sh-blue); }
-:where(.civic-ui.civic-refined) .dash-tip.is-ready .dash-tip-icon { color: #1F6B45; }
-:where(.civic-ui.civic-refined) .dash-tip h2 { margin: 2px 0 4px; color: var(--sh-ink); font-size: 1rem; font-weight: 800; }
-:where(.civic-ui.civic-refined) .dash-tip p { margin: 0 0 8px; color: var(--sh-text); font-size: .875rem; line-height: 1.55; }
-:where(.civic-ui.civic-refined) .dash-tip p:last-child { margin-bottom: 0; }
-
-/* Residency banner (dashboard and profile) */
-:where(.civic-ui.civic-refined) .residency-banner { display: flex; gap: 14px; margin-bottom: 20px; padding: 16px 18px; border: 1px solid #D6E3F3; border-radius: 14px; background: #F2F7FD; color: var(--sh-text); }
-:where(.civic-ui.civic-refined) .residency-banner.is-approved { border-color: #BFE3CF; background: #EEF8F2; }
-[data-bs-theme="dark"] :where(.civic-ui.civic-refined) .residency-banner { border-color: #2E4A6B; background: #16283D; }
-[data-bs-theme="dark"] :where(.civic-ui.civic-refined) .residency-banner.is-approved { border-color: #2C5A40; background: #142A1F; }
-:where(.civic-ui.civic-refined) .residency-banner-icon { display: grid; place-items: center; width: 36px; height: 36px; flex: 0 0 36px; border-radius: 10px; background: var(--sh-surface); color: var(--sh-blue); }
-:where(.civic-ui.civic-refined) .residency-banner.is-approved .residency-banner-icon { color: #1F6B45; }
-[data-bs-theme="dark"] :where(.civic-ui.civic-refined) .residency-banner.is-approved .residency-banner-icon { color: #8ED6B0; }
+/* Tip and residency callouts: blue by default, green when it is good news */
+:where(.civic-ui.civic-refined) :is(.dash-tip, .residency-banner) { display: flex; gap: 14px; padding: 16px 18px; border: 1px solid var(--ds-tint-border); border-radius: var(--ds-radius-lg); background: var(--ds-tint); color: var(--ds-text); }
+:where(.civic-ui.civic-refined) :is(.dash-tip.is-ready, .residency-banner.is-approved) { border-color: color-mix(in srgb, var(--ds-green) 35%, transparent); background: var(--ds-tint-green); }
+:where(.civic-ui.civic-refined) .residency-banner.is-pending { border-color: color-mix(in srgb, var(--ds-gold) 45%, transparent); background: var(--ds-tint-gold); }
+:where(.civic-ui.civic-refined) :is(.dash-tip-icon, .residency-banner-icon) { display: grid; place-items: center; width: 38px; height: 38px; flex: 0 0 38px; border-radius: var(--ds-radius-sm); background: var(--ds-surface); color: var(--ds-blue); }
+:where(.civic-ui.civic-refined) :is(.dash-tip.is-ready .dash-tip-icon, .residency-banner.is-approved .residency-banner-icon) { color: var(--ds-green-dark); }
+:where(.civic-ui.civic-refined) .residency-banner.is-pending .residency-banner-icon { color: var(--ds-gold-dark); }
+:where(.civic-ui.civic-refined) :is(.dash-tip, .residency-banner) h2 { margin: 2px 0 4px; color: var(--ds-ink); font-size: 1rem; font-weight: 800; }
+:where(.civic-ui.civic-refined) :is(.dash-tip, .residency-banner) p { margin: 0; font-size: .875rem; line-height: 1.55; }
+:where(.civic-ui.civic-refined) .dash-tip p:not(:last-child) { margin-bottom: 8px; }
+:where(.civic-ui.civic-refined) .residency-banner { margin-bottom: 20px; }
 :where(.civic-ui.civic-refined) .residency-banner-body { min-width: 0; }
-:where(.civic-ui.civic-refined) .residency-banner h2 { margin: 2px 0 2px; color: var(--sh-ink); font-size: 1rem; font-weight: 800; }
-:where(.civic-ui.civic-refined) .residency-banner p { margin: 0; font-size: .875rem; line-height: 1.55; }
-:where(.civic-ui.civic-refined) .residency-banner-message { margin-top: 8px !important; }
-:where(.civic-ui.civic-refined) .residency-banner-meta { margin-top: 6px !important; color: var(--sh-muted); font-size: .75rem !important; }
+:where(.civic-ui.civic-refined) .residency-banner .residency-banner-message { margin-top: 8px; }
+:where(.civic-ui.civic-refined) .residency-banner .residency-banner-meta { margin-top: 6px; color: var(--ds-muted); font-size: .75rem; }
 
 /* Account summary modal */
-:where(.civic-ui.civic-refined) .app-account-modal { border: 1px solid var(--sh-border); border-radius: 18px; background: var(--sh-surface); color: var(--sh-text); font-family: var(--sh-font); }
-:where(.civic-ui.civic-refined) .app-account-modal :is(.modal-header, .modal-body, .modal-footer) { padding: 20px 24px; border-color: var(--sh-border); }
-:where(.civic-ui.civic-refined) .app-account-modal .modal-title { color: var(--sh-ink); font-weight: 800; }
+:where(.civic-ui.civic-refined) .app-account-modal { border: 1px solid var(--ds-border); border-radius: 18px; background: var(--ds-surface); color: var(--ds-text); font-family: var(--ds-font); }
+:where(.civic-ui.civic-refined) .app-account-modal :is(.modal-header, .modal-body, .modal-footer) { padding: 20px 24px; border-color: var(--ds-border); }
+:where(.civic-ui.civic-refined) .app-account-modal .modal-title { color: var(--ds-ink); font-weight: 800; }
 :where(.civic-ui.civic-refined) .app-account-modal .btn-close { min-width: 40px; min-height: 40px; }
 [data-bs-theme="dark"] :where(.civic-ui.civic-refined) .app-account-modal .btn-close { filter: invert(1) grayscale(1) brightness(1.8); }
-:where(.civic-ui.civic-refined) .account-details dt { margin-bottom: 4px; color: var(--sh-muted); font-size: .75rem; font-weight: 600; }
-:where(.civic-ui.civic-refined) .account-details dd { margin-bottom: 16px; color: var(--sh-ink); font-size: .9375rem; font-weight: 600; overflow-wrap: anywhere; }
+:where(.civic-ui.civic-refined) .account-details dt { margin-bottom: 4px; color: var(--ds-muted); font-size: .75rem; font-weight: 600; }
+:where(.civic-ui.civic-refined) .account-details dd { margin-bottom: 16px; color: var(--ds-ink); font-size: .9375rem; font-weight: 600; overflow-wrap: anywhere; }
 
-/* ---------- Motion (JS adds .dash-motion; reduced-motion users get none) ---------- */
+/* ---------- Shared page pieces used by module pages ---------- */
+/* Page intro: one-line subtitle on the left, page actions on the right (the H1 is in the topbar). */
+:where(.civic-ui.civic-refined) .rv-intro { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 20px; margin: 4px 0 20px; }
+:where(.civic-ui.civic-refined) .rv-intro-text { flex: 1 1 320px; margin: 0; color: var(--ds-muted); font-size: .9375rem; line-height: 1.55; }
+:where(.civic-ui.civic-refined) .rv-intro-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+
+/* Option card: a native radio styled as a selectable card. */
+:where(.civic-ui.civic-refined) .rv-option { position: relative; display: flex; align-items: flex-start; gap: 12px; min-width: 0; height: 100%; padding: 16px 44px 16px 16px; border: 1px solid var(--ds-border); border-radius: var(--ds-radius-lg); background: var(--ds-surface); cursor: pointer; transition: transform var(--ds-dur) var(--ds-ease); }
+:where(.civic-ui.civic-refined) .rv-option:hover { border-color: var(--ds-border-strong); background: var(--ds-hover); }
+:where(.civic-ui.civic-refined) .rv-option-input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+:where(.civic-ui.civic-refined) .rv-option-body { display: flex; flex: 1; flex-direction: column; gap: 6px; min-width: 0; color: var(--ds-text); }
+:where(.civic-ui.civic-refined) .rv-option-check { position: absolute; top: 16px; right: 16px; width: 20px; height: 20px; border: 2px solid var(--ds-border-strong); border-radius: 50%; background: var(--ds-surface); }
+:where(.civic-ui.civic-refined) .rv-option:has(.rv-option-input:checked) { border-color: var(--ds-blue); background: var(--ds-tint); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ds-blue) 18%, transparent); }
+:where(.civic-ui.civic-refined) .rv-option:has(.rv-option-input:checked) .rv-option-check { border: 6px solid var(--ds-solid); }
+:where(.civic-ui.civic-refined) .rv-option:has(.rv-option-input:focus-visible) { outline: 3px solid var(--ds-focus); outline-offset: 2px; }
+:where(.civic-ui.civic-refined) .rv-option.is-disabled { cursor: not-allowed; opacity: .6; background: var(--ds-soft); }
+:where(.civic-ui.civic-refined) .rv-option.is-disabled:hover { border-color: var(--ds-border); background: var(--ds-soft); }
+:where(.civic-ui.civic-refined) .rv-options { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr)); gap: 12px; margin: 0; padding: 0; border: 0; }
+
+/* Action bar: Back on the left, primary action on the right; sticky at the bottom on phones. */
+:where(.civic-ui.civic-refined) .rv-action-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-top: 24px; padding-top: 18px; border-top: 1px solid var(--ds-border); }
+@media (max-width: 767.98px) {
+    :where(.civic-ui.civic-refined) .rv-action-bar { position: sticky; bottom: 0; z-index: 5; margin-inline: -16px; padding: 12px 16px calc(12px + env(safe-area-inset-bottom)); border-top: 1px solid var(--ds-border); background: var(--ds-surface); box-shadow: 0 -8px 20px rgb(15 27 45 / 8%); }
+    :where(.civic-ui.civic-refined) .rv-action-bar .btn { flex: 1 1 0; }
+    :where(.civic-ui.civic-refined) .app-role-resident .rv-action-bar { bottom: calc(84px + env(safe-area-inset-bottom)); border-radius: var(--ds-radius); margin-inline: 0; }
+}
+
+/* ---------- Dashboard intro (JS adds .dash-motion once per session; transform and opacity only) ---------- */
 @media (prefers-reduced-motion: no-preference) {
-    :where(.civic-ui.civic-refined) .dash-motion :is(.dash-hero, .dashboard-stat, .dash-main, .dash-side > *) { animation: dash-rise .5s cubic-bezier(.2,.7,.2,1) both; }
-    :where(.civic-ui.civic-refined) .dash-motion .dash-stats > :nth-child(2) .dashboard-stat, :where(.civic-ui.civic-refined) .dash-motion .dash-stats > .dashboard-stat:nth-child(2) { animation-delay: 60ms; }
-    :where(.civic-ui.civic-refined) .dash-motion .dash-stats > .dashboard-stat:nth-child(3) { animation-delay: 120ms; }
-    :where(.civic-ui.civic-refined) .dash-motion .dash-stats > .dashboard-stat:nth-child(4) { animation-delay: 180ms; }
-    :where(.civic-ui.civic-refined) .dash-motion .dash-main { animation-delay: 200ms; }
-    :where(.civic-ui.civic-refined) .dash-motion .dash-side > * { animation-delay: 260ms; }
-    :where(.civic-ui.civic-refined) .dash-motion .status-bar-track > span { transform: scaleX(0); transition: transform .9s cubic-bezier(.2,.7,.2,1) .35s; }
+    :where(.civic-ui.civic-refined) .dash-motion :is(.dash-hero, .dashboard-stat, .dash-main, .dash-side > *) { animation: dash-rise var(--ds-dur-reveal) var(--ds-ease) both; }
+    :where(.civic-ui.civic-refined) .dash-motion .dash-stats > :nth-child(2) { animation-delay: 50ms; }
+    :where(.civic-ui.civic-refined) .dash-motion .dash-stats > :nth-child(3) { animation-delay: 100ms; }
+    :where(.civic-ui.civic-refined) .dash-motion .dash-stats > :nth-child(4) { animation-delay: 150ms; }
+    :where(.civic-ui.civic-refined) .dash-motion .dash-main { animation-delay: 150ms; }
+    :where(.civic-ui.civic-refined) .dash-motion .dash-side > * { animation-delay: 200ms; }
+    :where(.civic-ui.civic-refined) .dash-motion .status-bar-track > span { transform: scaleX(0); transition: transform var(--ds-dur-reveal) var(--ds-ease) 250ms; }
     :where(.civic-ui.civic-refined) .dash-motion .status-bars.is-filled .status-bar-track > span { transform: scaleX(1); }
-    @keyframes dash-rise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+    @keyframes dash-rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
 }
 @media (prefers-reduced-motion: reduce) {
-    :where(.civic-ui.civic-refined) .quick-tile, :where(.civic-ui.civic-refined) .quick-tile:hover { transition: none; transform: none; }
+    :where(.civic-ui.civic-refined) .quick-tile:hover { transform: none; }
 }
 
 /* ---------- Small screens ---------- */
@@ -235,14 +252,9 @@
     :where(.civic-ui.civic-refined) .dash-hero-actions .btn { flex: 1 1 auto; }
     :where(.civic-ui.civic-refined) .dash-stats { gap: 10px; }
     :where(.civic-ui.civic-refined) .dashboard-stat .card-body { flex-direction: column; gap: 10px; padding: 14px; }
-    :where(.civic-ui.civic-refined) .stat-icon { width: 36px; height: 36px; flex-basis: 36px; border-radius: 10px; }
+    :where(.civic-ui.civic-refined) .stat-icon { width: 36px; height: 36px; flex-basis: 36px; border-radius: var(--ds-radius-sm); }
     :where(.civic-ui.civic-refined) .stat-icon .app-icon { width: 18px; height: 18px; flex-basis: 18px; }
     :where(.civic-ui.civic-refined) .stat-value { font-size: 1.625rem; }
-    :where(.civic-ui.civic-refined) .dashboard-panel-heading { padding: 16px 18px; }
+    :where(.civic-ui.civic-refined) .dashboard-panel-heading { padding: 14px 18px; }
     :where(.civic-ui.civic-refined) .status-bars { padding: 16px 18px 18px; }
-}
-:where(.civic-ui.civic-refined) .recent-reservations-table .recent-open { width: 34px; height: 34px; justify-content: center; padding: 0; border: 1px solid var(--sh-border); }
-@media (max-width: 767.98px) {
-    :where(.civic-ui.civic-refined) .recent-reservations-table .recent-open { width: auto; height: auto; padding: 6px 10px; }
-    :where(.civic-ui.civic-refined) .recent-reservations-table .recent-open .recent-action-label { position: static !important; width: auto !important; height: auto !important; margin: 0 !important; overflow: visible !important; clip: auto !important; white-space: normal !important; }
 }

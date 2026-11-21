@@ -36,7 +36,7 @@ class ReservationController extends Controller
             $draft = [];
         }
 
-        return $this->page(1, ['services' => Service::where('is_active', true)->orderBy('name')->get(), 'draft' => $draft]);
+        return $this->page(1, ['services' => Service::where('is_active', true)->withCount('serviceRequirements')->orderBy('name')->get(), 'draft' => $draft]);
     }
 
     public function selectService(ReservationWizardRequest $request): RedirectResponse

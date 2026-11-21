@@ -79,9 +79,6 @@
 .document-preview-frame [hidden] { display: none !important; }
 .certificate-template-info { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
 .certificate-template-info p { flex-basis: 100%; margin-bottom: 4px; }
-.service-secondary-actions { display: flex; gap: 8px; flex-wrap: wrap; }
-.service-status-action { padding-left: 8px; border-left: 1px solid var(--border-color); }
-.service-primary-action { font-weight: 600; }
 .service-table th:nth-child(1) { width: 25%; }
 .service-table th:nth-child(2) { width: 20%; }
 .service-table th:nth-child(3) { width: 10%; }
@@ -101,10 +98,6 @@
     .certificate-print-page { padding: 16px; }
     .pdf-preview-controls .btn { padding-inline: 10px; font-size: 12px; }
     .service-actions .service-primary-action { flex-basis: 100%; }
-    .service-secondary-actions { flex: 1; }
-    .service-secondary-actions .btn { flex: 1; }
-    .service-status-action { flex-basis: 100%; border-left: 0; border-top: 1px solid var(--border-color); padding: 8px 0 0; }
-    .service-status-action .btn { width: 100%; }
 }
 @media print {
     .unified-certificate-print { margin: 0 !important; padding: 0 !important; background: #fff; }

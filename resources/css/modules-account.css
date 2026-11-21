@@ -1,0 +1,78 @@
+/* Account pages: notifications (page and bell preview), profile and settings. Tokens from tokens.css. */
+
+/* ---------- Notifications ---------- */
+:where(.civic-ui.civic-refined) .ac-notif-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 20px; border-bottom: 1px solid var(--ds-border); }
+:where(.civic-ui.civic-refined) .ac-notif-toolbar .rv-chips { margin: 0; }
+:where(.civic-ui.civic-refined) .ac-notif-group { padding: 6px 20px 14px; }
+:where(.civic-ui.civic-refined) .ac-notif-group + .ac-notif-group { border-top: 1px solid var(--ds-border); }
+:where(.civic-ui.civic-refined) .ac-notif-group > h2 { margin: 12px 0 8px; color: var(--ds-muted); font-size: .75rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+:where(.civic-ui.civic-refined) .ac-notif-list { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+:where(.civic-ui.civic-refined) .ac-notif-pagination > * { margin: 4px 20px 18px; }
+:where(.civic-ui.civic-refined) .notification-item { --nt-bg: var(--ds-tint); --nt-fg: var(--ds-blue); position: relative; display: flex; gap: 14px; min-width: 0; padding: 14px 16px; border: 1px solid var(--ds-border); border-radius: var(--ds-radius); background: var(--ds-surface); }
+:where(.civic-ui.civic-refined) .notification-item.is-unread { border-color: color-mix(in srgb, var(--ds-blue) 35%, transparent); background: linear-gradient(90deg, var(--ds-tint), var(--ds-surface) 60%); }
+:where(.civic-ui.civic-refined) .notification-item.tone-success { --nt-bg: var(--ds-tint-green); --nt-fg: var(--ds-green-dark); }
+:where(.civic-ui.civic-refined) .notification-item.tone-payment { --nt-bg: var(--ds-tint-teal); --nt-fg: var(--ds-teal); }
+:where(.civic-ui.civic-refined) .notification-item.tone-attention { --nt-bg: var(--ds-tint-gold); --nt-fg: var(--ds-gold-dark); }
+:where(.civic-ui.civic-refined) .notification-symbol { display: grid; place-items: center; width: 40px; height: 40px; flex: 0 0 40px; border-radius: var(--ds-radius-sm); background: var(--nt-bg); color: var(--nt-fg); }
+:where(.civic-ui.civic-refined) .notification-symbol .app-icon { width: 20px; height: 20px; flex: 0 0 20px; }
+:where(.civic-ui.civic-refined) .notification-body { display: grid; flex: 1; gap: 4px; min-width: 0; }
+:where(.civic-ui.civic-refined) .notification-title { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+:where(.civic-ui.civic-refined) .notification-title h2 { margin: 0; color: var(--ds-ink); font-size: .9375rem; font-weight: 800; }
+:where(.civic-ui.civic-refined) .notification-unread { display: inline-flex; align-items: center; gap: 5px; color: var(--ds-blue); font-size: .75rem; font-weight: 800; }
+:where(.civic-ui.civic-refined) .notification-unread::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--ds-blue-bright); }
+:where(.civic-ui.civic-refined) .notification-read { color: var(--ds-muted); font-size: .75rem; font-weight: 600; }
+:where(.civic-ui.civic-refined) .notification-body p { margin: 0; color: var(--ds-text); font-size: .875rem; line-height: 1.5; overflow-wrap: anywhere; }
+:where(.civic-ui.civic-refined) .notification-body time { color: var(--ds-muted); font-size: .75rem; }
+:where(.civic-ui.civic-refined) .notification-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+:where(.civic-ui.civic-refined) .notification-actions form { margin: 0; }
+:where(.civic-ui.civic-refined) .notification-empty { display: grid; justify-items: center; gap: 6px; padding: 40px 20px; text-align: center; }
+:where(.civic-ui.civic-refined) .notification-empty h2 { margin: 0; color: var(--ds-ink); font-size: 1.0625rem; font-weight: 800; }
+:where(.civic-ui.civic-refined) .notification-empty p { margin: 0; color: var(--ds-muted); font-size: .875rem; }
+/* Bell preview (topbar dropdown) */
+:where(.civic-ui.civic-refined) .notification-preview { width: min(380px, calc(100vw - 24px)); padding: 0; overflow: hidden; border: 1px solid var(--ds-border); border-radius: var(--ds-radius-lg); background: var(--ds-surface); box-shadow: var(--ds-shadow-lift); }
+:where(.civic-ui.civic-refined) .notification-preview-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 16px; border-bottom: 1px solid var(--ds-border); color: var(--ds-ink); }
+:where(.civic-ui.civic-refined) .notification-preview-heading span { color: var(--ds-muted); font-size: .8125rem; }
+:where(.civic-ui.civic-refined) .notification-preview ul { max-height: 360px; overflow-y: auto; padding: 8px; }
+:where(.civic-ui.civic-refined) .notification-preview li + li { margin-top: 6px; }
+:where(.civic-ui.civic-refined) .notification-item.is-compact { padding: 10px 12px; }
+:where(.civic-ui.civic-refined) .notification-item.is-compact .notification-symbol { width: 34px; height: 34px; flex-basis: 34px; }
+:where(.civic-ui.civic-refined) .notification-item.is-compact .notification-actions .btn-link { min-height: 0; padding: 0; font-size: .8125rem; font-weight: 700; text-decoration: none; }
+:where(.civic-ui.civic-refined) .notification-view-all { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-top: 1px solid var(--ds-border); color: var(--ds-blue); font-size: .875rem; font-weight: 700; text-decoration: none; }
+:where(.civic-ui.civic-refined) .notification-view-all:hover { background: var(--ds-hover); }
+/* The bell uses data-bs-display="static", so plain CSS positions it (no Popper inline styles to override). */
+@media (max-width: 575.98px) {
+    :where(.civic-ui.civic-refined) .notification-dropdown { position: static; }
+    :where(.civic-ui.civic-refined) .notification-preview[data-bs-popper] { position: fixed; inset: 76px 12px auto; width: auto; }
+}
+
+/* ---------- Profile ---------- */
+:where(.civic-ui.civic-refined) .ac-profile-head { position: relative; overflow: hidden; display: flex; flex-wrap: wrap; align-items: center; gap: 18px 22px; margin-bottom: 20px; padding: 22px 24px; border-radius: var(--ds-radius-xl); color: #FFF; background: var(--ds-brand-gradient); box-shadow: 0 18px 40px rgb(23 74 133 / 20%); }
+:where(.civic-ui.civic-refined) .app-role-resident .ac-profile-head { background: var(--ds-brand-gradient-warm); }
+:where(.civic-ui.civic-refined) .ac-avatar { display: grid; place-items: center; overflow: hidden; width: 88px; height: 88px; flex: 0 0 88px; border: 3px solid rgb(255 255 255 / 70%); border-radius: 50%; background: rgb(255 255 255 / 16%); color: #FFF; font-size: 2rem; font-weight: 800; }
+:where(.civic-ui.civic-refined) .ac-avatar img { width: 100%; height: 100%; object-fit: cover; }
+:where(.civic-ui.civic-refined) .ac-profile-text { flex: 1 1 220px; min-width: 0; }
+:where(.civic-ui.civic-refined) .ac-profile-text h2 { margin: 0 0 4px; color: #FFF; font-size: 1.5rem; font-weight: 800; letter-spacing: -0.02em; overflow-wrap: anywhere; }
+:where(.civic-ui.civic-refined) .ac-profile-text p { margin: 0; color: #D8E7F7; font-size: .9375rem; overflow-wrap: anywhere; }
+:where(.civic-ui.civic-refined) .ac-profile-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+:where(.civic-ui.civic-refined) .ac-chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border: 1px solid rgb(255 255 255 / 30%); border-radius: 999px; background: rgb(255 255 255 / 14%); color: #FFF; font-size: .75rem; font-weight: 700; }
+:where(.civic-ui.civic-refined) .ac-chip.is-approved { border-color: transparent; background: #E2F3EA; color: #1F6B45; }
+:where(.civic-ui.civic-refined) .ac-chip.is-pending { border-color: transparent; background: #FBF1DC; color: #8A5A07; }
+:where(.civic-ui.civic-refined) .ac-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (min-width: 1200px) { :where(.civic-ui.civic-refined) .ac-grid { grid-template-columns: minmax(280px, 340px) minmax(0, 1fr); } }
+@media (min-width: 1200px) { :where(.civic-ui.civic-refined) .ac-grid.is-settings { grid-template-columns: minmax(0, 1.4fr) minmax(280px, 1fr); } }
+:where(.civic-ui.civic-refined) .ac-stack { display: grid; gap: 20px; min-width: 0; }
+:where(.civic-ui.civic-refined) .ac-card-body { padding: 20px 22px 22px; }
+:where(.civic-ui.civic-refined) .ac-card-body .form-label { color: var(--ds-ink); font-weight: 700; }
+:where(.civic-ui.civic-refined) .ac-card-body :is(.form-control, .form-select) { border-color: var(--ds-input-border); }
+:where(.civic-ui.civic-refined) .ac-card-body fieldset legend { color: var(--ds-ink); font-size: 1rem; font-weight: 800; }
+:where(.civic-ui.civic-refined) .ac-photo { display: grid; justify-items: center; gap: 10px; margin-bottom: 16px; }
+:where(.civic-ui.civic-refined) .ac-photo :is(.profile-image, .profile-placeholder) { display: grid; place-items: center; width: 120px; height: 120px; border-radius: 50%; object-fit: cover; background: var(--ds-tint); color: var(--ds-blue); font-size: 2.5rem; font-weight: 800; box-shadow: 0 0 0 4px var(--ds-surface), 0 0 0 6px var(--ds-tint-border); }
+:where(.civic-ui.civic-refined) .ac-form-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 10px; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--ds-border); }
+
+/* ---------- Settings ---------- */
+:where(.civic-ui.civic-refined) .ac-theme-options { grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr)); }
+:where(.civic-ui.civic-refined) .ac-theme-preview { display: block; width: 100%; height: 76px; margin-bottom: 6px; overflow: hidden; border: 1px solid var(--ds-border); border-radius: var(--ds-radius-sm); }
+:where(.civic-ui.civic-refined) .ac-theme-preview.is-light { background: linear-gradient(90deg, #FFF 0 28%, #F3F7FC 28%); box-shadow: inset 0 14px 0 #FFF, inset 0 15px 0 #E2E8F0; }
+:where(.civic-ui.civic-refined) .ac-theme-preview.is-dark { background: linear-gradient(90deg, #132034 0 28%, #0B1422 28%); box-shadow: inset 0 14px 0 #132034, inset 0 15px 0 #233550; }
+:where(.civic-ui.civic-refined) .ac-about dt { color: var(--ds-ink); font-size: .875rem; font-weight: 800; }
+:where(.civic-ui.civic-refined) .ac-about dd { margin: 2px 0 14px; color: var(--ds-muted); font-size: .875rem; }

@@ -35,5 +35,5 @@
         @endif
     </div>
     @if($hint)<div id="{{ $name }}-hint" class="form-text">{{ $hint }}</div>@endif
-    @error($name)<div id="{{ $name }}-error" class="invalid-feedback d-block">{{ $message }}</div>@enderror
+    @error($name)<div id="{{ $name }}-error" class="invalid-feedback">{{ $message }}</div>@enderror
 </div>

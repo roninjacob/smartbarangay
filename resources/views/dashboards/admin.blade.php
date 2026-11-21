@@ -27,9 +27,9 @@
 
 <section class="dash-stats" aria-label="Barangay operations summary">
     <x-dashboard-stat label="Needs attention" :value="$needsAttention" icon="status" note="Pending and under review" tone="gold"/>
-    <x-dashboard-stat label="Ready for pickup" :value="$counts[\App\Enums\ReservationStatus::ReadyForPickup->value]" icon="services" tone="green"/>
+    <x-dashboard-stat label="Ready for pickup" :value="$counts[\App\Enums\ReservationStatus::ReadyForPickup->value]" icon="services" tone="teal"/>
     <x-dashboard-stat label="Total reservations" :value="$totalReservations" icon="document"/>
-    <x-dashboard-stat label="Registered residents" :value="$totalResidents" icon="users" tone="violet"/>
+    <x-dashboard-stat label="Registered residents" :value="$totalResidents" icon="users" tone="indigo"/>
 </section>
 
 <section class="dash-group" aria-labelledby="collections-heading">
@@ -49,7 +49,7 @@
     <div class="dash-side">
         <x-dashboard-statuses :statuses="$statuses" :counts="$counts" :total="$totalReservations"/>
         <section class="card dashboard-panel" aria-labelledby="quick-actions-heading">
-            <div class="dashboard-panel-heading"><h2 id="quick-actions-heading">Quick access</h2></div>
+            <div class="dashboard-panel-heading"><h2 id="quick-actions-heading"><span class="panel-icon is-gold" aria-hidden="true"><x-app-icon name="dashboard"/></span>Quick access</h2></div>
             <div class="quick-tiles">
                 <a class="quick-tile" href="{{ route('admin.reservations.index') }}"><span class="quick-tile-icon"><x-app-icon name="document"/></span>Reservations</a>
                 <a class="quick-tile" href="{{ route('admin.schedules.index') }}"><span class="quick-tile-icon"><x-app-icon name="calendar"/></span>Schedules</a>

@@ -13,8 +13,6 @@
 .civic-ui.civic-refined .account-details>div:first-child { grid-column:1/-1; }
 .civic-ui.civic-refined .account-details dt { font-size:11px; color:var(--muted-text); margin-bottom:3px; }
 .civic-ui.civic-refined .account-details dd { margin:0; font-size:14px; overflow-wrap:anywhere; }
-.civic-ui.civic-refined .reservation-worklist>.table-responsive { max-height:none; }
-.civic-ui.civic-refined .reservation-worklist-table tbody :is(td,th) { padding-block:20px; }
 .civic-ui.civic-refined .report-status-board { display:grid; grid-template-columns:230px minmax(0,1fr); background:var(--surface); border:1px solid var(--border-color); border-radius:18px; overflow:hidden; margin-bottom:16px; }
 .civic-ui.civic-refined .report-total { display:flex; gap:15px; padding:24px; background:var(--sb-soft); }
 .civic-ui.civic-refined .report-total h2 { font-size:13px; margin:0 0 10px; }

@@ -88,9 +88,9 @@ if (!document.querySelector('[data-print-document]')) {
 
     // Shortcuts use headings already visible on long detail/profile pages.
     const main = document.querySelector('.app-main');
-    if (main && !main.querySelector('.reservation-reports,.dashboard-welcome,.dash-hero')) {
+    if (main && !main.querySelector('.reservation-reports,.dashboard-welcome,.dash-hero,.rv-detail-grid,.rv-wizard,.user-preferences')) {
         const headings = [...new Map([...main.querySelectorAll('h2[id],h3[id]')]
-            .filter((heading) => !heading.closest('.modal,[data-pdf-preview],article'))
+            .filter((heading) => !heading.closest('.modal,[data-pdf-preview],article,.ac-profile-head,.residency-banner'))
             .map((heading) => [heading.id, heading])).values()];
         if (headings.length >= 2) {
             const labels = { 'admin-request-heading': 'Request details', 'reservation-detail-heading': 'Request details', 'qr-lifecycle-heading': 'QR ticket',
@@ -111,12 +111,8 @@ if (!document.querySelector('[data-print-document]')) {
             const fallback = main.querySelector('.request-section-nav');
             if (fallback) fallback.hidden = true;
             main.classList.add('has-section-navigation');
-            if (main.querySelector('.reservation-wizard')) {
-                main.classList.add('has-reservation-sections');
-                const back = main.querySelector('.reservation-details-back');
-                if (back) main.querySelector('.app-page-heading')?.append(back);
-            }
-            main.querySelector('.app-page-heading')?.after(nav);
+            if (main.querySelector('.reservation-wizard')) main.classList.add('has-reservation-sections');
+            main.prepend(nav);
         }
     }
 }
