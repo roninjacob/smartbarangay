@@ -21,7 +21,7 @@ class ServiceController extends Controller
 {
     public function index(): View
     {
-        $services = Service::with('documentTemplate')->orderBy('name')->orderBy('id')->paginate(15);
+        $services = Service::with('documentTemplate')->withCount('serviceRequirements')->orderBy('name')->orderBy('id')->paginate(15);
         $readiness = [];
         foreach ($services as $service) {
             try {

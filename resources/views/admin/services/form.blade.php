@@ -1,80 +1,82 @@
 @extends('layouts.authenticated')
 @section('dashboard')
-<a href="{{ route('admin.services.index') }}" class="service-back-link">&larr; Back to service catalog</a>
-<div class="row g-4">
-    <div class="col-xl-8">
-        <section class="dashboard-panel service-form-panel" aria-labelledby="service-form-heading">
-            <div class="dashboard-panel-heading"><div><h2 id="service-form-heading">{{ $service->exists ? 'Service details' : 'Add a barangay service' }}</h2><p class="panel-description">{{ $service->exists ? 'Keep service information clear and up to date.' : 'Prepare a document or service for the Barangay Calayo catalog.' }}</p></div></div>
-            <form method="POST" action="{{ $service->exists ? route('admin.services.update', $service) : route('admin.services.store') }}" enctype="multipart/form-data" class="service-form" data-service-submit>
-                @csrf
-                @if($service->exists) @method('PUT')<input type="hidden" name="edit_revision" value="{{ is_string(old('edit_revision')) ? old('edit_revision') : app(\App\Services\ConfigurationAudit::class)->revision($service) }}"> @endif
-                @if($errors->any())<div class="alert alert-danger" role="alert">Please correct the highlighted fields and try again. @error('edit_revision')<p class="mb-2 mt-2">{{ $message }}</p><a class="btn btn-outline-primary" href="{{ route('admin.services.edit', $service) }}">Reload current details</a>@enderror</div>@endif
-                <div class="mb-4">
+<x-page-intro :subtitle="$service->exists ? $service->name : 'New services start active.'">
+    <x-slot:actions><a class="btn btn-outline-secondary" href="{{ route('admin.services.index') }}">Back to services</a></x-slot:actions>
+</x-page-intro>
+<form method="POST" action="{{ $service->exists ? route('admin.services.update', $service) : route('admin.services.store') }}" enctype="multipart/form-data" class="admin-editor" data-service-submit>
+    @csrf
+    @if($service->exists) @method('PUT')<input type="hidden" name="edit_revision" value="{{ is_string(old('edit_revision')) ? old('edit_revision') : app(\App\Services\ConfigurationAudit::class)->revision($service) }}"> @endif
+    @if($errors->any())<div class="alert alert-danger" role="alert">Please correct the highlighted fields. @error('edit_revision')<p class="mb-2 mt-2">{{ $message }}</p><a class="btn btn-outline-primary" href="{{ route('admin.services.edit', $service) }}">Reload current details</a>@enderror</div>@endif
+    <div class="admin-editor-grid">
+        <section class="dashboard-panel rv-section">
+            <div class="dashboard-panel-heading"><h2><span class="panel-icon" aria-hidden="true"><x-app-icon name="services"/></span>Service details</h2>
+                @if($service->exists)<span @class(['rv-badge', 'is-green' => $service->is_active, 'is-muted' => ! $service->is_active])>{{ $service->is_active ? 'Active' : 'Inactive' }}</span>@endif
+            </div>
+            <div class="rv-section-body">
+                <div class="admin-form-field">
                     <label for="service-name" class="form-label">Service / Document Name <span class="service-required">(required)</span></label>
                     <input id="service-name" name="name" type="text" @class(['form-control', 'is-invalid' => $errors->has('name')]) value="{{ is_string(old('name', $service->name)) ? old('name', $service->name) : '' }}" required maxlength="255" aria-describedby="service-name-help{{ $errors->has('name') ? ' service-name-error' : '' }}" @if($errors->has('name')) aria-invalid="true" @endif>
-                    <div id="service-name-help" class="form-text">Use a clear, unique name, such as Barangay Clearance.</div>
+                    <div id="service-name-help" class="form-text">Service names must be unique.</div>
                     @error('name')<div id="service-name-error" class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
-                <div class="mb-4">
+                <div class="admin-form-field">
                     <label for="service-description" class="form-label">Description <span class="service-required">(optional)</span></label>
                     <textarea id="service-description" name="description" rows="6" maxlength="5000" @class(['form-control', 'is-invalid' => $errors->has('description')]) aria-describedby="service-description-help{{ $errors->has('description') ? ' service-description-error' : '' }}" @if($errors->has('description')) aria-invalid="true" @endif>{{ is_string(old('description', $service->description)) ? old('description', $service->description) : '' }}</textarea>
-                    <div id="service-description-help" class="form-text">Describe the service in plain text. Maximum 5,000 characters.</div>
+                    <div id="service-description-help" class="form-text">Maximum 5,000 characters.</div>
                     @error('description')<div id="service-description-error" class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
-                <div class="mb-4">
+                <div class="admin-form-field">
                     <label for="service-fee" class="form-label">Service Fee (₱) <span class="service-required">(required)</span></label>
-                    @if($service->exists && $service->fee_amount === null)<p class="text-warning-emphasis">Fee setup required. Enter an amount explicitly, including 0.00 for a free service.</p>@endif
+                    @if($service->exists && $service->fee_amount === null)<p class="text-warning-emphasis">Fee setup required.</p>@endif
                     <input id="service-fee" name="fee_amount" type="number" min="0" max="99999999.99" step="0.01" required inputmode="decimal" @class(['form-control', 'is-invalid' => $errors->has('fee_amount')]) value="{{ is_scalar(old('fee_amount', $service->fee_amount)) ? old('fee_amount', $service->fee_amount) : '' }}" aria-describedby="service-fee-help{{ $errors->has('fee_amount') ? ' service-fee-error' : '' }}" @if($errors->has('fee_amount')) aria-invalid="true" @endif>
-                    <div id="service-fee-help" class="form-text">Enter 0.00 for a free service. Changes to the service fee apply only to new reservations. Existing reservations retain their original fee.</div>
+                    <div id="service-fee-help" class="form-text">Enter 0.00 for a free service. Existing reservations retain their original fee.</div>
                     @error('fee_amount')<div id="service-fee-error" class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
-                <fieldset class="mb-4 border-top pt-4">
-                    <legend class="h5 float-none w-auto">Official Certificate PDF</legend>
-                    <p class="app-note">This is the official Barangay Calayo PDF used for certificate printing. Service Requirements are the files a Resident submits with a reservation.</p>
-                    @if($service->exists && $service->documentTemplate)
-                        @php($template = $service->documentTemplate)
-                        <dl class="mb-3">
-                            <dt>Current file</dt><dd class="text-break">{{ $template->original_filename }}</dd>
-                            <dt>Format / Size</dt><dd>{{ $template->format() }} · {{ number_format($template->file_size / 1024, 1) }} KB</dd>
-                            <dt>Uploaded</dt><dd>{{ $template->uploaded_at->timezone('Asia/Manila')->format('F j, Y, g:i A') }} · Philippine time</dd>
-                        </dl>
-                        @if($template->format() === 'PDF')<a href="{{ route('admin.services.template.download', $service) }}" class="btn btn-outline-primary mb-3">Download Blank PDF</a>@else<p class="alert alert-warning">Replace this legacy file with a PDF to preview or print blank templates.</p>@endif
-                    @else
-                        <p class="app-note">No template uploaded. Services can be saved without a template.</p>
-                    @endif
-                    <label class="form-label d-block" for="official-template">{{ $service->exists && $service->documentTemplate ? 'Replace Template' : 'Official template (optional)' }}</label>
-                    <input id="official-template" type="file" name="official_template" accept=".pdf,application/pdf" @class(['form-control', 'is-invalid' => $errors->has('official_template')]) aria-describedby="template-help{{ $errors->has('official_template') ? ' template-error' : '' }}">
-                    <div id="template-help" class="form-text">PDF only · Maximum 10 MB. Upload the official Barangay Calayo certificate PDF used for this service. Select the file again if validation fails.</div>
-                    @error('official_template')<div id="template-error" class="invalid-feedback">{{ $message }}</div>@enderror
-                </fieldset>
-                <div class="service-form-actions"><button class="btn btn-primary" type="submit" data-saving-label="Saving…">{{ $service->exists ? 'Save Changes' : 'Create Service' }}</button><a class="btn btn-outline-secondary" href="{{ route('admin.services.index') }}">Cancel</a></div>
-            </form>
-            @if($service->exists && $service->documentTemplate)
-                <section class="border-top mt-4 p-4" aria-labelledby="remove-template-heading">
-                    <h3 id="remove-template-heading" class="h6">Remove current master template</h3>
-                    <p class="app-note">Only the current official template will be removed. The service, requirements, reservations, submitted files and QR tickets are preserved.</p>
-                    <form method="POST" action="{{ route('admin.services.template.destroy', $service) }}" data-service-submit>
-                        @csrf @method('DELETE')
-                        <input type="hidden" name="template_id" value="{{ $service->documentTemplate->id }}">
-                        <input type="hidden" name="template_revision" value="{{ $service->documentTemplate->revision() }}">
-                        <div class="form-check mb-3">
-                            <input id="confirm-template-removal" type="checkbox" name="confirm_removal" value="1" class="form-check-input" required>
-                            <label class="form-check-label" for="confirm-template-removal">I confirm removal of the current master template.</label>
-                        </div>
-                        @error('confirm_removal')<p class="text-danger" role="alert">{{ $message }}</p>@enderror
-                        @error('template_id')<p class="text-danger" role="alert">{{ $message }}</p>@enderror
-                        <button type="submit" class="btn btn-outline-danger" data-saving-label="Removing…">Remove Template</button>
-                    </form>
-                </section>
-            @endif
+            </div>
+        </section>
+        <section class="dashboard-panel rv-section">
+            <div class="dashboard-panel-heading"><h2><span class="panel-icon is-indigo" aria-hidden="true"><x-app-icon name="document"/></span>Official Certificate PDF</h2></div>
+            <div class="rv-section-body">
+                <p class="app-note mb-0">The master PDF is separate from the files a resident submits.</p>
+                @if($service->exists && $service->documentTemplate)
+                    @php($template = $service->documentTemplate)
+                    <dl class="mb-3">
+                        <dt>Current file</dt><dd class="text-break">{{ $template->original_filename }}</dd>
+                        <dt>Format / Size</dt><dd>{{ $template->format() }} · {{ number_format($template->file_size / 1024, 1) }} KB</dd>
+                        <dt>Uploaded</dt><dd>{{ $template->uploaded_at->timezone('Asia/Manila')->format('F j, Y, g:i A') }} · Philippine time</dd>
+                    </dl>
+                    @if($template->format() === 'PDF')<a href="{{ route('admin.services.template.download', $service) }}" class="btn btn-outline-primary mb-3">Download Blank PDF</a>@else<p class="alert alert-warning">Replace this legacy file with a PDF to preview or print blank templates.</p>@endif
+                @else
+                    <p class="app-note">No template uploaded. A master PDF is optional.</p>
+                @endif
+                <label class="form-label d-block" for="official-template">{{ $service->exists && $service->documentTemplate ? 'Replace Template' : 'Official template (optional)' }}</label>
+                <input id="official-template" type="file" name="official_template" accept=".pdf,application/pdf" @class(['form-control', 'is-invalid' => $errors->has('official_template')]) aria-describedby="template-help{{ $errors->has('official_template') ? ' template-error' : '' }}">
+                <div id="template-help" class="form-text">PDF only · Up to 10 MB. Reselect the file after a validation error.</div>
+                @error('official_template')<div id="template-error" class="invalid-feedback">{{ $message }}</div>@enderror
+            </div>
         </section>
     </div>
-    <div class="col-xl-4">
-        <aside class="dashboard-panel service-form-note" aria-labelledby="availability-heading"><span class="service-empty-icon"><x-app-icon name="services"/></span><h2 id="availability-heading">Service availability</h2>
-            <p>{{ $service->exists ? 'Change availability using Activate or Deactivate in the service catalog.' : 'New services start active. You can deactivate them from the service catalog when needed.' }}</p>
-            @if($service->exists)<span @class(['service-status', 'is-active' => $service->is_active])>{{ $service->is_active ? 'Active' : 'Inactive' }}</span>@endif
-            <p class="mb-0 mt-3">Deactivation keeps existing reservations and history intact.</p>
-        </aside>
-    </div>
-</div>
+    <x-action-bar>
+        <a class="btn btn-outline-secondary" href="{{ route('admin.services.index') }}">Cancel</a>
+        <button class="btn btn-primary" type="submit" data-saving-label="Saving…">{{ $service->exists ? 'Save Changes' : 'Create Service' }}</button>
+    </x-action-bar>
+</form>
+@if($service->exists && $service->documentTemplate)
+    <section class="dashboard-panel rv-section p-4" aria-labelledby="remove-template-heading">
+        <h3 id="remove-template-heading" class="h6">Remove current master template</h3>
+        <p class="app-note">Removal applies to the current master PDF only.</p>
+        <form method="POST" action="{{ route('admin.services.template.destroy', $service) }}" data-service-submit>
+            @csrf @method('DELETE')
+            <input type="hidden" name="template_id" value="{{ $service->documentTemplate->id }}">
+            <input type="hidden" name="template_revision" value="{{ $service->documentTemplate->revision() }}">
+            <div class="form-check mb-3">
+                <input id="confirm-template-removal" type="checkbox" name="confirm_removal" value="1" class="form-check-input" required>
+                <label class="form-check-label" for="confirm-template-removal">I confirm removal of the current master template.</label>
+            </div>
+            @error('confirm_removal')<p class="text-danger" role="alert">{{ $message }}</p>@enderror
+            @error('template_id')<p class="text-danger" role="alert">{{ $message }}</p>@enderror
+            <button type="submit" class="btn btn-outline-danger" data-saving-label="Removing…">Remove Template</button>
+        </form>
+    </section>
+@endif
 @endsection

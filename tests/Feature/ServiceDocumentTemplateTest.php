@@ -78,7 +78,7 @@ class ServiceDocumentTemplateTest extends TestCase
         $this->actingAs($this->admin())->post('/admin/services', ['fee_amount' => '0.00', 'name' => 'No template'])->assertSessionHas('status');
         $service = Service::sole();
         $this->assertDatabaseCount('service_document_templates', 0);
-        $this->get(route('admin.services.edit', $service))->assertSee('No template uploaded')->assertSee('Resident submits');
+        $this->get(route('admin.services.edit', $service))->assertSee('No template uploaded')->assertSee('resident submits');
         $this->put(route('admin.services.update', $service), ['edit_revision' => app(ConfigurationAudit::class)->revision($service->fresh()), 'fee_amount' => '0.00', 'name' => 'Still valid'])->assertSessionHas('status');
         $this->get(route('admin.services.template.download', $service))->assertNotFound();
         $this->get('/admin/services/999/template')->assertNotFound();

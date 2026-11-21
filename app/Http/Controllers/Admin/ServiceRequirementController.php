@@ -19,7 +19,7 @@ class ServiceRequirementController extends Controller
     public function index(Service $service): View
     {
         return view('admin.requirements.index', [
-            ...$this->shellData('Service Requirements'),
+            ...$this->shellData('Requirements'),
             'service' => $service,
             'requirements' => $service->serviceRequirements()->withExists('attachments')
                 ->orderBy('name')->orderBy('id')->paginate(15),
