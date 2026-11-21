@@ -16,9 +16,6 @@
 .civic-ui.civic-refined .app-account-modal .modal-body dl { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; }
 .civic-ui.civic-refined .app-account-modal .modal-body dl>div { padding:16px; background:var(--interaction-soft); border-radius:12px; min-width:0; }
 .civic-ui.civic-refined .app-account-modal dd { overflow-wrap:anywhere; }
-.civic-ui.civic-refined .dashboard-table tbody tr:hover>*,
-.civic-ui.civic-refined .dashboard-table tbody tr:focus-within>* { background-color:var(--interaction-soft); }
-.civic-ui.civic-refined .dashboard-table thead th { font-size:12px; letter-spacing:.02em; color:var(--muted-text); }
 .civic-ui.civic-refined .table-responsive:focus-visible { outline:2px solid var(--interaction-blue); outline-offset:4px; }
 .civic-ui.civic-refined .reservation-option { position:relative; }
 .civic-ui.civic-refined .reservation-option:has(input:checked) { border-color:var(--interaction-blue); background:var(--interaction-soft); box-shadow:0 0 0 2px #245ee012; }
@@ -26,7 +23,6 @@
 .civic-ui.civic-refined .reservation-options input { accent-color:var(--interaction-blue); }
 .civic-ui.civic-refined .request-progress .is-current { background:var(--interaction-soft); border-radius:14px; box-shadow:inset 0 0 0 1px #719cf247; }
 .civic-ui.civic-refined .request-progress .is-current small { color:var(--civic-dark); font-weight:650; }
-.civic-ui.civic-refined .service-empty-icon { background:radial-gradient(circle at 25% 20%,#fff,var(--interaction-soft)); border:1px solid var(--border-color); border-radius:24px 20px 25px 16px; }
 .civic-ui.civic-refined .service-back-link { display:inline-flex; align-items:center; gap:8px; padding:8px 12px; border-radius:10px; text-decoration:none; }
 .civic-ui.civic-refined .service-back-link:hover { background:var(--interaction-soft); }
 .civic-toast-region { position:fixed; z-index:1090; right:24px; bottom:24px; width:380px; max-width:calc(100% - 48px); pointer-events:none; }
@@ -107,7 +103,6 @@
 .civic-ui.civic-refined .report-chart-data { padding:8px; border:1px solid var(--border-color); border-radius:10px; }
 @media(prefers-reduced-motion:no-preference) {
     .civic-ui.civic-refined .app-main details[open]>.report-chart-data { animation:civic-enter 220ms ease-out; }
-    .civic-ui.civic-refined .dashboard-table tbody tr>* { transition:background-color 150ms ease; }
 }
 @media print {
     .chart-tools,.chart-explorer,.module-shortcuts,.chart-active-point { display:none!important; }

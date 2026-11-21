@@ -1,0 +1,160 @@
+/* Authenticated app shell: sidebar, topbar, page header, footer and pagination.
+   Shares tokens with landing.css / auth.css so the whole system reads as one product. */
+
+.civic-ui {
+    --sh-blue: #1F5EA8;
+    --sh-blue-dark: #174A85;
+    --sh-green: #2F855A;
+    --sh-gold: #E0A93B;
+    --sh-ink: #0F1B2D;
+    --sh-text: #334155;
+    --sh-muted: #5B6779;
+    --sh-page: #F4F7FB;
+    --sh-surface: #FFFFFF;
+    --sh-border: #E2E8F0;
+    --sh-border-strong: #D3DCE7;
+    --sh-tint: #EAF1FA;
+    --sh-hover: #F2F6FB;
+    --sh-shadow: 0 1px 2px rgb(15 27 45 / 4%), 0 6px 20px rgb(15 27 45 / 5%);
+    --sh-sidebar: 264px;
+    --sh-font: "Plus Jakarta Sans Variable", "Plus Jakarta Sans", "Segoe UI", system-ui, -apple-system, Arial, sans-serif;
+}
+[data-bs-theme="dark"] .civic-ui {
+    --sh-blue: #8DBBFF;
+    --sh-blue-dark: #BDD6FF;
+    --sh-green: #8ED6B0;
+    --sh-ink: #EEF3F9;
+    --sh-text: #CAD5E2;
+    --sh-muted: #A2B1C3;
+    --sh-page: #0F161F;
+    --sh-surface: #17212D;
+    --sh-border: #263444;
+    --sh-border-strong: #33445A;
+    --sh-tint: #1D3047;
+    --sh-hover: #1B2836;
+    --sh-shadow: 0 1px 2px rgb(0 0 0 / 30%), 0 8px 24px rgb(0 0 0 / 22%);
+}
+
+.civic-ui.civic-refined .app-shell { min-height: 100vh; min-height: 100dvh; background: var(--sh-page); color: var(--sh-text); font-family: var(--sh-font); }
+.civic-ui.civic-refined .app-shell :is(h1, h2, h3) { font-family: var(--sh-font); }
+
+/* ---------- Sidebar ---------- */
+.civic-ui.civic-refined .app-sidebar { --bs-offcanvas-width: var(--sh-sidebar); display: flex; flex-direction: column; background: var(--sh-surface); border-right: 1px solid var(--sh-border); color: var(--sh-text); }
+.civic-ui.civic-refined .app-sidebar-brand { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 20px 20px 16px; }
+.civic-ui.civic-refined .app-sidebar .brand-lockup { display: flex; align-items: center; gap: 11px; min-width: 0; }
+.civic-ui.civic-refined .app-sidebar .brand-lockup > div { min-width: 0; }
+.civic-ui.civic-refined .app-sidebar .sb-brand-mark { width: 38px; height: 38px; flex: 0 0 38px; border-radius: 10px; }
+.civic-ui.civic-refined .app-sidebar .brand-name { display: block; color: var(--sh-ink); font-size: 1.0625rem; font-weight: 800; letter-spacing: -0.02em; line-height: 1.2; }
+.civic-ui.civic-refined .app-sidebar .brand-location { display: block; max-width: none; margin-top: 2px; color: var(--sh-muted); font-size: .75rem; opacity: 1; line-height: 1.3; }
+.civic-ui.civic-refined .app-sidebar .btn-close { min-width: 40px; min-height: 40px; }
+[data-bs-theme="dark"] .civic-ui.civic-refined .app-sidebar .btn-close { filter: invert(1) grayscale(1) brightness(1.8); }
+.civic-ui.civic-refined .app-sidebar-body { flex: 1; min-height: 0; overflow-y: auto; padding: 8px 12px 16px; scrollbar-width: thin; }
+.civic-ui.civic-refined .app-navigation { display: flex; flex-direction: column; gap: 18px; }
+.civic-ui.civic-refined .app-nav-group ul { display: grid; gap: 2px; }
+.civic-ui.civic-refined .app-nav-heading { margin: 0 0 6px; padding: 0 12px; color: var(--sh-muted); font-size: .6875rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+.civic-ui.civic-refined .app-nav-link { position: relative; display: flex; align-items: center; gap: 10px; width: 100%; min-height: 40px; margin: 0; padding: 8px 12px; border: 0; border-radius: 10px; background: transparent; color: var(--sh-text); font-size: .875rem; font-weight: 500; line-height: 1.3; text-align: left; text-decoration: none; }
+.civic-ui.civic-refined .app-nav-link .app-nav-icon { display: grid; place-items: center; color: var(--sh-muted); }
+.civic-ui.civic-refined .app-nav-link .app-icon { width: 19px; height: 19px; flex: 0 0 19px; }
+.civic-ui.civic-refined .app-nav-label { flex: 1; min-width: 0; }
+.civic-ui.civic-refined .app-nav-link:hover { background: var(--sh-hover); color: var(--sh-ink); }
+.civic-ui.civic-refined .app-nav-link:hover .app-nav-icon { color: var(--sh-ink); }
+.civic-ui.civic-refined .app-nav-link.is-current { background: var(--sh-tint); color: var(--sh-blue-dark); font-weight: 700; }
+.civic-ui.civic-refined .app-nav-link.is-current .app-nav-icon { color: var(--sh-blue); }
+.civic-ui.civic-refined .app-nav-link.is-current::before { content: ""; position: absolute; left: -12px; top: 8px; bottom: 8px; width: 3px; border-radius: 0 3px 3px 0; background: var(--sh-blue); }
+.civic-ui.civic-refined .app-nav-link:focus-visible { outline: 3px solid var(--sh-blue); outline-offset: -1px; }
+.civic-ui.civic-refined .app-nav-unavailable { color: var(--sh-muted); cursor: default; }
+.civic-ui.civic-refined .app-logout:hover { background: #FDF0EF; color: #B42318; }
+[data-bs-theme="dark"] .civic-ui.civic-refined .app-logout:hover { background: #2C1715; color: #FFB4AD; }
+.civic-ui.civic-refined .app-sidebar-user { display: flex; align-items: center; gap: 10px; margin: 8px 12px 14px; padding: 10px; border: 1px solid var(--sh-border); border-radius: 12px; background: var(--sh-surface); color: var(--sh-text); text-align: left; }
+.civic-ui.civic-refined .app-sidebar-user:hover { background: var(--sh-hover); border-color: var(--sh-border-strong); }
+.civic-ui.civic-refined .app-sidebar-user:focus-visible { outline: 3px solid var(--sh-blue); outline-offset: 2px; }
+.civic-ui.civic-refined .app-sidebar-user-text { flex: 1; min-width: 0; }
+.civic-ui.civic-refined .app-sidebar-user-text strong { display: block; overflow: hidden; color: var(--sh-ink); font-size: .875rem; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+.civic-ui.civic-refined .app-sidebar-user-text small { display: block; color: var(--sh-muted); font-size: .75rem; }
+.civic-ui.civic-refined .app-sidebar-user-arrow { width: 16px; height: 16px; flex: 0 0 16px; color: var(--sh-muted); }
+.civic-ui.civic-refined .app-avatar { display: grid; place-items: center; overflow: hidden; width: 36px; height: 36px; flex: 0 0 36px; border-radius: 50%; background: linear-gradient(140deg, #2D6FBF, #174A85); color: #FFF; font-size: .875rem; font-weight: 800; }
+.civic-ui.civic-refined .app-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+@media (min-width: 992px) {
+    .civic-ui.civic-refined .app-sidebar { position: fixed; inset: 0 auto 0 0; z-index: 1030; width: var(--sh-sidebar); height: 100vh; height: 100dvh; visibility: visible !important; transform: none !important; }
+    .civic-ui.civic-refined .app-workspace { margin-left: var(--sh-sidebar); }
+}
+@media (max-width: 991.98px) {
+    .civic-ui.civic-refined .app-sidebar { --bs-offcanvas-width: 300px; max-width: 88vw; }
+}
+
+/* ---------- Topbar ---------- */
+.civic-ui.civic-refined .app-workspace { min-width: 0; }
+.civic-ui.civic-refined .app-topbar { position: sticky; top: 0; z-index: 1020; isolation: isolate; display: flex; align-items: center; justify-content: space-between; gap: 12px; height: 64px; padding: 0 32px; }
+.civic-ui.civic-refined .app-topbar::before { content: ""; position: absolute; inset: 0; z-index: -1; opacity: 0; border-bottom: 1px solid var(--sh-border); background: color-mix(in srgb, var(--sh-surface) 82%, transparent);
+    -webkit-backdrop-filter: saturate(160%) blur(14px); backdrop-filter: saturate(160%) blur(14px); transition: opacity .2s ease; }
+.civic-ui.civic-refined .app-topbar.is-scrolled::before { opacity: 1; }
+.civic-ui.civic-refined .app-topbar-start { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.civic-ui.civic-refined .app-topbar-title { overflow: hidden; color: var(--sh-ink); font-size: 1.0625rem; font-weight: 800; letter-spacing: -0.02em; text-overflow: ellipsis; white-space: nowrap; }
+.civic-ui.civic-refined .app-header-actions { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
+.civic-ui.civic-refined :is(.app-menu-button, .notification-bell, .app-user-button) { position: relative; display: inline-grid; place-items: center; width: 40px; height: 40px; min-height: 40px; padding: 0; border: 1px solid var(--sh-border); border-radius: 10px; background: var(--sh-surface); color: var(--sh-ink); }
+.civic-ui.civic-refined :is(.app-menu-button, .notification-bell):hover { background: var(--sh-hover); border-color: var(--sh-border-strong); color: var(--sh-ink); }
+.civic-ui.civic-refined :is(.app-menu-button, .notification-bell, .app-user-button):focus-visible { outline: 3px solid var(--sh-blue); outline-offset: 2px; }
+.civic-ui.civic-refined :is(.app-menu-button, .notification-bell) .app-icon { width: 20px; height: 20px; flex: 0 0 20px; }
+.civic-ui.civic-refined .app-user-button { border-radius: 50%; padding: 2px; }
+.civic-ui.civic-refined .app-user-button .app-avatar { width: 34px; height: 34px; flex-basis: 34px; }
+.civic-ui.civic-refined .notification-count { position: absolute; top: -5px; right: -5px; display: grid; place-items: center; min-width: 19px; height: 19px; padding: 0 5px; border: 2px solid var(--sh-surface); border-radius: 999px; background: #D92D20; color: #FFF; font-size: .6875rem; font-weight: 800; line-height: 1; }
+@media (pointer: coarse) {
+    .civic-ui.civic-refined :is(.app-menu-button, .notification-bell, .app-user-button) { width: 44px; height: 44px; }
+}
+@media (min-width: 992px) {
+    .civic-ui.civic-refined .app-topbar-title { display: none; }
+}
+
+/* ---------- Main and page header ---------- */
+.civic-ui.civic-refined .app-main { max-width: 1440px; margin: 0 auto; padding: 8px 32px 24px; }
+.civic-ui.civic-refined .app-page-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin: 8px 0 24px; }
+.civic-ui.civic-refined .app-page-title { min-width: 0; }
+.civic-ui.civic-refined .app-page-heading h1 { margin: 0; color: var(--sh-ink); font-size: clamp(1.625rem, 2.4vw, 2rem); font-weight: 800; letter-spacing: -0.03em; line-height: 1.15; overflow-wrap: anywhere; }
+.civic-ui.civic-refined .app-page-title p { margin: 6px 0 0; color: var(--sh-muted); font-size: .9375rem; }
+.civic-ui.civic-refined .app-date { display: inline-flex; align-items: center; gap: 8px; padding: 7px 12px; border: 1px solid var(--sh-border); border-radius: 999px; background: var(--sh-surface); color: var(--sh-muted); font-size: .8125rem; font-weight: 600; white-space: nowrap; }
+.civic-ui.civic-refined .app-date .app-icon { width: 16px; height: 16px; flex: 0 0 16px; color: var(--sh-blue); }
+.civic-ui.civic-refined .app-footer { margin-top: 40px; padding: 18px 0 4px; border-top: 1px solid var(--sh-border); color: var(--sh-muted); font-size: .8125rem; text-align: center; }
+
+@media (max-width: 991.98px) {
+    .civic-ui.civic-refined .app-topbar { padding: 0 16px; }
+    .civic-ui.civic-refined .app-main { padding: 4px 16px 24px; }
+    /* The title moves into the topbar; the H1 stays in the document for assistive technology. */
+    .civic-ui.civic-refined .app-page-heading { align-items: center; margin: 4px 0 18px; }
+    .civic-ui.civic-refined .app-page-heading h1 { position: absolute !important; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+}
+@media (max-width: 575.98px) {
+    .civic-ui.civic-refined .app-header-actions { gap: 6px; }
+    .civic-ui.civic-refined .app-date { font-size: .75rem; }
+}
+
+/* ---------- Resident tab bar (phones) ---------- */
+.civic-ui.civic-refined .resident-mobile-nav { display: none; }
+@media (max-width: 991.98px) {
+    .civic-ui.civic-refined .resident-mobile-nav { position: fixed; left: 12px; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom)); z-index: 1025; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; padding: 6px; border: 1px solid var(--sh-border); border-radius: 18px;
+        background: color-mix(in srgb, var(--sh-surface) 88%, transparent); -webkit-backdrop-filter: saturate(160%) blur(16px); backdrop-filter: saturate(160%) blur(16px); box-shadow: 0 12px 32px rgb(15 27 45 / 16%); }
+    .civic-ui.civic-refined .resident-mobile-link { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; min-height: 52px; padding: 6px 4px; border-radius: 13px; color: var(--sh-muted); font-size: .6875rem; font-weight: 700; text-decoration: none; }
+    .civic-ui.civic-refined .resident-mobile-link .app-icon { width: 21px; height: 21px; flex: 0 0 21px; }
+    .civic-ui.civic-refined .resident-mobile-link:hover { color: var(--sh-ink); }
+    .civic-ui.civic-refined .resident-mobile-link.is-current { background: var(--sh-tint); color: var(--sh-blue-dark); }
+    .civic-ui.civic-refined .resident-mobile-link:focus-visible { outline: 3px solid var(--sh-blue); outline-offset: 1px; }
+    .civic-ui.civic-refined .app-role-resident .app-main { padding-bottom: calc(96px + env(safe-area-inset-bottom)); }
+}
+
+/* ---------- Pagination ---------- */
+.civic-ui.civic-refined .pagination { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; --bs-pagination-border-width: 0; }
+.civic-ui.civic-refined .page-link { display: inline-grid; place-items: center; min-width: 38px; height: 38px; padding: 0 10px; border: 1px solid var(--sh-border) !important; border-radius: 10px !important; background: var(--sh-surface); color: var(--sh-text); font-size: .875rem; font-weight: 600; box-shadow: none; }
+.civic-ui.civic-refined a.page-link:hover { background: var(--sh-hover); border-color: var(--sh-border-strong) !important; color: var(--sh-ink); }
+.civic-ui.civic-refined .page-link:focus-visible { outline: 3px solid var(--sh-blue); outline-offset: 2px; box-shadow: none; }
+.civic-ui.civic-refined .active > .page-link { background: #1F5EA8; border-color: #1F5EA8 !important; color: #FFF; }
+[data-bs-theme="dark"] .civic-ui.civic-refined .active > .page-link { background: #2D67B3; border-color: #477FCB !important; }
+.civic-ui.civic-refined .disabled > .page-link { background: transparent; color: var(--sh-muted); opacity: .55; }
+
+/* ---------- Motion ---------- */
+@media (prefers-reduced-motion: reduce) {
+    .civic-ui.civic-refined .app-topbar::before { transition: none; }
+}
+@media print {
+    .civic-ui.civic-refined :is(.app-sidebar, .app-topbar, .resident-mobile-nav, .app-footer) { display: none !important; }
+    .civic-ui.civic-refined .app-workspace { margin-left: 0; }
+}

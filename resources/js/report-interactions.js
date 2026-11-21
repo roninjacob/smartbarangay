@@ -88,7 +88,7 @@ if (!document.querySelector('[data-print-document]')) {
 
     // Shortcuts use headings already visible on long detail/profile pages.
     const main = document.querySelector('.app-main');
-    if (main && !main.querySelector('.reservation-reports,.dashboard-welcome')) {
+    if (main && !main.querySelector('.reservation-reports,.dashboard-welcome,.dash-hero')) {
         const headings = [...new Map([...main.querySelectorAll('h2[id],h3[id]')]
             .filter((heading) => !heading.closest('.modal,[data-pdf-preview],article'))
             .map((heading) => [heading.id, heading])).values()];

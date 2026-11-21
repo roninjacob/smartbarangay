@@ -66,24 +66,8 @@ body.civic-ui {
     font-size: 10px;
     line-height: 1.5;
 }
-.civic-ui .app-sidebar .sb-brand-mark {
-    width: 37px;
-    height: 37px;
-    flex-basis: 37px;
-}
-.civic-ui .app-sidebar .brand-name {
-    font-size: 19px;
-}
-.civic-ui .app-sidebar .brand-location {
-    font-size: 9px;
-}
 .civic-ui .brand-lockup>div {
     min-width: 0;
-}
-.civic-ui :is(.btn,.page-link) {
-    border-radius: 12px;
-    font-weight: 600;
-    transition: background-color .16s ease,border-color .16s ease,box-shadow .16s ease,transform .16s ease;
 }
 .civic-ui .btn {
     min-height: 44px;
@@ -235,248 +219,15 @@ body.civic-ui {
     background: var(--surface);
     color: var(--main-text);
 }
-.civic-ui .app-shell {
-    --sidebar-width: 252px;
-}
-.civic-ui .app-sidebar {
-    border-color: var(--border-color);
-}
-.civic-ui .app-sidebar-brand {
-    padding: 28px 20px 24px;
-    border-bottom: 0;
-}
-.civic-ui .app-sidebar-body {
-    padding: 14px 15px 22px;
-}
-.civic-ui .app-role-tag {
-    background: none;
-    border: 0;
-    color: var(--muted-text);
-    font-size: 9px;
-    letter-spacing: .12em;
-    padding: 0;
-    margin-bottom: 23px;
-}
-.civic-ui .app-nav-heading {
-    font-size: 9px;
-    color: var(--muted-text);
-    letter-spacing: .12em;
-}
-.civic-ui .app-nav-link {
-    font-size: 13px;
-    min-height: 47px;
-    border-radius: 12px;
-    color: var(--muted-text);
-    padding: 12px;
-    gap: 12px;
-}
-.civic-ui .app-nav-link:hover {
-    background: var(--page-background);
-    color: var(--main-text);
-}
-.civic-ui .app-nav-link.is-current {
-    background: var(--sb-soft);
-    color: var(--civic-dark);
-    box-shadow: none;
-    font-weight: 650;
-}
-.civic-ui .app-nav-link .app-icon {
-    width: 19px;
-    height: 19px;
-    flex-basis: 19px;
-}
-.civic-ui .app-sidebar-note {
-    border-color: var(--border-color);
-    font-size: 11px;
-}
-.civic-ui .app-topbar {
-    min-height: 81px;
-    padding: 16px 34px;
-}
-.civic-ui .app-topbar-location strong {
-    font-size: 13px;
-}
-.civic-ui .app-topbar-location span {
-    font-size: 11px;
-}
 .civic-ui .app-main {
     padding: 34px;
     max-width: 1500px;
 }
-.civic-ui .app-page-heading {
-    margin-bottom: 27px;
-}
-.civic-ui .app-page-heading h1 {
-    font-size: 32px;
-    letter-spacing: -.045em;
-    font-weight: 700;
-    overflow-wrap: anywhere;
-}
-.civic-ui .app-eyebrow {
-    font-size: 9px;
-    color: var(--muted-text);
-    letter-spacing: .12em;
-    margin-bottom: 9px;
-}
-.civic-ui .app-date {
-    font-size: 11px;
-    padding: 8px 12px;
-    border: 1px solid var(--border-color);
-    background: var(--surface);
-    border-radius: 10px;
-    color: var(--muted-text);
-}
-.civic-ui .app-menu-button {
-    background: var(--surface);
-    border-radius: 12px;
-}
-.civic-ui .app-avatar {
-    border: 0;
-    background: var(--sb-soft);
-    color: var(--civic-dark);
-    width: 36px;
-    height: 36px;
-    flex-basis: 36px;
-}
-.civic-ui .app-user-text strong {
-    font-size: 12px;
-}
-.civic-ui .app-user-button {
-    border-radius: 12px;
-}
-.civic-ui .app-footer {
-    color: var(--muted-text);
-    font-size: 11px;
-}
-.civic-ui :is(.dashboard-panel,.dashboard-stat,.profile-card) {
+.civic-ui .profile-card {
     background: var(--surface);
     border: 1px solid var(--border-color);
     border-radius: var(--sb-radius);
     box-shadow: var(--sb-shadow);
-}
-.civic-ui .dashboard-panel-heading {
-    padding: 25px;
-    gap: 16px;
-    flex-wrap: wrap;
-}
-.civic-ui .dashboard-panel-heading h2 {
-    font-size: 20px;
-}
-.civic-ui .panel-description {
-    font-size: 14px;
-    line-height: 1.7;
-    color: var(--muted-text);
-}
-.civic-ui .panel-caption {
-    font-size: 11px;
-}
-.civic-ui .dashboard-welcome {
-    border-radius: 22px;
-    padding: 30px;
-    border-color: var(--border-color);
-    background: var(--sb-soft);
-    color: var(--main-text);
-}
-.civic-ui .dashboard-welcome h2 {
-    color: var(--main-text);
-    font-size: 30px;
-    font-weight: 700;
-}
-.civic-ui .dashboard-welcome p {
-    font-size: 15px;
-    color: var(--muted-text);
-}
-.civic-ui .welcome-eyebrow {
-    color: var(--civic-dark);
-    font-size: 9px;
-}
-.civic-ui .welcome-art {
-    color: var(--civic-blue);
-}
-.civic-ui .welcome-location {
-    display: block;
-    width: fit-content;
-    margin-top: 18px;
-    color: var(--muted-text);
-    border-color: var(--border-color);
-    font-size: 11px;
-}
-.civic-ui .admin-welcome {
-    background: var(--surface);
-}
-.civic-ui .welcome-today {
-    border-color: var(--border-color);
-}
-.civic-ui .welcome-today small {
-    font-size: 11px;
-    color: var(--muted-text);
-}
-.civic-ui .dashboard-stat .card-body {
-    padding: 22px;
-}
-.civic-ui .stat-heading h2 {
-    font-size: 13px;
-    color: var(--muted-text);
-}
-.civic-ui .stat-value {
-    font-size: 32px;
-    color: var(--main-text);
-    font-weight: 700;
-}
-.civic-ui .stat-note {
-    font-size: 12px;
-    color: var(--muted-text);
-}
-.civic-ui .stat-icon {
-    border-radius: 12px;
-    background: var(--sb-soft);
-    color: var(--civic-blue);
-}
-.civic-ui .dashboard-status-list {
-    padding: 0 25px 16px;
-}
-.civic-ui .dashboard-status-list>div {
-    border-color: var(--border-color);
-    padding-block: 13px;
-}
-.civic-ui .dashboard-quick-actions {
-    background: var(--surface);
-    border: 1px solid var(--border-color);
-    padding: 24px;
-    border-radius: 20px;
-    box-shadow: var(--sb-shadow);
-    margin-top: 20px;
-}
-.civic-ui .dashboard-quick-actions h2 {
-    font-size: 18px;
-}
-.civic-ui .account-quick-link {
-    font-size: 14px;
-    min-height: 44px;
-    color: var(--civic-dark);
-}
-.civic-ui .dashboard-guidance {
-    border-color: var(--border-color);
-}
-.civic-ui .dashboard-guidance h2 {
-    font-size: 15px;
-}
-.civic-ui .dashboard-guidance p {
-    font-size: 14px;
-    color: var(--muted-text);
-}
-.civic-ui :is(.app-note,.service-empty p,.dashboard-empty p) {
-    font-size: 13px;
-    color: var(--muted-text);
-}
-.civic-ui :is(.service-empty,.dashboard-empty) {
-    padding: 45px 25px;
-}
-.civic-ui :is(.empty-icon,.service-empty-icon) {
-    border-radius: 18px;
-    background: var(--sb-soft);
-    color: var(--civic-blue);
-    border-color: var(--border-color);
 }
 .civic-ui .table-responsive {
     position: relative;
@@ -489,76 +240,15 @@ body.civic-ui {
     --bs-table-border-color: var(--border-color);
     font-size: 14px;
 }
-.civic-ui .dashboard-table thead th {
-    background: var(--page-background);
-    color: var(--muted-text);
-    text-transform: none;
-    letter-spacing: 0;
-    font-size: 12px;
-    font-weight: 600;
-    border-color: var(--border-color);
-    padding: 15px 20px;
-}
-.civic-ui .dashboard-table tbody :is(td,th) {
-    padding: 23px 20px;
-    border-color: var(--border-color);
-    vertical-align: middle;
-}
-.civic-ui .dashboard-table tbody tr:hover {
-    background: var(--page-background);
-}
-.civic-ui .dashboard-table th:first-child {
-    padding-left: 25px;
-}
-.civic-ui .reservation-service {
-    font-weight: 650;
-    font-size: 14px;
-}
-.civic-ui .reservation-reference {
-    font-size: 11px;
-    line-height: 1.6;
-    color: var(--muted-text);
-}
-.civic-ui :is(.reservation-status,.service-status,.account-status,.requirement-label) {
+.civic-ui :is(.service-status,.account-status,.requirement-label) {
     border-radius: 8px;
     font-size: 12px;
     line-height: 1.5;
     padding: 6px 10px;
 }
-.civic-ui .reservation-status {
-    white-space: normal;
-    width: fit-content;
-}
-.civic-ui .reservation-status>span {
-    flex-shrink: 0;
-}
 .civic-ui .service-pagination {
     padding: 20px 25px;
     border-color: var(--border-color);
-}
-.civic-ui .pagination {
-    gap: 5px;
-    flex-wrap: wrap;
-}
-.civic-ui .page-link {
-    margin: 0;
-    min-width: 40px;
-    min-height: 40px;
-    display: grid;
-    place-items: center;
-    border-color: var(--border-color);
-    font-size: 13px;
-    background: var(--surface);
-    color: var(--civic-dark);
-}
-.civic-ui .active>.page-link {
-    background: #225FE5;
-    border-color: #225FE5;
-    color: white;
-}
-.civic-ui .disabled>.page-link {
-    background: var(--page-background);
-    color: var(--muted-text);
 }
 .civic-ui .reservation-panel {
     padding: 30px;
@@ -690,9 +380,6 @@ body.civic-ui {
     color: var(--civic-dark);
     border-color: var(--border-color);
 }
-.civic-ui .dashboard-panel :is(details,summary) {
-    overflow-wrap: anywhere;
-}
 .civic-ui summary {
     min-height: 44px;
     padding-block: 10px;
@@ -716,115 +403,20 @@ body.civic-ui {
     border-radius: 16px;
     border-color: var(--border-color);
 }
-.civic-ui .resident-mobile-nav {
-    display: none;
-}
-.civic-ui .resident-recent-cards {
-    padding: 0 23px 23px;
-    display: grid;
-    gap: 15px;
-}
-.civic-ui .resident-recent-card {
-    border: 1px solid var(--border-color);
-    border-radius: 16px;
-    padding: 23px;
-    background: var(--surface);
-}
-.civic-ui .resident-recent-card h3 {
-    font-size: 19px;
-    margin: 8px 0 12px;
-    overflow-wrap: anywhere;
-}
-.civic-ui .resident-recent-card p {
-    font-size: 14px;
-    color: var(--muted-text);
-    margin: 16px 0;
-}
-.civic-ui .resident-recent-appointment {
-    padding: 13px 16px;
-    background: var(--page-background);
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    font-size: 13px;
-    margin-bottom: 18px;
-}
-.civic-ui .resident-recent-appointment small {
-    display: block;
-    color: var(--muted-text);
-}
-.civic-ui .resident-recent-card .btn {
-    width: 100%;
-}
 [data-bs-theme=dark] .civic-ui .btn-outline-primary:hover {
     color: #152133;
-}
-@media(min-width:992px) {
-    .civic-ui .app-sidebar {
-        background: var(--surface)!important;
-    }
 }
 @media(max-width:1199.98px) {
     .civic-ui .app-main {
         padding: 27px;
     }
-    .civic-ui .app-topbar {
-        padding-inline: 27px;
-    }
-    .civic-ui .dashboard-aside .dashboard-quick-actions {
-        margin-top: 0;
-    }
 }
 @media(max-width:991.98px) {
-    .civic-ui .app-shell {
-        --sidebar-width: 280px;
-    }
     .civic-ui .app-main {
         padding: 25px;
     }
-    .civic-ui .app-topbar {
-        padding: 15px 25px;
-        min-height: 74px;
-    }
     .civic-ui .app-role-resident .app-main {
         padding-bottom: 105px;
-    }
-    .civic-ui .resident-mobile-nav {
-        position: fixed;
-        inset: auto 0 0;
-        z-index: 1020;
-        display: grid;
-        grid-template-columns: repeat(4,minmax(0,1fr));
-        background: var(--surface);
-        border-top: 1px solid var(--border-color);
-        padding: 8px 9px calc(8px + env(safe-area-inset-bottom));
-        gap: 5px;
-        box-shadow: 0 -5px 20px rgb(20 40 60 / 3%);
-    }
-    .civic-ui .resident-mobile-link {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-direction: column;
-        gap: 5px;
-        min-height: 50px;
-        font-size: 11px;
-        line-height: 1.3;
-        text-decoration: none;
-        color: var(--muted-text);
-        border-radius: 12px;
-        padding: 5px;
-    }
-    .civic-ui .resident-mobile-link.is-current {
-        color: var(--civic-dark);
-        background: var(--sb-soft);
-        font-weight: 650;
-    }
-    .civic-ui .resident-mobile-link .app-icon {
-        width: 22px;
-        height: 22px;
-        flex-basis: 22px;
     }
     .civic-ui .admin-reservation-table tbody tr {
         padding: 23px;
@@ -845,60 +437,6 @@ body.civic-ui {
 @media(max-width:575.98px) {
     .civic-ui .app-main {
         padding: 25px 17px;
-    }
-    .civic-ui .app-topbar {
-        padding: 12px 17px;
-        gap: 12px;
-        min-height: 70px;
-    }
-    .civic-ui .app-page-heading {
-        gap: 10px;
-    }
-    .civic-ui .app-page-heading h1 {
-        font-size: 29px;
-    }
-    .civic-ui .app-date {
-        padding: 0;
-        border: 0;
-        background: none;
-        font-size: 11px;
-    }
-    .civic-ui .app-eyebrow {
-        font-size: 9px;
-    }
-    .civic-ui .dashboard-welcome {
-        padding: 25px 22px;
-    }
-    .civic-ui .dashboard-welcome h2 {
-        font-size: 28px;
-    }
-    .civic-ui .dashboard-welcome p {
-        font-size: 14px;
-    }
-    .civic-ui .resident-start-action {
-        width: 100%;
-    }
-    .civic-ui .dashboard-stat .card-body {
-        padding: 17px 14px;
-    }
-    .civic-ui .stat-heading h2 {
-        font-size: 12px;
-    }
-    .civic-ui .stat-value {
-        font-size: 28px;
-    }
-    .civic-ui .stat-note {
-        font-size: 11px;
-    }
-    .civic-ui .dashboard-panel-heading {
-        padding: 22px 20px;
-        gap: 12px;
-    }
-    .civic-ui .dashboard-panel-heading h2 {
-        font-size: 20px;
-    }
-    .civic-ui .panel-description {
-        font-size: 13px;
     }
     .civic-ui .reservation-panel {
         padding: 23px 20px;
@@ -949,31 +487,14 @@ body.civic-ui {
     .civic-ui .profile-card {
         padding: 22px;
     }
-    .civic-ui .resident-recent-cards {
-        padding: 0 17px 18px;
-    }
-    .civic-ui .resident-recent-card {
-        padding: 21px;
-    }
-    .civic-ui .dashboard-quick-actions {
-        padding: 22px;
-    }
     .civic-ui .brand-name {
         font-size: 21px;
     }
     .civic-ui .brand-location {
         font-size: 9px;
     }
-    .civic-ui .app-footer {
-        flex-wrap: wrap;
-        gap: 7px;
-    }
     .civic-ui .btn {
         padding-inline: 14px;
-    }
-    .civic-ui .resident-recent-appointment {
-        padding: 12px;
-        font-size: 12px;
     }
 }
 @media(prefers-reduced-motion:no-preference) {
@@ -1002,11 +523,6 @@ body.civic-ui {
         scroll-behavior: auto!important;
         animation: none!important;
         transition: none!important;
-    }
-}
-@media print {
-    .civic-ui .resident-mobile-nav {
-        display: none!important;
     }
 }
 .civic-ui .request-section-nav {
@@ -1052,11 +568,6 @@ body.civic-ui {
     background: #225FE5;
     color: white;
     border-color: #225FE5;
-}
-.civic-ui .notification-count {
-    background: #225FE5;
-    color: #FFF;
-    border-color: var(--surface);
 }
 .civic-ui .reservation-steps .is-current .step-number {
     background: #225FE5;
@@ -1159,10 +670,7 @@ body.civic-ui {
 .civic-ui .worklist-service { overflow-wrap: anywhere; }
 .civic-ui .worklist-view { font-size: 14px; min-height: 50px; width: 100%; padding-inline: 12px; }
 .civic-ui .worklist-mobile-label { display: none; }
-.civic-ui .reservation-worklist .status-pending { background: #E9F0FF; color: #225FE5; }
-.civic-ui .reservation-worklist .status-under_review { background: #FCF1D9; color: #805B14; }
-[data-bs-theme=dark] .civic-ui .reservation-worklist .status-pending { background: #233C5B; color: #B8D2FF; }
-[data-bs-theme=dark] .civic-ui :is(.reservation-worklist .status-under_review,.worklist-attention) { background: #3B321F; color: #F3D18C; }
+[data-bs-theme=dark] .civic-ui .worklist-attention { background: #3B321F; color: #F3D18C; }
 @media(max-width:1199.98px) {
     .civic-ui .reservation-overview { gap: 16px; }
     .civic-ui .reservation-overview-card { padding: 25px; }

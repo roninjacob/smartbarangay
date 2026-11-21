@@ -1,7 +1,6 @@
 @import '@fontsource-variable/plus-jakarta-sans';
 @import './document-designer.css';
 @import 'bootstrap/dist/css/bootstrap.min.css';
-@import './dashboard.css';
 @import './services.css';
 @import './reservations.css';
 @import './reservation-activity.css';
@@ -20,9 +19,10 @@
 @import './schedules.css';
 @import './civic-interactions.css';
 @import './civic-workspaces.css';
-@import './civic-sidebar.css';
 @import './landing.css';
 @import './auth.css';
+@import './app-shell.css';
+@import './dashboard.css';
 @import './buttons.css';
 
 /* SmartBarangay civic identity, shared by the account pages and the application shell. */

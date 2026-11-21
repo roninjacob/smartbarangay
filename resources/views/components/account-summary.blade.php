@@ -4,7 +4,7 @@
     <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
         <section class="modal-content app-account-modal">
             <div class="modal-header">
-                <div><span class="app-eyebrow">YOUR SMARTBARANGAY ACCOUNT</span><h2 id="account-summary-heading" class="modal-title fs-5">Profile overview</h2></div>
+                <h2 id="account-summary-heading" class="modal-title fs-5">Profile overview</h2>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close profile overview"></button>
             </div>
             <div class="modal-body">

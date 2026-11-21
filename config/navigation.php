@@ -19,7 +19,7 @@ return [
         ],
         'Account preferences' => [
             ['label' => 'Settings', 'icon' => 'account', 'route' => 'resident.settings.edit', 'active' => 'resident.settings.*'],
-            ['label' => 'Public Website', 'icon' => 'dashboard', 'route' => 'home'],
+            ['label' => 'Public Website', 'icon' => 'globe', 'route' => 'home'],
         ],
     ],
     'admin' => [
@@ -28,23 +28,23 @@ return [
             ['label' => 'Notifications', 'icon' => 'bell', 'route' => 'admin.notifications.index', 'active' => 'admin.notifications.*'],
         ],
         'Barangay operations' => [
-            ['label' => 'Reservation Management', 'icon' => 'document', 'route' => 'admin.reservations.index', 'active' => 'admin.reservations.*'],
-            ['label' => 'Schedule & Slot Management', 'icon' => 'calendar', 'route' => 'admin.schedules.index', 'active' => 'admin.schedules.*'],
+            ['label' => 'Reservations', 'icon' => 'document', 'route' => 'admin.reservations.index', 'active' => 'admin.reservations.*'],
+            ['label' => 'Schedules', 'icon' => 'calendar', 'route' => 'admin.schedules.index', 'active' => 'admin.schedules.*'],
             ['label' => 'QR Verification', 'icon' => 'qr', 'route' => 'admin.qr-verification.index', 'active' => 'admin.qr-verification.*'],
-            ['label' => 'IoT Dashboard', 'icon' => 'dashboard', 'route' => 'admin.iot-dashboard.index', 'active' => 'admin.iot-dashboard.*'],
-            ['label' => 'Services & Document Management', 'icon' => 'services', 'route' => 'admin.services.index', 'active' => 'admin.services.*'],
-            ['label' => 'User Management', 'icon' => 'users', 'route' => 'admin.users.index', 'active' => 'admin.users.*'],
-            ['label' => 'Reservation Logs', 'icon' => 'history', 'route' => 'admin.reservation-logs.index', 'active' => 'admin.reservation-logs.*'],
+            ['label' => 'IoT Dashboard', 'icon' => 'chip', 'route' => 'admin.iot-dashboard.index', 'active' => 'admin.iot-dashboard.*'],
+            ['label' => 'Services & Documents', 'icon' => 'services', 'route' => 'admin.services.index', 'active' => 'admin.services.*'],
+            ['label' => 'Residents & Users', 'icon' => 'users', 'route' => 'admin.users.index', 'active' => 'admin.users.*'],
+            ['label' => 'Activity Logs', 'icon' => 'history', 'route' => 'admin.reservation-logs.index', 'active' => 'admin.reservation-logs.*'],
         ],
         'Reports' => [
-            ['label' => 'Reservation Reports', 'icon' => 'document', 'route' => 'admin.reports.reservations', 'active' => 'admin.reports.reservations'],
-            ['label' => 'Collections Reports', 'icon' => 'document', 'route' => 'admin.reports.collections', 'active' => 'admin.reports.collections'],
+            ['label' => 'Reservation Report', 'icon' => 'chart', 'route' => 'admin.reports.reservations', 'active' => 'admin.reports.reservations'],
+            ['label' => 'Collections', 'icon' => 'cash', 'route' => 'admin.reports.collections', 'active' => 'admin.reports.collections'],
             ['label' => 'Recorded Check-ins', 'icon' => 'history', 'route' => 'admin.reports.checkins', 'active' => 'admin.reports.checkins'],
             ['label' => 'Finalized PDFs', 'icon' => 'document', 'route' => 'admin.reports.documents', 'active' => 'admin.reports.documents'],
         ],
         'Administration' => [
             ['label' => 'Settings', 'icon' => 'account', 'route' => 'admin.settings.edit', 'active' => 'admin.settings.*'],
-            ['label' => 'Public Website', 'icon' => 'dashboard', 'route' => 'home'],
+            ['label' => 'Public Website', 'icon' => 'globe', 'route' => 'home'],
         ],
     ],
 ];

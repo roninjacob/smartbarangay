@@ -24,13 +24,14 @@ toggles.forEach((button) => {
         }
         const token = document.querySelector('meta[name="csrf-token"]')?.content;
         try {
+            // Following the redirect lets the settings page consume its one-time "saved" message in the
+            // background, so it does not reappear on the next page the user opens.
             const response = await fetch(saveUrl, {
-                method: 'POST', credentials: 'same-origin', redirect: 'manual',
+                method: 'POST', credentials: 'same-origin', redirect: 'follow',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded', Accept: 'text/html' },
                 body: new URLSearchParams(preferenceFormData(theme, token)),
             });
-            // Laravel answers a saved preference with a redirect (opaque here); anything else is a failure.
-            if (response.type !== 'opaqueredirect' && !response.ok) applyTheme(previous);
+            if (!response.ok || !response.redirected) applyTheme(previous);
         } catch {
             applyTheme(previous);
         }

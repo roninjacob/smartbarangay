@@ -13,7 +13,7 @@
                             </a>
                         @else
                             <span class="app-nav-link app-nav-unavailable" aria-disabled="true">
-                                <span class="app-nav-icon" aria-hidden="true"><x-app-icon :name="$item['icon']"/></span><span class="app-nav-label">{{ $item['label'] }}</span><small>Soon</small>
+                                <span class="app-nav-icon" aria-hidden="true"><x-app-icon :name="$item['icon']"/></span><span class="app-nav-label">{{ $item['label'] }}</span>
                             </span>
                         @endif
                     </li>

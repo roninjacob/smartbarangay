@@ -1,43 +1,76 @@
 @extends('layouts.authenticated')
 @section('dashboard')
-@include('partials.residency-status', ['resident' => auth()->user()])
-<section class="dashboard-welcome resident-welcome" aria-labelledby="welcome-heading">
-    <div class="welcome-copy"><span class="welcome-eyebrow">YOUR COMMUNITY, CONNECTED</span><h2 id="welcome-heading">Welcome, {{ auth()->user()->name }}</h2><p>Your barangay services, in one place.<br>We'll guide you through your next document request.</p><a href="{{ route(auth()->user()->canSubmitReservations() ? 'resident.reservations.create' : 'resident.profile.edit') }}" class="btn btn-primary resident-start-action">{{ auth()->user()->canSubmitReservations() ? 'Request a document' : 'Review your profile' }} <x-app-icon name="arrow"/></a><span class="welcome-location">Barangay Calayo · Nasugbu, Batangas</span></div>
-    <div class="welcome-art" aria-hidden="true"><x-app-icon name="services"/><span>Reserve. Track. Verify.</span></div>
+@php
+    $now = now('Asia/Manila');
+    $greeting = $now->hour < 12 ? 'Good morning' : ($now->hour < 18 ? 'Good afternoon' : 'Good evening');
+    $viewer = auth()->user();
+    $firstName = filled($viewer->first_name) ? $viewer->first_name : \Illuminate\Support\Str::before(trim($viewer->name).' ', ' ');
+    $canSubmit = $viewer->canSubmitReservations();
+    $latest = $recentReservations->first();
+    $readyCount = $counts[\App\Enums\ReservationStatus::ReadyForPickup->value];
+@endphp
+@include('partials.residency-status', ['resident' => $viewer])
+
+<section class="dash-hero" aria-labelledby="welcome-heading">
+    <div class="dash-hero-bg" aria-hidden="true"></div>
+    <div class="dash-hero-copy">
+        <p class="dash-hero-date"><time datetime="{{ $now->toDateString() }}">{{ $now->format('l, F j, Y') }}</time></p>
+        <h2 id="welcome-heading">{{ $greeting }}, {{ $firstName }}</h2>
+        <p>Request barangay documents and follow each request here.</p>
+        <div class="dash-hero-actions">
+            <a href="{{ route($canSubmit ? 'resident.reservations.create' : 'resident.profile.edit') }}" class="btn btn-light">{{ $canSubmit ? 'Request a document' : 'Review your profile' }} <x-app-icon name="arrow"/></a>
+        </div>
+    </div>
+    @if($latest)
+        <a class="dash-hero-card dash-hero-latest" href="{{ route('resident.reservations.show', $latest) }}" aria-label="Latest request: {{ $latest->service->name }}, {{ $latest->status->label() }}">
+            <small>Latest request</small>
+            <strong class="dash-hero-latest-name">{{ $latest->service->name }}</strong>
+            <x-reservation-status :status="$latest->status"/>
+            <span class="dash-hero-latest-date"><x-app-icon name="calendar"/>{{ $latest->appointment->date->format('M j, Y') }}</span>
+        </a>
+    @endif
 </section>
 
-<section class="row g-3 dashboard-stats" aria-label="Your reservation summary">
-    <div class="col-6 col-xl-3"><x-dashboard-stat label="Total reservations" :value="$totalReservations" icon="document" note="All your document requests"/></div>
-    <div class="col-6 col-xl-3"><x-dashboard-stat label="In progress" :value="$inProgress" icon="status" note="Pending, under review or approved" tone="gold"/></div>
-    <div class="col-6 col-xl-3"><x-dashboard-stat label="Ready for pickup" :value="$counts[\App\Enums\ReservationStatus::ReadyForPickup->value]" icon="services" note="Documents ready to collect" tone="green"/></div>
-    <div class="col-6 col-xl-3"><x-dashboard-stat label="Completed" :value="$counts[\App\Enums\ReservationStatus::Completed->value]" icon="check" note="Successfully completed requests"/></div>
+<section class="dash-stats" aria-label="Your reservation summary">
+    <x-dashboard-stat label="Total reservations" :value="$totalReservations" icon="document"/>
+    <x-dashboard-stat label="In progress" :value="$inProgress" icon="status" note="Pending, under review or approved" tone="gold"/>
+    <x-dashboard-stat label="Ready for pickup" :value="$readyCount" icon="services" tone="green"/>
+    <x-dashboard-stat label="Completed" :value="$counts[\App\Enums\ReservationStatus::Completed->value]" icon="check" tone="violet"/>
 </section>
 
-<div class="row g-4 dashboard-content-grid">
-    <div class="col-12 dashboard-primary"><x-recent-reservations :reservations="$recentReservations"/>
-        <section class="dashboard-guidance" aria-labelledby="next-step-heading">
-            <span class="guidance-icon"><x-app-icon :name="$counts[\App\Enums\ReservationStatus::ReadyForPickup->value] > 0 ? 'services' : 'status'"/></span>
-            <div><h2 id="next-step-heading">Your next step</h2>
-                @if($counts[\App\Enums\ReservationStatus::ReadyForPickup->value] > 0)
-                    <p>You have documents ready for pickup. Contact the Barangay Calayo office for collection guidance.</p>
+<div class="dash-grid">
+    <div class="dash-main">
+        <x-recent-reservations :reservations="$recentReservations"/>
+    </div>
+    <div class="dash-side">
+        <section @class(['dash-tip', 'is-ready' => $readyCount > 0]) aria-labelledby="tip-heading">
+            <span class="dash-tip-icon" aria-hidden="true"><x-app-icon :name="$readyCount > 0 ? 'qr' : 'status'"/></span>
+            <div>
+                @if($readyCount > 0)
+                    <h2 id="tip-heading">Ready for pickup</h2>
+                    <p>You have documents ready for pickup. Bring your QR ticket to the Barangay Calayo office.</p>
+                    <a class="panel-link" href="{{ route('resident.qr-tickets.index') }}">Open my QR tickets <x-app-icon name="arrow"/></a>
                 @elseif($inProgress > 0)
-                    <p>Your requests are being processed. Check this dashboard for updates from Barangay Calayo.</p>
-                @elseif(! auth()->user()->canSubmitReservations())
-                    <p>Review your residency status and keep your profile up to date while the barangay office reviews your account.</p>
+                    <h2 id="tip-heading">Requests in progress</h2>
+                    <p>The barangay office is processing your requests. You get a notification when a status changes.</p>
+                @elseif(! $canSubmit)
+                    <h2 id="tip-heading">Residency review</h2>
+                    <p>Keep your profile up to date while the barangay office reviews your residency.</p>
                 @else
-                    <p>Need a barangay document? Start a new reservation to choose your service and schedule.</p>
+                    <h2 id="tip-heading">Need a document?</h2>
+                    <p>Start a new reservation to choose a service and an available schedule.</p>
                 @endif
             </div>
         </section>
-    </div>
-    <div class="col-12 dashboard-aside dashboard-support"><x-dashboard-statuses :statuses="$statuses" :counts="$counts" :total="$totalReservations"/>
-        <section class="dashboard-quick-actions" aria-labelledby="quick-actions-heading"><h2 id="quick-actions-heading">Quick access</h2>
-            @if(auth()->user()->canSubmitReservations())<a class="account-quick-link" href="{{ route('resident.reservations.create') }}"><x-app-icon name="plus"/><span>New Reservation</span><x-app-icon name="arrow"/></a>@endif
-            <a class="account-quick-link" href="{{ route('resident.reservations.index') }}"><x-app-icon name="document"/><span>My Reservations</span><x-app-icon name="arrow"/></a>
-            <a class="account-quick-link" href="{{ route('resident.qr-tickets.index') }}"><x-app-icon name="qr"/><span>My QR Tickets</span><x-app-icon name="arrow"/></a>
-            <a class="account-quick-link" href="{{ route('resident.request-status.index') }}"><x-app-icon name="status"/><span>Request Status</span><x-app-icon name="arrow"/></a>
-            <a class="account-quick-link" href="{{ route('resident.profile.edit') }}"><x-app-icon name="account"/><span>View my profile</span><x-app-icon name="arrow"/></a>
-            <p class="app-note mb-0">Choose New Reservation to submit a document request. QR tickets become available after approval.</p>
+        <x-dashboard-statuses :statuses="$statuses" :counts="$counts" :total="$totalReservations"/>
+        <section class="card dashboard-panel" aria-labelledby="quick-actions-heading">
+            <div class="dashboard-panel-heading"><h2 id="quick-actions-heading">Quick access</h2></div>
+            <div class="quick-tiles">
+                @if($canSubmit)<a class="quick-tile" href="{{ route('resident.reservations.create') }}"><span class="quick-tile-icon"><x-app-icon name="plus"/></span>New reservation</a>@endif
+                <a class="quick-tile" href="{{ route('resident.reservations.index') }}"><span class="quick-tile-icon"><x-app-icon name="document"/></span>My reservations</a>
+                <a class="quick-tile" href="{{ route('resident.qr-tickets.index') }}"><span class="quick-tile-icon"><x-app-icon name="qr"/></span>QR tickets</a>
+                <a class="quick-tile" href="{{ route('resident.request-status.index') }}"><span class="quick-tile-icon"><x-app-icon name="status"/></span>Request status</a>
+            </div>
         </section>
     </div>
 </div>

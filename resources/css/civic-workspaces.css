@@ -33,29 +33,6 @@
     .section-navigation-items { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; align-items:stretch; }
     .civic-ui.civic-refined .module-shortcuts a { min-height:44px; padding:10px 12px; white-space:normal; overflow-wrap:anywhere; }
 }
-.civic-ui.civic-refined .app-topbar {
-    --header-background:#edf4fc;
-    --header-text:#183b63;
-    --header-muted:#526b88;
-    --header-control:#e0ecfa;
-    --header-icon:#285fa8;
-    --header-border:#d5e2f2;
-    background:var(--header-background);
-    border-bottom:1px solid var(--header-border);
-    box-shadow:0 3px 16px #143c7608;
-}
-.civic-ui.civic-refined .app-topbar-location strong { color:var(--header-text); }
-.civic-ui.civic-refined .app-topbar-location span { color:var(--header-muted); }
-.civic-ui.civic-refined .app-topbar .app-topbar-location>.app-icon { background:var(--header-control); color:var(--header-icon); }
-.civic-ui.civic-refined .app-topbar :is(.app-user-button,.app-menu-button,.notification-bell) { background:var(--header-control); color:var(--header-icon); border-color:var(--header-border); }
-.civic-ui.civic-refined .app-topbar .app-user-text strong { color:var(--header-text); }
-.civic-ui.civic-refined .app-topbar .app-user-text small { color:var(--header-muted); }
-.civic-ui.civic-refined .app-topbar .app-user-icon { color:var(--header-icon); }
-.civic-ui.civic-refined .app-topbar :is(.app-user-button,.app-menu-button,.notification-bell):hover { background:var(--header-background); border-color:var(--header-icon); }
-.civic-ui.civic-refined .app-topbar :is(button,a):focus-visible { outline-color:var(--header-icon); }
-.civic-ui.civic-refined .app-page-heading { border-left:4px solid #4e83df; }
-.civic-ui.civic-refined .dashboard-panel { box-shadow:0 5px 22px #234b8108; }
-.civic-ui.civic-refined .dashboard-panel>h2:first-child { padding-left:13px; border-left:3px solid #6095ef; }
 .civic-ui.civic-refined .workspace-action,
 .civic-ui.civic-refined :is(.activity-section-heading,.activity-context)>a,
 .civic-ui.civic-refined .app-main>p>a:not(.btn),
@@ -70,15 +47,6 @@
 /* The sign-in scene shares landing motion without animating any input or text. */
 
 /* Tables retain semantic headers, real actions and scrollable dense columns. */
-.civic-ui.civic-refined .app-main :is(.table,.dashboard-table) { --bs-table-bg:transparent; --bs-table-color:var(--main-text); }
-.civic-ui.civic-refined .app-main :is(.table,.dashboard-table) thead th {
-    background:var(--interaction-soft); color:var(--civic-dark); font-size:12px;
-    font-weight:650; padding:17px 20px; border-bottom:1px solid var(--border-color);
-}
-.civic-ui.civic-refined .app-main :is(.table,.dashboard-table) tbody :is(th,td) { padding:21px 20px; line-height:1.6; vertical-align:middle; }
-.civic-ui.civic-refined .app-main :is(.table,.dashboard-table) tbody tr:nth-child(even)>* { background:color-mix(in srgb,var(--interaction-soft) 28%,var(--surface)); }
-.civic-ui.civic-refined .app-main :is(.table,.dashboard-table) tbody tr:focus-within>*,
-.civic-ui.civic-refined .app-main :is(.table,.dashboard-table) tbody tr:hover>* { background:color-mix(in srgb,var(--interaction-soft) 65%,var(--surface)); }
 .civic-ui.civic-refined .app-main .table caption { color:var(--muted-text); padding:14px 8px; font-size:12px; }
 .civic-ui.civic-refined .report-table table { table-layout:auto; }
 .civic-ui.civic-refined .report-table :is(th,td):first-child { white-space:nowrap; }
@@ -113,14 +81,6 @@
 .civic-ui.civic-refined .report-services li { padding:16px; border:1px solid var(--border-color); border-radius:13px; background:var(--interaction-soft); margin:0; }
 .civic-ui.civic-refined .report-bar-track { height:9px; background:var(--surface); }
 .civic-ui.civic-refined .report-bar-track>div { background:linear-gradient(90deg,#2f6bd2,#66a6ee); }
-[data-bs-theme="dark"] .civic-ui.civic-refined .app-topbar {
-    --header-background:#1b2d43;
-    --header-text:#e5efff;
-    --header-muted:#b3c6df;
-    --header-control:#263e59;
-    --header-icon:#b6d4ff;
-    --header-border:#38516e;
-}
 @media (max-width:1199.98px) {
     .civic-ui.civic-refined .schedule-table { padding:0; border-spacing:0; }
     .civic-ui.civic-refined .schedule-table tbody tr { border-left:3px solid #7ba5ec; }
@@ -130,7 +90,6 @@
 @media (max-width:767.98px) {
     .civic-ui.civic-refined .reservation-log-feed { padding:12px 16px 20px; }
     .civic-ui.civic-refined .reservation-log-feed>li { padding:18px; gap:16px; }
-    .civic-ui.civic-refined .app-main :is(.table,.dashboard-table):not(.schedule-table) tbody :is(th,td) { padding:16px; }
     .civic-ui.civic-refined .chart-explorer { padding:14px; }
 }
 @media (max-width:767.98px) {

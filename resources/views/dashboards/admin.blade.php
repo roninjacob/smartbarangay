@@ -1,35 +1,61 @@
 @extends('layouts.authenticated')
 @section('dashboard')
-<section class="dashboard-welcome admin-welcome" aria-labelledby="welcome-heading">
-    <div class="welcome-copy"><span class="welcome-eyebrow">BARANGAY OPERATIONS</span><h2 id="welcome-heading">Welcome, {{ auth()->user()->name }}</h2><p>A clear view of your community's requests.<br>Keep Barangay Calayo services moving.</p></div>
-    <div class="welcome-today"><span class="welcome-today-icon"><x-app-icon name="calendar"/></span><div><strong>{{ number_format($todayReservations) }}</strong><span>scheduled today</span><small>All appointment statuses · Philippine time</small></div></div>
+@php
+    $now = now('Asia/Manila');
+    $greeting = $now->hour < 12 ? 'Good morning' : ($now->hour < 18 ? 'Good afternoon' : 'Good evening');
+    $viewer = auth()->user();
+    $firstName = filled($viewer->first_name) ? $viewer->first_name : \Illuminate\Support\Str::before(trim($viewer->name).' ', ' ');
+@endphp
+<section class="dash-hero" aria-labelledby="welcome-heading">
+    <div class="dash-hero-bg" aria-hidden="true"></div>
+    <div class="dash-hero-copy">
+        <p class="dash-hero-date"><time datetime="{{ $now->toDateString() }}">{{ $now->format('l, F j, Y') }}</time></p>
+        <h2 id="welcome-heading">{{ $greeting }}, {{ $firstName }}</h2>
+        <p>Here is today at Barangay Calayo.</p>
+        <div class="dash-hero-actions">
+            <a class="btn btn-light" href="{{ route('admin.reservations.index') }}"><x-app-icon name="document"/> Reservations</a>
+            <a class="btn btn-outline-light" href="{{ route('admin.qr-verification.index') }}"><x-app-icon name="qr"/> QR Verification</a>
+        </div>
+    </div>
+    <div class="dash-hero-card">
+        <span class="dash-hero-card-icon" aria-hidden="true"><x-app-icon name="calendar"/></span>
+        <strong data-count-to="{{ (int) $todayReservations }}">{{ number_format($todayReservations) }}</strong>
+        <span>scheduled today</span>
+        <small>All appointment statuses · Philippine time</small>
+    </div>
 </section>
 
-<section class="row g-3 dashboard-stats" aria-label="Barangay operations summary">
-    <div class="col-6 col-xl-3"><x-dashboard-stat label="Needs attention" :value="$needsAttention" icon="status" note="Pending and under review" tone="gold"/></div>
-    <div class="col-6 col-xl-3"><x-dashboard-stat label="Ready for pickup" :value="$counts[\App\Enums\ReservationStatus::ReadyForPickup->value]" icon="services" note="Documents awaiting collection" tone="green"/></div>
-    <div class="col-6 col-xl-3"><x-dashboard-stat label="Total reservations" :value="$totalReservations" icon="document" note="All requests, across all statuses"/></div>
-    <div class="col-6 col-xl-3"><x-dashboard-stat label="Registered residents" :value="$totalResidents" icon="users" note="All Resident accounts"/></div>
+<section class="dash-stats" aria-label="Barangay operations summary">
+    <x-dashboard-stat label="Needs attention" :value="$needsAttention" icon="status" note="Pending and under review" tone="gold"/>
+    <x-dashboard-stat label="Ready for pickup" :value="$counts[\App\Enums\ReservationStatus::ReadyForPickup->value]" icon="services" tone="green"/>
+    <x-dashboard-stat label="Total reservations" :value="$totalReservations" icon="document"/>
+    <x-dashboard-stat label="Registered residents" :value="$totalResidents" icon="users" tone="violet"/>
 </section>
 
-<section class="row g-3 dashboard-stats" aria-label="On-site collections summary">
-    <div class="col-12 col-md-6 col-xl-3"><x-dashboard-stat label="Collections Today" :value="$collections['today']" :formatted="\App\Support\ServiceFee::format($collections['today'])" icon="document" note="Payments recorded today · Philippine time" tone="green"/></div>
-    <div class="col-12 col-md-6 col-xl-3"><x-dashboard-stat label="Collections This Month" :value="$collections['month']" :formatted="\App\Support\ServiceFee::format($collections['month'])" icon="document" note="Payments recorded this month · Philippine time" tone="green"/></div>
-    <div class="col-12 col-md-6 col-xl-3"><x-dashboard-stat label="Paid Transactions Today" :value="$collections['paid_today']" icon="status" note="Based on payment time · Philippine time"/></div>
-    <div class="col-12 col-md-6 col-xl-3"><x-dashboard-stat label="Ready for Pickup — Unpaid" :value="$collections['ready_unpaid']" icon="services" note="Known positive fees without a payment" tone="gold"/></div>
+<section class="dash-group" aria-labelledby="collections-heading">
+    <h2 id="collections-heading" class="dash-group-title">Collections</h2>
+    <div class="dash-stats">
+        <x-dashboard-stat label="Collections Today" :value="$collections['today']" :formatted="\App\Support\ServiceFee::format($collections['today'])" icon="cash" tone="green"/>
+        <x-dashboard-stat label="Collections This Month" :value="$collections['month']" :formatted="\App\Support\ServiceFee::format($collections['month'])" icon="cash" tone="green"/>
+        <x-dashboard-stat label="Paid Transactions Today" :value="$collections['paid_today']" icon="check"/>
+        <x-dashboard-stat label="Ready for Pickup — Unpaid" :value="$collections['ready_unpaid']" icon="services" note="Known positive fees without a payment" tone="gold"/>
+    </div>
+    <p class="dash-group-note">Collections use payment time in Philippine time.</p>
 </section>
 @if($collections['integrity_issues'] > 0)<p class="alert alert-danger" role="alert">Payment integrity issues detected ({{ $collections['integrity_issues'] }}). Collections exclude inconsistent payment records. Review Reservation Details.</p>@endif
 
-<div class="row g-4 dashboard-content-grid">
-    <div class="col-12 dashboard-primary"><x-recent-reservations :reservations="$recentReservations" :admin="true"/>
-        <section class="dashboard-guidance" aria-labelledby="operations-heading"><span class="guidance-icon"><x-app-icon name="services"/></span><div><h2 id="operations-heading">Your operations workspace</h2><p>Open Reservation Management to review requests and record their next status. Service and schedule configuration are available in the sidebar.</p></div></section>
-    </div>
-    <div class="col-12 dashboard-aside dashboard-support"><x-dashboard-statuses :statuses="$statuses" :counts="$counts" :total="$totalReservations"/>
-        <section class="dashboard-quick-actions" aria-labelledby="quick-actions-heading"><h2 id="quick-actions-heading">Quick access</h2>
-            <a class="account-quick-link" href="{{ route('admin.reservations.index') }}"><x-app-icon name="document"/><span>Reservation Management</span><x-app-icon name="arrow"/></a>
-            <a class="account-quick-link" href="{{ route('admin.users.index') }}"><x-app-icon name="users"/><span>User Management</span><x-app-icon name="arrow"/></a>
-            <a class="account-quick-link" href="{{ route('admin.profile.edit') }}"><x-app-icon name="account"/><span>View my profile</span><x-app-icon name="arrow"/></a>
-            <p class="app-note mb-0">Your dashboard reflects current database records. You can personalize your appearance in Settings.</p>
+<div class="dash-grid">
+    <div class="dash-main"><x-recent-reservations :reservations="$recentReservations" :admin="true"/></div>
+    <div class="dash-side">
+        <x-dashboard-statuses :statuses="$statuses" :counts="$counts" :total="$totalReservations"/>
+        <section class="card dashboard-panel" aria-labelledby="quick-actions-heading">
+            <div class="dashboard-panel-heading"><h2 id="quick-actions-heading">Quick access</h2></div>
+            <div class="quick-tiles">
+                <a class="quick-tile" href="{{ route('admin.reservations.index') }}"><span class="quick-tile-icon"><x-app-icon name="document"/></span>Reservations</a>
+                <a class="quick-tile" href="{{ route('admin.schedules.index') }}"><span class="quick-tile-icon"><x-app-icon name="calendar"/></span>Schedules</a>
+                <a class="quick-tile" href="{{ route('admin.users.index') }}"><span class="quick-tile-icon"><x-app-icon name="users"/></span>Residents</a>
+                <a class="quick-tile" href="{{ route('admin.reports.reservations') }}"><span class="quick-tile-icon"><x-app-icon name="chart"/></span>Reports</a>
+            </div>
         </section>
     </div>
 </div>

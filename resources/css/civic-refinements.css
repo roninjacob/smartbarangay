@@ -1,53 +1,7 @@
 /* Compact civic surfaces. Scoped away from official PDF and print layouts. */
 .civic-ui.civic-refined { --sb-radius:18px; --page-background:#F4F7FC; --sb-soft:#EDF4FF; --border-color:#DFE7F2; }
-.civic-ui.civic-refined .app-sidebar { background:linear-gradient(180deg,#F3F7FF,var(--surface) 70%); }
-.civic-ui.civic-refined .app-nav-link.is-current { background:#225FE5; color:#FFF; box-shadow:0 5px 14px #225FE524; }
-.civic-ui.civic-refined .dashboard-panel { border-radius:18px; }
-.civic-ui.civic-refined .dashboard-panel-heading { padding:20px 22px; }
-.civic-ui.civic-refined .dashboard-stat .card-body { padding:18px 20px; }
-.civic-ui.civic-refined .stat-value { font-size:30px; }
-.civic-ui.civic-refined .dashboard-welcome { padding:26px 30px; background:radial-gradient(ellipse at 90% 0%,#4388F8,transparent 65%),linear-gradient(115deg,#163D87,#225FE5); color:#FFF; border-color:transparent; }
-.civic-ui.civic-refined .dashboard-welcome :is(h2,p,.welcome-eyebrow,.welcome-location,.welcome-today small) { color:#FFF; }
-.civic-ui.civic-refined .dashboard-welcome h2 { font-size:28px; margin-bottom:12px; }
-.civic-ui.civic-refined .welcome-location { opacity:.8; border-color:#FFFFFF30; margin-top:16px; }
-.civic-ui.civic-refined .welcome-art { display:none; }
-.civic-ui.civic-refined .welcome-copy { flex:1; min-width:0; }
-.civic-ui.civic-refined .resident-start-action { background:#FFF; color:#174A9F; border-color:#FFF; box-shadow:0 5px 16px #12346B33; }
-.civic-ui.civic-refined .welcome-today { background:#FFFFFF18; border-color:#FFFFFF35; border-radius:14px; }
-.civic-ui.civic-refined .welcome-today strong { color:#FFF; }
-.civic-ui.civic-refined .dashboard-support { display:grid; grid-template-columns:minmax(0,1.1fr) minmax(0,1fr); gap:28px; align-items:start; }
-.civic-ui.civic-refined .dashboard-content-grid { --bs-gutter-y:32px; }
-.civic-ui.civic-refined .dashboard-support .dashboard-panel-heading { padding:24px; }
-.civic-ui.civic-refined .dashboard-status-list { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; padding:0 24px 24px; }
-.civic-ui.civic-refined .dashboard-status-list>div { position:relative; padding:16px 14px 20px; border:1px solid var(--border-color); border-radius:12px; gap:12px; min-width:0; }
-.civic-ui.civic-refined .dashboard-status-list>div:last-child:nth-child(odd) { grid-column:1/-1; }
-.civic-ui.civic-refined .dashboard-status-list>div::after { content:""; position:absolute; bottom:5px; left:10px; width:var(--status-share); max-width:calc(100% - 20px); height:3px; border-radius:4px; background:#76A8FF; }
-.civic-ui.civic-refined .dashboard-status-list .reservation-status { font-size:12px; padding:7px 10px; white-space:normal; }
-.civic-ui.civic-refined .dashboard-status-list dd { margin:0; font-weight:750; }
-.civic-ui.civic-refined .dashboard-support .dashboard-quick-actions { display:flex; flex-direction:column; gap:14px; margin:0; padding:24px; }
-.civic-ui.civic-refined .dashboard-quick-actions h2 { margin-bottom:6px; }
-.civic-ui.civic-refined .dashboard-quick-actions .app-note { margin-top:6px; line-height:1.8; }
-.civic-ui.civic-refined .account-quick-link { background:var(--sb-soft); border:1px solid transparent; border-radius:12px; padding:16px; text-decoration:none; min-height:56px; }
-.civic-ui.civic-refined .account-quick-link:hover { border-color:#B6CEFA; text-decoration:none; }
-.civic-ui.civic-refined .recent-reservations-table { min-width:960px; table-layout:fixed; }
-.civic-ui.civic-refined .recent-reservations-table :is(th,td) { padding:24px; }
-.civic-ui.civic-refined .recent-reservations-table thead th:nth-child(1) { width:29%; }
-.civic-ui.civic-refined .recent-reservations-table thead th:nth-child(2) { width:27%; }
-.civic-ui.civic-refined .recent-reservations-table thead th:nth-child(3) { width:21%; }
-.civic-ui.civic-refined .recent-reservations-table thead th:nth-child(4) { width:16%; }
-.civic-ui.civic-refined .recent-reservations-table thead th:nth-child(5) { width:7%; }
-.civic-ui.civic-refined .recent-appointment :is(time,.reservation-reference) { white-space:nowrap; }
-.civic-ui.civic-refined .recent-reservations-table .reservation-service { font-weight:550; overflow-wrap:anywhere; }
-.civic-ui.civic-refined .recent-action-label { display:none; }
-.civic-ui.civic-refined .resident-recent-cards { grid-template-columns:repeat(2,minmax(0,1fr)); gap:24px; padding:0 24px 24px; align-items:start; }
 .civic-ui.civic-refined .recent-reservations-table .resident-avatar { width:34px; height:34px; flex-basis:34px; }
-.civic-ui.civic-refined .recent-person { display:flex; align-items:center; gap:10px; }
-.civic-ui.civic-refined .recent-person>div { min-width:0; }
-.civic-ui.civic-refined .recent-resident-name { display:block; font-size:13px; overflow-wrap:anywhere; }
-.civic-ui.civic-refined .recent-open { display:grid; place-items:center; width:38px; height:38px; border-radius:10px; background:var(--sb-soft); color:var(--civic-dark); }
-.civic-ui.civic-refined .recent-open svg { width:18px; height:18px; }
 .civic-ui.civic-refined .app-account-modal .modal-header { background:linear-gradient(120deg,#173E8D,#225FE5); color:#FFF; padding:22px 24px; }
-.civic-ui.civic-refined .app-account-modal .app-eyebrow { color:#D5E5FF; }
 .civic-ui.civic-refined .app-account-modal .modal-header .btn-close { filter:brightness(0) invert(1); }
 .civic-ui.civic-refined .app-account-modal .modal-body { padding:24px; }
 .civic-ui.civic-refined .account-person { display:flex; align-items:center; gap:14px; margin-bottom:22px; }
@@ -61,7 +15,6 @@
 .civic-ui.civic-refined .account-details dd { margin:0; font-size:14px; overflow-wrap:anywhere; }
 .civic-ui.civic-refined .reservation-worklist>.table-responsive { max-height:none; }
 .civic-ui.civic-refined .reservation-worklist-table tbody :is(td,th) { padding-block:20px; }
-.civic-ui.civic-refined .pagination { gap:5px; margin:0; flex-wrap:wrap; }
 .civic-ui.civic-refined .report-status-board { display:grid; grid-template-columns:230px minmax(0,1fr); background:var(--surface); border:1px solid var(--border-color); border-radius:18px; overflow:hidden; margin-bottom:16px; }
 .civic-ui.civic-refined .report-total { display:flex; gap:15px; padding:24px; background:var(--sb-soft); }
 .civic-ui.civic-refined .report-total h2 { font-size:13px; margin:0 0 10px; }
@@ -85,29 +38,11 @@
 .civic-ui.civic-refined .reservation-log-feed .activity-content { min-width:0; }
 .civic-ui.civic-refined .activity-item h3 { font-size:14px; }
 [data-bs-theme=dark] .civic-ui.civic-refined { --page-background:#121D28; --border-color:#364757; --sb-soft:#233C5B; }
-[data-bs-theme=dark] .civic-ui.civic-refined .app-sidebar { background:linear-gradient(180deg,#1D3048,var(--surface)); }
-@media(min-width:1200px) {
-    .civic-ui.civic-refined .dashboard-welcome:not(.admin-welcome) .welcome-copy { display:grid; grid-template-columns:1fr auto; column-gap:32px; align-items:center; }
-    .civic-ui.civic-refined .dashboard-welcome:not(.admin-welcome) :is(.welcome-eyebrow,h2,.welcome-location) { grid-column:1/-1; }
-    .civic-ui.civic-refined .dashboard-welcome:not(.admin-welcome) p { margin:0; }
-}
 @media(max-width:991px) {
-    .civic-ui.civic-refined .dashboard-support { grid-template-columns:1fr; gap:24px; }
     .civic-ui.civic-refined .report-status-board { grid-template-columns:190px minmax(0,1fr); }
     .civic-ui.civic-refined .report-status-grid { grid-template-columns:repeat(3,minmax(0,1fr)); }
 }
 @media(max-width:767px) {
-    .civic-ui.civic-refined .resident-recent-cards { grid-template-columns:1fr; padding:0 18px 18px; gap:20px; }
-    .civic-ui.civic-refined .recent-reservations-table { display:block; min-width:0; }
-    .civic-ui.civic-refined .recent-reservations-table thead { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); }
-    .civic-ui.civic-refined .recent-reservations-table tbody { display:block; }
-    .civic-ui.civic-refined .recent-reservations-table tbody tr { display:grid; grid-template-columns:minmax(0,1fr); gap:18px; padding:24px 20px; border-top:1px solid var(--border-color); }
-    .civic-ui.civic-refined .recent-reservations-table tbody :is(th,td) { display:block; width:auto; padding:0; border:0; }
-    .civic-ui.civic-refined .recent-reservations-table td[data-label]::before { content:attr(data-label); display:block; color:var(--muted-text); font-size:11px; margin-bottom:5px; }
-    .civic-ui.civic-refined .recent-action-label { display:inline; }
-    .civic-ui.civic-refined .recent-open { display:flex; align-items:center; justify-content:center; gap:12px; width:100%; min-height:44px; font-weight:600; text-decoration:none; }
-    .civic-ui.civic-refined .dashboard-welcome { padding:24px; }
-    .civic-ui.civic-refined .dashboard-welcome h2 { font-size:24px; }
     .civic-ui.civic-refined .report-status-board { grid-template-columns:1fr; }
     .civic-ui.civic-refined .report-total { align-items:center; padding:20px; }
     .civic-ui.civic-refined .report-total strong { font-size:30px; }
@@ -116,7 +51,6 @@
     .civic-ui.civic-refined .reservation-log-feed .activity-content { grid-column:2; }
 }
 @media(max-width:575px) {
-    .civic-ui.civic-refined .dashboard-status-list { grid-template-columns:1fr; padding-inline:20px; }
     .civic-ui.civic-refined .app-account-modal .modal-footer .btn-primary { width:100%; }
 }
 @media(prefers-reduced-motion:reduce) { .civic-ui.civic-refined * { scroll-behavior:auto!important; } }

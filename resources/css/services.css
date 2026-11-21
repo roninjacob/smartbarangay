@@ -41,10 +41,6 @@
 .service-actions .btn { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; }
 .service-status { display: inline-block; font-size: 11px; font-weight: 600; padding: 5px 9px; border-radius: 5px; background: #EEF1F5; color: #536174; }
 .service-status.is-active { background: #EAF5EF; color: #286F4B; }
-.service-empty { text-align: center; padding: 42px 24px 48px; }
-.service-empty-icon { display: inline-grid; place-items: center; width: 48px; height: 48px; border-radius: 12px; color: var(--civic-blue); background: #EDF3FA; margin-bottom: 16px; }
-.service-empty h3 { font-size: 18px; font-weight: 600; }
-.service-empty p { color: var(--muted-text); font-size: 13px; }
 .service-pagination { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; padding: 18px 22px; border-top: 1px solid var(--border-color); }
 .service-pagination .pagination { margin-bottom: 0; flex-wrap: wrap; }
 .service-back-link { display: inline-block; margin-bottom: 20px; font-size: 13px; }

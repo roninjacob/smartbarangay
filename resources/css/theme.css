@@ -24,59 +24,15 @@
 .user-preferences .btn { min-height: 44px; white-space: normal; }
 .user-preferences dd { margin-top: .4rem; margin-bottom: 1rem; }
 
-[data-bs-theme="dark"] .app-nav-link,
-[data-bs-theme="dark"] .app-sidebar-note,
-[data-bs-theme="dark"] .app-nav-heading,
-[data-bs-theme="dark"] .app-eyebrow,
-[data-bs-theme="dark"] .app-date,
-[data-bs-theme="dark"] .app-logout,
-[data-bs-theme="dark"] .app-footer,
-[data-bs-theme="dark"] .app-sidebar .brand-location,
-[data-bs-theme="dark"] .app-sidebar-note small,
-[data-bs-theme="dark"] .app-note,
-[data-bs-theme="dark"] .dashboard-empty p,
-[data-bs-theme="dark"] .dashboard-guidance p,
-[data-bs-theme="dark"] .admin-welcome p,
-[data-bs-theme="dark"] .reservation-reference,
-[data-bs-theme="dark"] .notification-body time,
-[data-bs-theme="dark"] .report-empty { color: var(--muted-text); }
+[data-bs-theme="dark"] .app-eyebrow,[data-bs-theme="dark"] .app-note,[data-bs-theme="dark"] .notification-body time,[data-bs-theme="dark"] .report-empty { color: var(--muted-text); }
 
-[data-bs-theme="dark"] .stat-note,
-[data-bs-theme="dark"] .panel-description,
-[data-bs-theme="dark"] .panel-caption,
-[data-bs-theme="dark"] .form-text,
-[data-bs-theme="dark"] .account-details dt { color: var(--muted-text); }
-[data-bs-theme="dark"] .dashboard-table thead th { background: #243244; color: var(--muted-text); border-color: var(--border-color); }
+[data-bs-theme="dark"] .form-text,[data-bs-theme="dark"] .account-details dt { color: var(--muted-text); }
 [data-bs-theme="dark"] .notification-list { background: var(--surface); }
 [data-bs-theme="dark"] .notification-item.is-unread { background: #22364e; }
-[data-bs-theme="dark"] .notification-count { background: #285fa7; border-color: var(--surface); }
 [data-bs-theme="dark"] .is-current .step-number { background: #285fa7; }
-[data-bs-theme="dark"] .dashboard-welcome:not(.admin-welcome) { background: #174a85; border-color: #477fcb; }
-[data-bs-theme="dark"] .stat-icon,
-[data-bs-theme="dark"] .profile-placeholder,
-[data-bs-theme="dark"] .resident-avatar,
-[data-bs-theme="dark"] .service-empty-icon,
-[data-bs-theme="dark"] .requirement-label,
-[data-bs-theme="dark"] .reservation-notice,
-[data-bs-theme="dark"] .reservation-option:has(input:checked),
-[data-bs-theme="dark"] .qr-camera-frame { background: #283d53; color: #c6dcff; border-color: var(--border-color); }
+[data-bs-theme="dark"] .profile-placeholder,[data-bs-theme="dark"] .resident-avatar,[data-bs-theme="dark"] .service-empty-icon,[data-bs-theme="dark"] .requirement-label,[data-bs-theme="dark"] .reservation-notice,[data-bs-theme="dark"] .reservation-option:has(input:checked),[data-bs-theme="dark"] .qr-camera-frame { background: #283d53; color: #c6dcff; border-color: var(--border-color); }
 
-[data-bs-theme="dark"] .app-nav-link.is-current,
-[data-bs-theme="dark"] .app-nav-link:hover,
-[data-bs-theme="dark"] .app-role-tag,
-[data-bs-theme="dark"] .app-avatar,
-[data-bs-theme="dark"] .app-menu-button,
-[data-bs-theme="dark"] .app-sidebar .brand-mark,
-[data-bs-theme="dark"] .empty-icon,
-[data-bs-theme="dark"] .empty-footnote,
-[data-bs-theme="dark"] .notification-symbol,
-[data-bs-theme="dark"] .notification-read,
-[data-bs-theme="dark"] .notification-unread { background: #283d53; color: #bdd6ff; border-color: var(--border-color); }
-
-[data-bs-theme="dark"] .app-sidebar-brand,
-[data-bs-theme="dark"] .app-sidebar-note,
-[data-bs-theme="dark"] .dashboard-guidance,
-[data-bs-theme="dark"] .dashboard-status-list > div { border-color: var(--border-color); }
+[data-bs-theme="dark"] .notification-symbol,[data-bs-theme="dark"] .notification-read,[data-bs-theme="dark"] .notification-unread { background: #283d53; color: #bdd6ff; border-color: var(--border-color); }
 [data-bs-theme="dark"] .report-line text { fill: var(--main-text); }
 [data-bs-theme="dark"] .report-bar-track { background: var(--border-color); }
 [data-bs-theme="dark"] .btn-primary { --bs-btn-bg: #285fa7; --bs-btn-border-color: #477fcb; --bs-btn-hover-bg: #326fbd; --bs-btn-hover-border-color: #6295d8; --bs-btn-active-bg: #245690; color: #fff; }
@@ -84,7 +40,7 @@
 
 /* PDFs, canvases and official document surfaces are deliberately not inverted. */
 @media (prefers-reduced-motion: no-preference) {
-    body, .app-sidebar, .app-topbar, .dashboard-panel, .preference-option {
+    body,.preference-option {
         transition: background-color .15s ease, color .15s ease, border-color .15s ease;
     }
 }

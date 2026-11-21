@@ -49,6 +49,18 @@
         @case('arrow')
             <path d="M5 12h14m-5-5 5 5-5 5"/>
             @break
+        @case('globe')
+            <circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.7 3.8 5.7 3.8 9s-1.3 6.3-3.8 9c-2.5-2.7-3.8-5.7-3.8-9S9.5 5.7 12 3Z"/>
+            @break
+        @case('chip')
+            <rect x="7" y="7" width="10" height="10" rx="2"/><path d="M10 10h4v4h-4zM9 3v4M15 3v4M9 17v4M15 17v4M3 9h4M3 15h4M17 9h4M17 15h4"/>
+            @break
+        @case('chart')
+            <path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>
+            @break
+        @case('cash')
+            <rect x="3" y="6" width="18" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/><path d="M6 9v.01M18 15v.01"/>
+            @break
         @default
             <path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8l-5-5ZM14 3v5h5M8 12h8M8 16h6"/>
     @endswitch
