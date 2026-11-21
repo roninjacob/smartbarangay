@@ -20,5 +20,6 @@ import './civic-interface';
 
 import './civic-interactions';
 import './landing';
+import './theme-toggle';
 
 import './report-interactions';

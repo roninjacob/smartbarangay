@@ -106,3 +106,21 @@
 @media (prefers-reduced-motion: reduce) {
     .civic-ui .btn, .civic-ui .btn:hover { transform: none !important; }
 }
+
+/* Light/dark toggle (public and account pages): 40px square icon button, the icon shows the mode it switches to. */
+.civic-ui .theme-toggle {
+    position: relative; display: inline-grid; place-items: center; flex: 0 0 auto;
+    width: 40px; height: 40px; padding: 0; border: 1px solid var(--sb-btn-border); border-radius: 10px;
+    background: var(--sb-btn-surface); color: var(--sb-btn-ink); cursor: pointer;
+}
+.civic-ui .theme-toggle:hover { background: var(--sb-btn-tint); border-color: var(--sb-btn-tint-border); }
+.civic-ui .theme-toggle:focus-visible { outline: 3px solid var(--sb-btn-focus); outline-offset: 2px; }
+.civic-ui .theme-toggle svg { grid-area: 1 / 1; width: 20px; height: 20px; transition: transform .25s ease, opacity .2s ease; }
+.civic-ui .theme-toggle .theme-toggle-sun { opacity: 0; transform: rotate(-45deg) scale(.6); }
+.civic-ui .theme-toggle[aria-pressed="true"] .theme-toggle-moon { opacity: 0; transform: rotate(45deg) scale(.6); }
+.civic-ui .theme-toggle[aria-pressed="true"] .theme-toggle-sun { opacity: 1; transform: none; }
+.civic-ui .theme-toggle-on-dark { border-color: rgb(255 255 255 / 35%); background: rgb(255 255 255 / 12%); color: #FFF; }
+.civic-ui .theme-toggle-on-dark:hover { background: rgb(255 255 255 / 22%); border-color: rgb(255 255 255 / 55%); color: #FFF; }
+.civic-ui .theme-toggle-on-dark:focus-visible { outline-color: #FFF; }
+@media (pointer: coarse) { .civic-ui .theme-toggle { width: 44px; height: 44px; } }
+@media (prefers-reduced-motion: reduce) { .civic-ui .theme-toggle svg { transition: none; } }

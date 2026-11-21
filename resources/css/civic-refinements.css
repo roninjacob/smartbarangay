@@ -46,28 +46,6 @@
 .civic-ui.civic-refined .recent-resident-name { display:block; font-size:13px; overflow-wrap:anywhere; }
 .civic-ui.civic-refined .recent-open { display:grid; place-items:center; width:38px; height:38px; border-radius:10px; background:var(--sb-soft); color:var(--civic-dark); }
 .civic-ui.civic-refined .recent-open svg { width:18px; height:18px; }
-.civic-ui.civic-refined .auth-shell-modern .brand-panel { background:radial-gradient(ellipse at 0% 100%,#357AE1,transparent 70%),linear-gradient(140deg,#123575,#1F55C1); color:#FFF; }
-.civic-ui.civic-refined .auth-shell-modern .brand-story { min-height:calc(100dvh - 80px); display:flex; flex-direction:column; justify-content:space-between; gap:30px; }
-.civic-ui.civic-refined .auth-shell-modern .brand-panel :is(.brand-name,.brand-location,.brand-description,.brand-eyebrow,.brand-process,.brand-footer,.brand-process h2,.brand-step-number,.civic-illustration) { color:#FFF; }
-.civic-ui.civic-refined .auth-shell-modern .brand-panel h1 { color:#FFF; font-size:clamp(34px,3.5vw,49px); line-height:1.12; }
-.civic-ui.civic-refined .auth-shell-modern .brand-description { font-size:14px; line-height:1.8; opacity:.88; }
-.civic-ui.civic-refined .auth-shell-modern .brand-capabilities { display:flex; flex-direction:column; gap:10px; margin:22px 0; }
-.civic-ui.civic-refined .auth-shell-modern .brand-capabilities li { padding:0; background:none; border:0; color:#FFF; font-size:13px; }
-.civic-ui.civic-refined .auth-shell-modern .brand-capabilities svg { width:18px; height:18px; }
-.civic-ui.civic-refined .auth-shell-modern .brand-process { border-color:#FFFFFF30; }
-.civic-ui.civic-refined .auth-shell-modern .brand-panel :is(.brand-process-steps,.brand-capabilities svg,.brand-footer strong) { color:#FFF; }
-.civic-ui.civic-refined .auth-shell-modern .brand-conclusion .civic-illustration { max-width:230px; margin:0 auto 18px; opacity:.75; }
-.civic-ui.civic-refined .auth-shell-modern .brand-footer { font-size:11px; border-color:#FFFFFF30; }
-.civic-ui.civic-refined .auth-shell-modern .auth-form-panel { background:#F7FAFF; }
-.civic-ui.civic-refined .auth-shell-modern .auth-form-content { display:flex; flex-direction:column; gap:22px; max-width:600px; }
-.civic-ui.civic-refined .auth-shell-modern .auth-form-card { background:var(--surface); border:1px solid var(--border-color); border-top:3px solid #225FE5; border-radius:18px; padding:28px; box-shadow:0 8px 28px #173E6A07; }
-.civic-ui.civic-refined .auth-shell-modern .auth-support { display:flex; align-items:flex-start; align-self:stretch; width:100%; margin:0; gap:12px; padding:16px; background:var(--sb-soft); color:var(--muted-text); border:1px solid var(--border-color); border-radius:14px; font-size:12px; }
-.civic-ui.civic-refined .auth-heading .section-eyebrow { color:var(--civic-dark); }
-.civic-ui.civic-refined .auth-heading .auth-audience { border-color:#CCDFFF; }
-.civic-ui.civic-refined .auth-support-icon { width:36px; height:36px; flex:0 0 36px; display:grid; place-items:center; background:var(--surface); border:0; border-radius:10px; color:var(--civic-dark); }
-.civic-ui.civic-refined .auth-support-icon svg { width:20px; height:20px; }
-.civic-ui.civic-refined .auth-help-link { display:inline-flex; gap:7px; align-items:center; font-weight:600; margin-top:8px; text-decoration:none; }
-.civic-ui.civic-refined .auth-help-link svg { width:15px; height:15px; }
 .civic-ui.civic-refined .app-account-modal .modal-header { background:linear-gradient(120deg,#173E8D,#225FE5); color:#FFF; padding:22px 24px; }
 .civic-ui.civic-refined .app-account-modal .app-eyebrow { color:#D5E5FF; }
 .civic-ui.civic-refined .app-account-modal .modal-header .btn-close { filter:brightness(0) invert(1); }
@@ -108,7 +86,6 @@
 .civic-ui.civic-refined .activity-item h3 { font-size:14px; }
 [data-bs-theme=dark] .civic-ui.civic-refined { --page-background:#121D28; --border-color:#364757; --sb-soft:#233C5B; }
 [data-bs-theme=dark] .civic-ui.civic-refined .app-sidebar { background:linear-gradient(180deg,#1D3048,var(--surface)); }
-[data-bs-theme=dark] .civic-ui.civic-refined .auth-shell-modern .auth-form-panel { background:var(--page-background); }
 @media(min-width:1200px) {
     .civic-ui.civic-refined .dashboard-welcome:not(.admin-welcome) .welcome-copy { display:grid; grid-template-columns:1fr auto; column-gap:32px; align-items:center; }
     .civic-ui.civic-refined .dashboard-welcome:not(.admin-welcome) :is(.welcome-eyebrow,h2,.welcome-location) { grid-column:1/-1; }
@@ -116,8 +93,6 @@
 }
 @media(max-width:991px) {
     .civic-ui.civic-refined .dashboard-support { grid-template-columns:1fr; gap:24px; }
-    .civic-ui.civic-refined .auth-shell-modern .brand-story { min-height:0; gap:20px; }
-    .civic-ui.civic-refined .auth-shell-modern .brand-conclusion { display:none; }
     .civic-ui.civic-refined .report-status-board { grid-template-columns:190px minmax(0,1fr); }
     .civic-ui.civic-refined .report-status-grid { grid-template-columns:repeat(3,minmax(0,1fr)); }
 }
@@ -142,11 +117,6 @@
 }
 @media(max-width:575px) {
     .civic-ui.civic-refined .dashboard-status-list { grid-template-columns:1fr; padding-inline:20px; }
-    .civic-ui.civic-refined .auth-shell-modern .brand-panel { padding:24px; }
-    .civic-ui.civic-refined .auth-shell-modern .brand-message h1 { font-size:23px; margin:16px 0 0; }
-    .civic-ui.civic-refined .auth-shell-modern :is(.brand-eyebrow,.brand-description,.brand-capabilities,.brand-process,.auth-service-info) { display:none; }
-    .civic-ui.civic-refined .auth-shell-modern .auth-form-card { padding:22px 18px; }
-    .civic-ui.civic-refined .auth-shell-modern .auth-form-content { gap:18px; }
     .civic-ui.civic-refined .app-account-modal .modal-footer .btn-primary { width:100%; }
 }
 @media(prefers-reduced-motion:reduce) { .civic-ui.civic-refined * { scroll-behavior:auto!important; } }

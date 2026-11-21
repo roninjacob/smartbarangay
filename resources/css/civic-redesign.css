@@ -716,74 +716,6 @@ body.civic-ui {
     border-radius: 16px;
     border-color: var(--border-color);
 }
-.civic-ui .auth-page {
-    background: var(--page-background);
-}
-.civic-ui .auth-shell-modern .brand-panel {
-    background: #EAF1FC;
-    color: #1C3B55;
-    border-right: 1px solid #DFE8F3;
-}
-.civic-ui .brand-panel .brand-name {
-    color: #182A38;
-}
-.civic-ui .brand-panel .brand-location {
-    color: #586E81;
-}
-.civic-ui .brand-panel .brand-eyebrow {
-    color: #365E8E;
-}
-.civic-ui .brand-panel :is(.brand-description,.brand-footer) {
-    color: #50677D;
-}
-.civic-ui .brand-panel .brand-message h1 {
-    color: #182A38;
-    font-weight: 750;
-    font-size: clamp(35px,3.8vw,58px);
-    letter-spacing: -.05em;
-}
-.civic-ui .brand-panel .brand-capabilities {
-    color: #345B82;
-}
-.civic-ui .brand-panel .brand-process {
-    border-color: #CDDAEA;
-}
-.civic-ui .brand-panel :is(.brand-process h2,.brand-process-steps) {
-    color: #365E8E;
-}
-.civic-ui .brand-panel .civic-illustration {
-    color: #5C87AE;
-}
-.civic-ui .auth-form-panel {
-    background: var(--surface);
-}
-.civic-ui .auth-heading h2 {
-    font-size: 34px;
-    font-weight: 700;
-    letter-spacing: -.045em;
-}
-.civic-ui .auth-heading p {
-    font-size: 15px;
-    color: var(--muted-text);
-}
-.civic-ui .auth-form-card {
-    border-radius: 22px;
-}
-.civic-ui .auth-support {
-    border-radius: 14px;
-    background: var(--page-background);
-    border-color: var(--border-color);
-}
-.civic-ui .auth-feature-icon {
-    background: var(--sb-soft);
-    border-radius: 11px;
-}
-.civic-ui .auth-feature-icon-green {
-    background: var(--sb-mint);
-}
-.civic-ui .auth-action-hint,.civic-ui .auth-info-note {
-    color: var(--muted-text);
-}
 .civic-ui .resident-mobile-nav {
     display: none;
 }
@@ -824,20 +756,6 @@ body.civic-ui {
 }
 .civic-ui .resident-recent-card .btn {
     width: 100%;
-}
-[data-bs-theme=dark] .civic-ui .auth-shell-modern .brand-panel {
-    background: #192E43;
-    color: #E9F0F6;
-    border-color: var(--border-color);
-}
-[data-bs-theme=dark] .civic-ui .brand-panel :is(.brand-name,.brand-message h1) {
-    color: #E9F0F6;
-}
-[data-bs-theme=dark] .civic-ui .brand-panel :is(.brand-location,.brand-description,.brand-footer,.brand-eyebrow,.brand-capabilities,.brand-process h2,.brand-process-steps) {
-    color: #B7CBE1;
-}
-[data-bs-theme=dark] .civic-ui .brand-panel .brand-process {
-    border-color: #38516A;
 }
 [data-bs-theme=dark] .civic-ui .btn-outline-primary:hover {
     color: #152133;
@@ -1040,12 +958,6 @@ body.civic-ui {
     .civic-ui .dashboard-quick-actions {
         padding: 22px;
     }
-    .civic-ui .auth-heading h2 {
-        font-size: 29px;
-    }
-    .civic-ui .auth-heading p {
-        font-size: 14px;
-    }
     .civic-ui .brand-name {
         font-size: 21px;
     }
@@ -1096,35 +1008,6 @@ body.civic-ui {
     .civic-ui .resident-mobile-nav {
         display: none!important;
     }
-}
-.civic-ui .brand-panel .brand-capabilities li {
-    color: #345B82;
-    border-color: #CDDAEA;
-    background: #F4F8FF;
-    border-radius: 11px;
-}
-.civic-ui .brand-panel .brand-capabilities svg {
-    color: #416D9D;
-}
-.civic-ui .brand-panel .brand-footer strong {
-    color: #345B82;
-}
-.civic-ui .brand-panel .brand-footer {
-    border-color: #CDDAEA;
-}
-.civic-ui .brand-panel .brand-step-number {
-    color: #745A27;
-}
-.civic-ui .brand-panel .brand-step-arrow {
-    color: #527296;
-}
-[data-bs-theme=dark] .civic-ui .brand-panel .brand-capabilities li {
-    color: #CFDDEE;
-    background: #203B54;
-    border-color: #3F5B73;
-}
-[data-bs-theme=dark] .civic-ui .brand-panel .brand-capabilities svg,[data-bs-theme=dark] .civic-ui .brand-panel .brand-footer strong {
-    color: #BBD8F5;
 }
 .civic-ui .request-section-nav {
     display: flex;

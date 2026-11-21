@@ -225,7 +225,7 @@ class ResidentDemographicProfileTest extends TestCase
 
     public function test_registration_collects_formal_identity_and_defers_optional_demographics(): void
     {
-        $this->get(route('register'))->assertOk()->assertSee('track your residency review')
+        $this->get(route('register'))->assertOk()->assertSee('the barangay office reviews your residency')
             ->assertSee('name="birthdate"', false)->assertSee('name="first_name"', false)->assertDontSee('name="civil_status"', false)
             ->assertDontSee('name="emergency_contact_name"', false);
     }

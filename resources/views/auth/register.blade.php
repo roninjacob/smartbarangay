@@ -1,56 +1,37 @@
 @extends('layouts.auth')
 @section('title', 'Resident registration')
 @section('shell-class', 'auth-shell-register')
-
-@section('auth-intro')
-<a class="back-link" href="{{ route('login') }}"><span aria-hidden="true">←</span> Back to Sign In</a>
-<div class="auth-heading">
-    <span class="section-eyebrow">FOR BARANGAY CALAYO RESIDENTS</span>
-    <h2 id="auth-heading">Create your account</h2>
-    <p>Create your resident account to access SmartBarangay services in Barangay Calayo.</p>
-    <p class="auth-audience">Verify your email to open your dashboard. An Admin will review your Barangay Calayo residency before you can submit document requests.</p>
-</div>
-@endsection
-
-@section('service-info-heading', 'Your SmartBarangay account gives you access to:')
-@section('support-heading', 'Need help creating your account?')
-@section('document-feature')
-<strong class="auth-feature-title">Online Document Requests</strong>
-Reserve available Barangay Calayo document services.
-@endsection
-@section('tracking-feature')
-<strong class="auth-feature-title">Reservation Tracking</strong>
-Monitor the status of your submitted requests.
-@endsection
-@section('qr-feature')
-<strong class="auth-feature-title">QR Ticket Access</strong>
-Access QR-based verification after approval.
-@endsection
+@section('brand-title', 'Register once, then request documents online.')
+@section('heading', 'Create your resident account')
+@section('subtitle', 'For residents of Barangay Calayo, Nasugbu, Batangas.')
 
 @section('form')
 @if($errors->any())
-    <div class="alert alert-danger" role="alert">Please correct the highlighted fields to create your account.</div>
+    <div class="au-alert au-alert-danger" role="alert"><span>Please correct the highlighted fields to create your account.</span></div>
 @endif
 
-<p class="auth-action-hint">Provide your personal information, verify your email, and track your residency review from your dashboard. Additional service-specific information can be completed later in Profile / Account Settings.</p>
-<form method="POST" action="{{ route('register.store') }}" data-auth-form>
+<div class="au-note">
+    <x-app-icon name="users"/>
+    <p>After you verify your email, the barangay office reviews your residency. You can submit document requests once it is approved.</p>
+</div>
+
+<form method="POST" action="{{ route('register.store') }}" class="au-form" data-auth-form>
     @csrf
-    <div class="row g-3">
-        <div class="col-12">@include('partials.resident-identity-fields')</div>
-        <div class="col-12"><x-form-field name="email" label="Email" type="email" autocomplete="email" maxlength="255" /></div>
-        <div class="col-md-6">
+    <fieldset class="au-fieldset">
+        <legend>Account</legend>
+        <div class="au-grid">
+            <div class="au-span-2"><x-form-field name="email" label="Email" type="email" autocomplete="email" maxlength="255" /></div>
             <x-form-field name="password" label="Password" type="password" autocomplete="new-password"
                 minlength="8" maxlength="72" hint="At least 8 characters, including letters and numbers." />
-        </div>
-        <div class="col-md-6">
             <x-form-field name="password_confirmation" label="Confirm Password" type="password"
                 autocomplete="new-password" minlength="8" maxlength="72" />
         </div>
-        <div class="col-12 pt-2">
-            <button type="submit" class="btn btn-primary w-100 auth-submit" data-submit-label="Creating account…">Create Resident Account</button>
-        </div>
-    </div>
+    </fieldset>
+
+    @include('partials.resident-identity-fields', ['identityGrouped' => true])
+
+    <button type="submit" class="btn btn-primary btn-lg w-100 au-submit" data-submit-label="Creating account…">Create Resident Account</button>
 </form>
-<div class="auth-divider"><span>Already registered?</span></div>
-<a class="btn btn-outline-primary w-100" href="{{ route('login') }}">Sign in to your account</a>
+
+<p class="au-switch">Already registered? <a class="au-link" href="{{ route('login') }}">Sign in instead</a></p>
 @endsection

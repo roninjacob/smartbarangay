@@ -1,13 +1,9 @@
 import { Toast } from 'bootstrap';
-import { filePresentation, landingMotion } from './civic-interaction-helpers';
+import { filePresentation } from './civic-interaction-helpers';
 
 // Presentation enhancements never run inside the dedicated official print view.
 if (!document.querySelector('[data-print-document]')) {
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
-    document.querySelectorAll('[data-landing-motion]').forEach((hero) => {
-        const control = hero.querySelector('[data-motion-control]');
-        if (control) landingMotion(hero, control, reducedMotion, document);
-    });
 
     // Report detail rows become labelled records on phones; headers and values stay authoritative.
     document.querySelectorAll('.report-table table,.collection-table table').forEach((table) => {

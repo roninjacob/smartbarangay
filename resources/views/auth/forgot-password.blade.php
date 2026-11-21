@@ -1,28 +1,27 @@
-@extends('layouts.auth-action')
+@extends('layouts.auth')
 @section('title', 'Forgot password')
-@section('eyebrow', 'FORGOT PASSWORD')
+@section('brand-title', 'Reset your password with a link sent to your email.')
 @section('heading', session('status') ? 'Check your email' : 'Reset your password')
-@section('description', session('status')
+@section('subtitle', session('status')
     ? 'If an eligible account exists for that email address, we have sent a password reset link.'
-    : 'Enter the email address associated with your SmartBarangay account. We’ll send you a secure password reset link.')
+    : 'Enter the email address of your SmartBarangay account. We will send you a secure reset link.')
+
 @section('form')
 @if(session('status'))
-    <div class="auth-info-note"><strong>Your next step</strong><p class="mb-0">Check your Spam or Junk folder too. You may request another link after a short wait.</p></div>
-    <a class="btn btn-primary w-100" href="{{ route('login') }}">Back to Sign In</a>
-    <a class="auth-secondary-link" href="{{ route('password.request') }}">Request another reset link</a>
+    <div class="au-alert au-alert-success" role="status"><span>Check your Spam or Junk folder too. You may request another link after a short wait.</span></div>
+    <a class="btn btn-primary btn-lg w-100" href="{{ route('login') }}">Back to Sign In</a>
+    <p class="au-switch"><a class="au-link" href="{{ route('password.request') }}">Request another reset link</a></p>
 @else
     <x-auth-feedback />
-    <form method="POST" action="{{ route('password.email') }}" data-auth-form>
+    <form method="POST" action="{{ route('password.email') }}" class="au-form" data-auth-form>
         @csrf
-        <div class="row g-3">
-            <div class="col-12"><x-form-field name="email" label="Email Address" type="email" autocomplete="email" maxlength="255" placeholder="you@example.com" /></div>
-            <div class="col-12"><button type="submit" class="btn btn-primary w-100" data-submit-label="Sending…">Send Password Reset Link</button></div>
-        </div>
+        <x-form-field name="email" label="Email Address" type="email" autocomplete="email" maxlength="255" placeholder="you@example.com" />
+        <button type="submit" class="btn btn-primary btn-lg w-100 au-submit" data-submit-label="Sending…">Send Password Reset Link</button>
     </form>
-    <a class="auth-secondary-link" href="{{ route('login') }}">← Back to Sign In</a>
+    <p class="au-switch">Remembered it? <a class="au-link" href="{{ route('login') }}">Sign in instead</a></p>
 @endif
-<div class="auth-info-note mt-3">
-    <strong>Haven't verified your email yet?</strong>
-    <p class="mb-0">Password reset is available after email verification. Sign in with your existing password to resend your verification email. If you cannot sign in, contact the Barangay Calayo office for account assistance.</p>
+<div class="au-note au-note-muted">
+    <x-app-icon name="bell"/>
+    <p><strong>Haven't verified your email yet?</strong> Password reset is available after email verification. Sign in with your existing password to resend your verification email. If you cannot sign in, contact the Barangay Calayo office for account assistance.</p>
 </div>
 @endsection

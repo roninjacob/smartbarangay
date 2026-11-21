@@ -174,7 +174,7 @@ html:has(.landing) { scroll-padding-top: 84px; }
 .civic-ui .landing .lp-tile .app-icon { width: 22px; height: 22px; }
 .civic-ui .landing .lp-skyline { width: min(560px, 86%); margin: 64px auto -96px; color: var(--lp-blue); opacity: .28; pointer-events: none; }
 .civic-ui .landing .lp-skyline svg { display: block; width: 100%; height: auto; }
-.civic-ui .landing .lp-skyline .lp-flag { stroke: var(--lp-gold); }
+.civic-ui .landing .lp-skyline .sb-skyline-flag { stroke: var(--lp-gold); }
 
 /* ---------- Sections ---------- */
 .civic-ui .landing .lp-section { position: relative; padding-block: var(--lp-section); }
@@ -392,4 +392,32 @@ html:has(.landing) { scroll-padding-top: 84px; }
 }
 @media print {
     .civic-ui .landing .lp-header, .civic-ui .landing .lp-hero-bg, .civic-ui .landing .lp-skyline, .civic-ui .landing .lp-preview { display: none !important; }
+}
+
+/* Theme toggle placement in the landing header */
+.civic-ui .landing .lp-theme { margin-left: auto; margin-right: 8px; }
+@media (min-width: 992px) {
+    .civic-ui .landing .lp-header .navbar-collapse { order: 2; }
+    .civic-ui .landing .lp-theme { order: 3; margin: 0 0 0 8px; }
+}
+
+/* Small laptops (992-1199px): give the hero preview a little more room. */
+@media (min-width: 992px) and (max-width: 1199.98px) {
+    .civic-ui .landing .lp-hero-grid { grid-template-columns: minmax(0, 6fr) minmax(0, 5fr); gap: 32px; }
+    .civic-ui .landing .lp-hero-title { font-size: clamp(2.4rem, 4.6vw, 3.25rem); }
+}
+
+/* Tablets (576-991px): centre the single-column hero so it lines up with the centred preview. */
+@media (min-width: 576px) and (max-width: 991.98px) {
+    .civic-ui .landing .lp-hero-copy { text-align: center; }
+    .civic-ui .landing .lp-hero-title { max-width: 18ch; margin-inline: auto; }
+    .civic-ui .landing .lp-hero-lead { margin-inline: auto; }
+    .civic-ui .landing .lp-hero .lp-actions, .civic-ui .landing .lp-facts { justify-content: center; }
+    .civic-ui .landing .lp-hero-grid { gap: 40px; }
+}
+
+/* Phones: brand on its own row, then the two link lists side by side. */
+@media (max-width: 767.98px) {
+    .civic-ui .landing .lp-footer-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px 20px; }
+    .civic-ui .landing .lp-footer-brand { grid-column: 1 / -1; }
 }

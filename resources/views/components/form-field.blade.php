@@ -7,7 +7,7 @@
     @if($labelAction)
         <div class="form-label-row">
             <label for="{{ $name }}" class="form-label">{{ $label }}</label>
-            <a class="auth-forgot-link" href="{{ $labelAction }}">Forgot Password?</a>
+            <a class="au-link au-link-sm" href="{{ $labelAction }}">Forgot Password?</a>
         </div>
     @else
         <label for="{{ $name }}" class="form-label">{{ $label }}</label>

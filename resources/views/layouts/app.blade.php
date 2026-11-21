@@ -7,6 +7,10 @@
     <meta name="theme-color" content="#225FE5">
     <link rel="icon" type="image/svg+xml" href="{{ asset('images/smartbarangay-mark.svg') }}">
     <title>@yield('title', 'SmartBarangay') · Barangay Calayo</title>
+    @unless(auth()->user()?->is_active && auth()->user()?->hasVerifiedEmail())
+    {{-- Visitors without a saved account preference: apply the theme chosen in this browser before paint. --}}
+    <script>try{if(localStorage.getItem('smartbarangay-theme')==='dark')document.documentElement.setAttribute('data-bs-theme','dark');}catch(e){}</script>
+    @endunless
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="civic-ui civic-refined">

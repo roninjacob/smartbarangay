@@ -1,0 +1,257 @@
+/* Account pages: login, register, recovery, verification and access pages.
+   Scoped under .auth-page and aligned with the landing page tokens (landing.css). */
+
+.civic-ui .auth-page {
+    --au-blue: #1F5EA8;
+    --au-blue-dark: #174A85;
+    --au-green: #2F855A;
+    --au-gold: #E0A93B;
+    --au-ink: #0F1B2D;
+    --au-text: #334155;
+    --au-muted: #556377;
+    --au-soft: #F6F8FB;
+    --au-surface: #FFFFFF;
+    --au-border: #DCE3EC;
+    --au-input-border: #C9D3DF;
+    --au-tint: #EAF1FA;
+    --au-danger: #B42318;
+    --au-radius: 12px;
+    display: flex;
+    min-height: 100vh;
+    min-height: 100dvh;
+    margin: 0;
+    padding: 0;
+    background: var(--au-surface);
+    color: var(--au-text);
+    font-family: "Plus Jakarta Sans Variable", "Plus Jakarta Sans", "Segoe UI", system-ui, -apple-system, Arial, sans-serif;
+    font-size: 1rem;
+    line-height: 1.6;
+}
+[data-bs-theme="dark"] .civic-ui .auth-page {
+    --au-blue: #8DBBFF;
+    --au-blue-dark: #BDD6FF;
+    --au-green: #8ED6B0;
+    --au-ink: #EEF3F9;
+    --au-text: #CAD5E2;
+    --au-muted: #A9B7C8;
+    --au-soft: #141F2B;
+    --au-surface: #111923;
+    --au-border: #2C3A4B;
+    --au-input-border: #3A4A5E;
+    --au-tint: #1D3047;
+    --au-danger: #FF9C94;
+}
+.civic-ui .auth-page :is(h1, h2, h3, legend) { color: var(--au-ink); font-family: inherit; letter-spacing: -0.02em; }
+.civic-ui .auth-page p { margin: 0; }
+.civic-ui .auth-page .app-icon { width: 20px; height: 20px; flex-shrink: 0; }
+
+/* Shared gradient backdrop (brand panel and centered pages) */
+.civic-ui .auth-page .au-brand-bg { position: absolute; inset: 0; z-index: -1; overflow: hidden; pointer-events: none;
+    background:
+        radial-gradient(34rem 26rem at 90% 0%, rgb(255 255 255 / 16%), transparent 70%),
+        radial-gradient(30rem 24rem at 0% 100%, rgb(47 133 90 / 38%), transparent 70%),
+        radial-gradient(18rem 14rem at 70% 60%, rgb(224 169 59 / 16%), transparent 70%),
+        linear-gradient(150deg, #1F5EA8 0%, #174A85 55%, #12396A 100%);
+}
+.civic-ui .auth-page .au-brand-bg::after { content: ""; position: absolute; inset: 0;
+    background-image: radial-gradient(rgb(255 255 255 / 18%) 1px, transparent 1.4px); background-size: 22px 22px;
+    -webkit-mask-image: radial-gradient(ellipse 80% 60% at 70% 30%, #000 10%, transparent 75%);
+    mask-image: radial-gradient(ellipse 80% 60% at 70% 30%, #000 10%, transparent 75%); }
+[data-bs-theme="dark"] .civic-ui .auth-page .au-brand-bg {
+    background:
+        radial-gradient(34rem 26rem at 90% 0%, rgb(141 187 255 / 14%), transparent 70%),
+        radial-gradient(30rem 24rem at 0% 100%, rgb(47 133 90 / 30%), transparent 70%),
+        linear-gradient(150deg, #173F70 0%, #112E52 55%, #0C2240 100%);
+}
+
+.civic-ui .auth-page .au-lockup { position: relative; display: inline-flex; align-items: center; gap: 12px; color: #FFF; text-decoration: none; }
+.civic-ui .auth-page .au-lockup .sb-brand-mark { width: 42px; height: 42px; flex: 0 0 42px; border-radius: 11px; box-shadow: 0 0 0 1px rgb(255 255 255 / 25%); }
+.civic-ui .auth-page .au-lockup strong { display: block; font-size: 1.125rem; font-weight: 800; letter-spacing: -0.02em; line-height: 1.2; }
+.civic-ui .auth-page .au-lockup small { display: block; color: #CFE0F5; font-size: .75rem; }
+.civic-ui .auth-page .au-lockup:focus-visible { outline: 3px solid #FFF; outline-offset: 4px; border-radius: 8px; }
+
+/* ---------- Split layout ---------- */
+.civic-ui .auth-page.au-split { flex-direction: column; }
+.civic-ui .auth-page .au-brand { position: relative; isolation: isolate; overflow: hidden; display: flex; flex-direction: column; gap: 20px; padding: 20px 20px 24px; color: #DCE8F7; }
+.civic-ui .auth-page .au-brand-body { position: relative; }
+.civic-ui .auth-page .au-brand-title { max-width: 18ch; color: #FFF; font-size: 1.5rem; font-weight: 800; line-height: 1.2; letter-spacing: -0.03em; }
+.civic-ui .auth-page .au-facts, .civic-ui .auth-page .au-mini, .civic-ui .auth-page .au-brand .au-skyline { display: none; }
+.civic-ui .auth-page .au-facts { flex-direction: column; gap: 14px; margin: 28px 0 0; padding: 0; list-style: none; font-size: .9875rem; font-weight: 500; color: #E3ECF8; }
+.civic-ui .auth-page .au-facts li { display: flex; align-items: center; gap: 12px; }
+.civic-ui .auth-page .au-fact-icon { display: grid; place-items: center; width: 36px; height: 36px; flex: 0 0 36px; border: 1px solid rgb(255 255 255 / 20%); border-radius: 10px; background: rgb(255 255 255 / 10%); color: #FFF; }
+.civic-ui .auth-page .au-fact-icon .app-icon { width: 18px; height: 18px; }
+.civic-ui .auth-page .au-mini { align-items: center; gap: 12px; max-width: 340px; margin-top: 36px; padding: 14px 16px; border: 1px solid rgb(255 255 255 / 30%); border-radius: 14px;
+    background: rgb(255 255 255 / 14%); -webkit-backdrop-filter: blur(14px) saturate(140%); backdrop-filter: blur(14px) saturate(140%);
+    box-shadow: 0 18px 40px rgb(5 20 45 / 30%); transform: rotate(-2deg); }
+.civic-ui .auth-page .au-mini-tile { display: grid; place-items: center; width: 40px; height: 40px; flex: 0 0 40px; border-radius: 10px; background: #FFF; color: #1F5EA8; }
+.civic-ui .auth-page .au-mini-text { flex: 1; min-width: 0; }
+.civic-ui .auth-page .au-mini-text small { display: block; color: #CFE0F5; font-size: .75rem; font-weight: 600; }
+.civic-ui .auth-page .au-mini-text strong { color: #FFF; font-size: .9375rem; }
+.civic-ui .auth-page .au-chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; font-size: .8125rem; font-weight: 700; white-space: nowrap; transition: opacity .22s ease, transform .22s ease; }
+.civic-ui .auth-page .au-chip::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.civic-ui .auth-page .au-chip.is-changing { opacity: 0; transform: translateY(4px); }
+.civic-ui .auth-page .au-chip[data-tone="pending"] { background: #FBF1DC; color: #8A5A07; }
+.civic-ui .auth-page .au-chip[data-tone="under_review"] { background: #E3EDFA; color: #174A85; }
+.civic-ui .auth-page .au-chip[data-tone="approved"] { background: #E2F3EA; color: #1F6B45; }
+.civic-ui .auth-page .au-chip[data-tone="ready_for_pickup"] { background: #DDF3EF; color: #166154; }
+.civic-ui .auth-page .au-skyline { color: #FFF; opacity: .3; pointer-events: none; }
+.civic-ui .auth-page .au-skyline svg { display: block; width: 100%; height: auto; }
+.civic-ui .auth-page .au-skyline .sb-skyline-flag { stroke: var(--au-gold); }
+
+.civic-ui .auth-page .au-main { flex: 1; display: flex; justify-content: center; padding: 28px 16px 40px; background: var(--au-surface); }
+.civic-ui .auth-page .au-main-inner { width: 100%; max-width: 440px; }
+.civic-ui .auth-shell-register .au-main-inner { max-width: 560px; }
+.civic-ui .auth-page .au-back { display: inline-flex; align-items: center; gap: 6px; margin-bottom: 28px; color: var(--au-muted); font-size: .9375rem; font-weight: 600; text-decoration: none; }
+.civic-ui .auth-page .au-back:hover { color: var(--au-blue); }
+.civic-ui .auth-page .au-head { margin-bottom: 24px; }
+.civic-ui .auth-page .au-head h1 { margin: 0 0 8px; font-size: clamp(1.625rem, 3vw, 2rem); font-weight: 800; line-height: 1.2; }
+.civic-ui .auth-page .au-head p { color: var(--au-muted); font-size: 1rem; }
+.civic-ui .auth-page .au-help { margin-top: 32px; padding-top: 20px; border-top: 1px solid var(--au-border); color: var(--au-muted); font-size: .875rem; }
+
+@media (min-width: 992px) {
+    .civic-ui .auth-page.au-split { flex-direction: row; }
+    .civic-ui .auth-page .au-brand { position: sticky; top: 0; flex: 0 0 44%; max-width: 44%; height: 100vh; height: 100dvh; justify-content: space-between; gap: 32px; padding: 40px clamp(40px, 4vw, 72px) 0; }
+    .civic-ui .auth-page .au-brand-body { flex: 1; display: flex; flex-direction: column; justify-content: center; }
+    .civic-ui .auth-page .au-brand-title { max-width: 16ch; font-size: clamp(2rem, 3vw, 2.75rem); line-height: 1.12; }
+    .civic-ui .auth-page .au-facts, .civic-ui .auth-page .au-mini { display: flex; }
+    .civic-ui .auth-page .au-brand .au-skyline { display: block; width: min(440px, 100%); margin: 0 auto -6px; }
+    .civic-ui .auth-page .au-main { align-items: center; padding: 48px clamp(32px, 5vw, 96px); }
+    .civic-ui .auth-shell-register .au-main { align-items: flex-start; }
+}
+
+/* ---------- Centered layout ---------- */
+.civic-ui .auth-page.au-center { position: relative; isolation: isolate; overflow: hidden; flex-direction: column; align-items: center; justify-content: center; padding: 32px 16px 120px; }
+.civic-ui .auth-page .au-center-inner { position: relative; display: flex; flex-direction: column; align-items: center; gap: 24px; width: 100%; max-width: 480px; }
+.civic-ui .auth-page .au-card { width: 100%; padding: 36px 32px; border: 1px solid var(--au-border); border-radius: 16px; background: var(--au-surface); box-shadow: 0 30px 60px rgb(5 20 45 / 25%); text-align: left; }
+.civic-ui .auth-page .au-card h1 { margin: 20px 0 8px; font-size: 1.75rem; font-weight: 800; line-height: 1.2; }
+.civic-ui .auth-page .au-card-lead { margin-bottom: 20px !important; color: var(--au-muted); font-size: 1rem; }
+.civic-ui .auth-page .au-center-foot { color: #CFE0F5; font-size: .8125rem; text-align: center; }
+.civic-ui .auth-page.au-center > .au-skyline { position: absolute; left: 50%; bottom: 0; width: min(520px, 90%); transform: translateX(-50%); }
+.civic-ui .auth-page .au-symbol { display: inline-grid; place-items: center; width: 56px; height: 56px; border-radius: 14px; background: var(--au-tint); color: var(--au-blue); box-shadow: inset 0 0 0 1px rgb(31 94 168 / 12%); }
+.civic-ui .auth-page .au-symbol svg { width: 28px; height: 28px; }
+.civic-ui .auth-page .au-symbol-clock, .civic-ui .auth-page .au-symbol-warning { background: #FBF1DC; color: #8A5A07; box-shadow: inset 0 0 0 1px rgb(138 90 7 / 14%); }
+[data-bs-theme="dark"] .civic-ui .auth-page .au-symbol-clock, [data-bs-theme="dark"] .civic-ui .auth-page .au-symbol-warning { background: #3A2E14; color: #F3C96B; }
+.civic-ui .auth-page .au-actions { display: grid; gap: 12px; margin-top: 20px; }
+
+/* ---------- Forms ---------- */
+.civic-ui .auth-page .au-form { display: grid; gap: 18px; }
+.civic-ui .auth-page .au-form .row { --bs-gutter-y: 16px; }
+.civic-ui .auth-page .form-label { margin-bottom: 6px; color: var(--au-ink); font-size: .9375rem; font-weight: 600; }
+.civic-ui .auth-page .form-label-row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.civic-ui .auth-page .form-control { min-height: 48px; padding: 11px 14px; border: 1px solid var(--au-input-border); border-radius: 10px; background: var(--au-surface); color: var(--au-ink); font-family: inherit; font-size: 1rem; }
+.civic-ui .auth-page .form-control::placeholder { color: #7A8798; }
+.civic-ui .auth-page .form-control:hover { border-color: #9DB0C6; }
+.civic-ui .auth-page .form-control:focus { border-color: var(--au-blue); box-shadow: 0 0 0 4px rgb(31 94 168 / 18%); outline: none; }
+.civic-ui .auth-page .form-control.is-invalid { border-color: var(--au-danger); background-image: none; padding-right: 14px; }
+.civic-ui .auth-page .form-control.is-invalid:focus { box-shadow: 0 0 0 4px rgb(180 35 24 / 16%); }
+.civic-ui .auth-page .form-text { margin-top: 6px; color: var(--au-muted); font-size: .8125rem; line-height: 1.5; }
+.civic-ui .auth-page .invalid-feedback { display: flex; align-items: flex-start; gap: 6px; margin-top: 6px; color: var(--au-danger); font-size: .8125rem; font-weight: 500; }
+.civic-ui .auth-page .invalid-feedback::before { content: ""; width: 15px; height: 15px; flex: 0 0 15px; margin-top: 2px; background: currentColor;
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M12 7.5v5.5M12 16.5h.01'/%3E%3C/svg%3E") center / contain no-repeat;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M12 7.5v5.5M12 16.5h.01'/%3E%3C/svg%3E") center / contain no-repeat; }
+.civic-ui .auth-page .is-invalid ~ .invalid-feedback, .civic-ui .auth-page .invalid-feedback.d-block { display: flex !important; }
+.civic-ui .auth-page .password-field { position: relative; }
+.civic-ui .auth-page .password-field .form-control { padding-right: 76px; }
+.civic-ui .auth-page .password-toggle { position: absolute; top: 6px; right: 6px; min-width: 60px; height: 36px; padding: 0 10px; border: 0; border-radius: 8px; background: transparent; color: var(--au-blue); font-size: .875rem; font-weight: 700; }
+.civic-ui .auth-page .password-toggle:hover { background: var(--au-tint); }
+.civic-ui .auth-page .password-toggle[aria-pressed="true"] { background: var(--au-tint); color: var(--au-blue-dark); }
+.civic-ui .auth-page .password-toggle:focus-visible { outline: 3px solid var(--au-blue); outline-offset: 1px; }
+.civic-ui .auth-page .au-submit { margin-top: 6px; }
+.civic-ui .auth-page .au-link { color: var(--au-blue); font-weight: 700; text-decoration: none; }
+.civic-ui .auth-page .au-link:hover { color: var(--au-blue-dark); text-decoration: underline; }
+.civic-ui .auth-page .au-link:focus-visible { outline: 3px solid var(--au-blue); outline-offset: 2px; border-radius: 4px; }
+.civic-ui .auth-page .au-link-sm { font-size: .875rem; }
+.civic-ui .auth-page .au-switch { margin-top: 20px !important; color: var(--au-muted); font-size: .9375rem; text-align: center; }
+.civic-ui .auth-page .au-muted { margin-top: 12px !important; color: var(--au-muted); font-size: .9375rem; }
+.civic-ui .auth-page .au-small { font-size: .8125rem; }
+
+/* Register: grouped sections */
+.civic-ui .auth-page .au-fieldset { min-width: 0; margin: 0; padding: 20px 0 0; border: 0; border-top: 1px solid var(--au-border); }
+.civic-ui .auth-page .au-fieldset:first-of-type { padding-top: 0; border-top: 0; }
+.civic-ui .auth-page .au-fieldset legend { float: none; width: auto; margin: 0 0 14px; padding: 0; font-size: 1rem; font-weight: 800; }
+.civic-ui .auth-page .au-fieldset .form-text.mb-3 { margin-top: -6px; }
+.civic-ui .auth-page .au-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
+@media (min-width: 576px) {
+    .civic-ui .auth-page .au-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .civic-ui .auth-page .au-span-2 { grid-column: 1 / -1; }
+}
+
+/* Notes, alerts and progress */
+.civic-ui .auth-page .au-note { display: flex; gap: 12px; margin-bottom: 24px; padding: 14px 16px; border: 1px solid #D6E3F3; border-radius: var(--au-radius); background: #F2F7FD; color: var(--au-text); font-size: .9375rem; }
+.civic-ui .auth-page .au-note .app-icon { color: var(--au-blue); margin-top: 2px; }
+.civic-ui .auth-page .au-note-muted { margin: 28px 0 0; border-color: var(--au-border); background: var(--au-soft); color: var(--au-muted); font-size: .875rem; }
+.civic-ui .auth-page .au-note-muted strong { color: var(--au-ink); }
+[data-bs-theme="dark"] .civic-ui .auth-page .au-note { border-color: #2E4A6B; background: #16283D; }
+[data-bs-theme="dark"] .civic-ui .auth-page .au-note-muted { border-color: var(--au-border); background: var(--au-soft); }
+.civic-ui .auth-page .au-alert { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 20px; padding: 12px 14px; border: 1px solid; border-radius: 10px; font-size: .9375rem; line-height: 1.5; }
+.civic-ui .auth-page .au-alert::before { content: ""; width: 18px; height: 18px; flex: 0 0 18px; margin-top: 2px; background: currentColor; -webkit-mask: var(--au-alert-icon) center / contain no-repeat; mask: var(--au-alert-icon) center / contain no-repeat; }
+.civic-ui .auth-page .au-alert-success { --au-alert-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='m8 12 3 3 5-6'/%3E%3C/svg%3E"); border-color: #BFE3CF; background: #EEF8F2; color: #1B5E3B; }
+.civic-ui .auth-page .au-alert-warning { --au-alert-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M10.3 3.9 2.4 18a2 2 0 0 0 1.7 3h15.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z'/%3E%3Cpath d='M12 9v4M12 17h.01'/%3E%3C/svg%3E"); border-color: #F1D9A6; background: #FDF6E7; color: #7A4F06; }
+.civic-ui .auth-page .au-alert-danger { --au-alert-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M12 7.5v5.5M12 16.5h.01'/%3E%3C/svg%3E"); border-color: #F3C3BE; background: #FDF1F0; color: #9B1C12; }
+[data-bs-theme="dark"] .civic-ui .auth-page .au-alert-success { border-color: #2C5A40; background: #142A1F; color: #9FDDBA; }
+[data-bs-theme="dark"] .civic-ui .auth-page .au-alert-warning { border-color: #5C4719; background: #2A2211; color: #F3C96B; }
+[data-bs-theme="dark"] .civic-ui .auth-page .au-alert-danger { border-color: #6B2C27; background: #2C1513; color: #FFB4AD; }
+.civic-ui .auth-page .au-progress { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 0 0 20px; padding: 0 0 18px; border-bottom: 1px solid var(--au-border); list-style: none; }
+.civic-ui .auth-page .au-progress li { display: flex; flex-direction: column; gap: 6px; color: var(--au-muted); font-size: .8125rem; font-weight: 600; line-height: 1.35; }
+.civic-ui .auth-page .au-progress li > span { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: var(--au-tint); color: var(--au-blue); font-size: .8125rem; font-weight: 800; }
+.civic-ui .auth-page .au-progress li.is-done > span { background: #E2F3EA; color: #1F6B45; }
+.civic-ui .auth-page .au-progress li[aria-current] { color: var(--au-ink); }
+.civic-ui .auth-page .au-progress li[aria-current] > span { background: var(--au-blue); color: #FFF; box-shadow: 0 0 0 4px rgb(31 94 168 / 16%); }
+[data-bs-theme="dark"] .civic-ui .auth-page .au-progress li[aria-current] > span { background: #2D67B3; }
+.civic-ui .auth-page .au-destination { margin-bottom: 4px; padding: 14px 16px; border: 1px solid var(--au-border); border-radius: 10px; background: var(--au-soft); color: var(--au-muted); font-size: .875rem; }
+.civic-ui .auth-page .au-destination strong { display: block; margin-top: 4px; color: var(--au-ink); font-size: 1rem; overflow-wrap: anywhere; }
+
+/* ---------- Motion (reduced-motion users get none) ---------- */
+@media (prefers-reduced-motion: no-preference) {
+    .civic-ui .auth-page .au-brand-body, .civic-ui .auth-page .au-lockup { animation: au-fade .6s ease both; }
+    .civic-ui .auth-page .au-main-inner, .civic-ui .auth-page .au-card { animation: au-rise .55s cubic-bezier(.2,.7,.2,1) .08s both; }
+    .civic-ui .auth-page .au-mini { animation: au-fade .6s ease .2s both, au-float 7s ease-in-out .8s infinite; }
+    @keyframes au-fade { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes au-rise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+    @keyframes au-float { 0%, 100% { transform: rotate(-2deg) translateY(0); } 50% { transform: rotate(-2deg) translateY(-6px); } }
+}
+@media (prefers-reduced-motion: reduce) {
+    .civic-ui .auth-page *, .civic-ui .auth-page *::before, .civic-ui .auth-page *::after { animation: none !important; transition: none !important; }
+}
+
+/* ---------- Small screens ---------- */
+@media (max-width: 575.98px) {
+    .civic-ui .auth-page .au-card { padding: 28px 20px; }
+    .civic-ui .auth-page .au-card h1 { font-size: 1.5rem; }
+    .civic-ui .auth-page .au-lockup small { font-size: .6875rem; }
+}
+@media print {
+    .civic-ui .auth-page .au-brand-bg, .civic-ui .auth-page .au-skyline, .civic-ui .auth-page .au-mini { display: none !important; }
+}
+
+/* Top row of the form column: back link and theme toggle */
+.civic-ui .auth-page .au-topbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 28px; }
+.civic-ui .auth-page .au-topbar .au-back { margin-bottom: 0; }
+.civic-ui .auth-page .au-theme-corner { position: absolute; top: 16px; right: 16px; z-index: 2; }
+
+/* ---------- Phones and tablets (< 992px): gradient header with the form in a raised card ---------- */
+.civic-ui .auth-page { --au-card: #FFFFFF; --au-page: #F1F5FA; }
+[data-bs-theme="dark"] .civic-ui .auth-page { --au-card: #1B2634; --au-page: #0D141D; }
+@media (max-width: 991.98px) {
+    .civic-ui .auth-page.au-split { background: var(--au-page); }
+    .civic-ui .auth-page .au-brand { gap: 18px; padding: 22px 24px 92px; }
+    .civic-ui .auth-page .au-brand-title { max-width: 22ch; font-size: clamp(1.5rem, 4.6vw, 2.125rem); line-height: 1.15; }
+    .civic-ui .auth-page .au-brand .au-skyline { display: block; position: absolute; right: 16px; bottom: 0; width: 210px; opacity: .2; }
+    .civic-ui .auth-page .au-main { align-items: flex-start; padding: 0 16px 40px; background: transparent; }
+    .civic-ui .auth-page .au-main-inner { position: relative; z-index: 1; margin-top: -68px; padding: 24px 20px 22px; border: 1px solid var(--au-border); border-radius: 18px;
+        background: var(--au-card); box-shadow: 0 24px 50px rgb(15 27 45 / 14%), 0 2px 6px rgb(15 27 45 / 6%); }
+    [data-bs-theme="dark"] .civic-ui .auth-page .au-main-inner { box-shadow: 0 24px 50px rgb(0 0 0 / 45%); }
+    .civic-ui .auth-page .au-topbar { margin-bottom: 20px; }
+    .civic-ui .auth-page .au-help { margin-top: 24px; }
+}
+@media (min-width: 576px) and (max-width: 991.98px) {
+    .civic-ui .auth-page .au-brand { padding: 28px 40px 112px; }
+    .civic-ui .auth-page .au-brand-body { max-width: 640px; }
+    .civic-ui .auth-page .au-facts { display: flex; flex-flow: row wrap; gap: 8px; margin-top: 18px; font-size: .875rem; }
+    .civic-ui .auth-page .au-facts li { gap: 8px; padding: 5px 12px 5px 5px; border: 1px solid rgb(255 255 255 / 18%); border-radius: 999px; background: rgb(255 255 255 / 9%); }
+    .civic-ui .auth-page .au-fact-icon { width: 28px; height: 28px; flex-basis: 28px; border: 0; border-radius: 50%; background: rgb(255 255 255 / 16%); }
+    .civic-ui .auth-page .au-fact-icon .app-icon { width: 15px; height: 15px; }
+    .civic-ui .auth-page .au-brand .au-skyline { right: 32px; width: 300px; }
+    .civic-ui .auth-page .au-main-inner { max-width: 540px; margin-top: -76px; padding: 36px 40px 30px; border-radius: 20px; }
+    .civic-ui .auth-shell-register .au-main-inner { max-width: 680px; }
+}

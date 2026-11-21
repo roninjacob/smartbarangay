@@ -8,19 +8,3 @@ export function filePresentation(file) {
         image: previewTypes[extension] === file.type && file.size <= 5 * 1024 * 1024,
     };
 }
-
-export function landingMotion(hero, control, preference, browserDocument) {
-    let paused = false;
-    const update = () => {
-        const reduced = preference.matches;
-        hero.dataset.motionEnabled = String(!reduced);
-        hero.dataset.motionPaused = String(paused || reduced || browserDocument.hidden);
-        control.hidden = reduced;
-        control.setAttribute('aria-pressed', String(paused));
-        control.textContent = paused ? 'Resume page animation' : 'Pause page animation';
-    };
-    control.addEventListener('click', () => { paused = !paused; update(); });
-    preference.addEventListener('change', update);
-    browserDocument.addEventListener('visibilitychange', update);
-    update();
-}

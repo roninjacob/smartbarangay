@@ -1,12 +1,12 @@
 @if(session('status'))
-    <div class="alert alert-success" role="status">{{ session('status') }}</div>
+    <div class="au-alert au-alert-success" role="status"><span>{{ session('status') }}</span></div>
 @endif
 @if(session('warning'))
-    <div class="alert alert-warning" role="alert">{{ session('warning') }}</div>
+    <div class="au-alert au-alert-warning" role="alert"><span>{{ session('warning') }}</span></div>
 @endif
 @if(session('reset_error'))
-    <div class="alert alert-danger" role="alert">{{ session('reset_error') }}</div>
+    <div class="au-alert au-alert-danger" role="alert"><span>{{ session('reset_error') }}</span></div>
 @endif
 @if($errors->any())
-    <div class="alert alert-danger" role="alert">Please check the highlighted fields below.</div>
+    <div class="au-alert au-alert-danger" role="alert"><span>{{ $slot->isNotEmpty() ? $slot : 'Please check the highlighted fields below.' }}</span></div>
 @endif

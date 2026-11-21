@@ -40,6 +40,7 @@
     <header class="lp-header" data-lp-header>
         <nav class="navbar navbar-expand-lg lp-container" aria-label="Public navigation">
             <a class="lp-brand" href="{{ route('home') }}"><x-brand-mark/><span><strong>SmartBarangay</strong><small>Barangay Calayo &middot; Nasugbu, Batangas</small></span></a>
+            <x-theme-toggle class="lp-theme" />
             <button class="navbar-toggler lp-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#public-nav" aria-controls="public-nav" aria-expanded="false" aria-label="Toggle public navigation"><x-app-icon name="menu"/></button>
             <div class="collapse navbar-collapse" id="public-nav">
                 <ul class="navbar-nav lp-nav-links">
@@ -102,9 +103,7 @@
                     </div>
                 </div>
             </div>
-            <div class="lp-skyline" aria-hidden="true">
-                <svg viewBox="0 0 420 86" fill="none" xmlns="http://www.w3.org/2000/svg" focusable="false"><path d="M12 74H408" stroke="currentColor" opacity=".35"/><g stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M34 73V42L65 18L96 42V73M46 39V22H57M57 73V52H73V73M135 73V40L179 14L223 40V73M127 40H231M147 73H211M153 48V65M179 48V65M205 48V65M269 73V44L301 20L333 44V73M280 51H291V62H280ZM309 51H320V62H309Z"/><path class="lp-flag" d="M179 14V3H199V12H179"/><path d="M362 73V52M353 52C344 45 356 30 362 26C370 34 381 47 372 52Z"/></g></svg>
-            </div>
+            <div class="lp-skyline" aria-hidden="true">@include('partials.skyline')</div>
         </section>
 
         {{-- Services --}}
