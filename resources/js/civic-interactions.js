@@ -39,7 +39,7 @@ if (!document.querySelector('[data-print-document]')) {
                 observer.unobserve(target);
             });
         }, { threshold: 0.12 });
-        document.querySelectorAll('.public-service-card,.public-step,.public-about-surface,.app-page-heading,.reservation-progress').forEach((element) => observer.observe(element));
+        document.querySelectorAll('.app-page-heading,.reservation-progress').forEach((element) => observer.observe(element));
     }
 
     // Only routine profile/preferences success becomes a persistent dismissible toast.

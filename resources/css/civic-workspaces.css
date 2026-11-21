@@ -66,9 +66,6 @@
     font-size:13px; font-weight:650; width:fit-content; max-width:100%;
 }
 .civic-ui.civic-refined :is(.workspace-action,.activity-context>a):hover { border-color:#719ce7; background:var(--surface); }
-.civic-ui.civic-refined .public-top-action { display:inline-flex; align-items:center; gap:14px; text-decoration:none; color:#fff; padding:6px 6px 6px 18px; border:1px solid #ffffff40; border-radius:100px; font-size:13px; }
-.public-top-icon { display:grid; place-items:center; width:40px; height:40px; border-radius:50%; background:#fff; color:#194c99; font-size:23px; }
-.civic-ui.civic-refined .public-top-action:hover { background:#ffffff14; }
 
 /* The sign-in scene shares landing motion without animating any input or text. */
 .civic-ui.civic-refined .brand-panel { position:relative; isolation:isolate; overflow:hidden; }
@@ -171,5 +168,5 @@
     .civic-ui.civic-refined .chart-pan-hint { display:none; }
 }
 @media print {
-    .chart-explorer,.auth-motion-control,.public-top-action { display:none!important; }
+    .chart-explorer,.auth-motion-control { display:none!important; }
 }

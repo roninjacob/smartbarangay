@@ -19,5 +19,6 @@ import './document-designer';
 import './civic-interface';
 
 import './civic-interactions';
+import './landing';
 
 import './report-interactions';

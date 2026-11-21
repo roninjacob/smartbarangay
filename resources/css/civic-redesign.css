@@ -784,163 +784,6 @@ body.civic-ui {
 .civic-ui .auth-action-hint,.civic-ui .auth-info-note {
     color: var(--muted-text);
 }
-.civic-ui .public-site {
-    color: var(--main-text);
-    background: var(--page-background);
-}
-.civic-ui .public-header {
-    background: var(--page-background);
-    border: 0;
-}
-.civic-ui .public-site .container {
-    max-width: 1240px;
-}
-.civic-ui .public-brand {
-    gap: 11px;
-    color: var(--main-text);
-}
-.civic-ui .public-brand strong {
-    font-size: 23px;
-    font-weight: 750;
-    letter-spacing: -.055em;
-    color: var(--main-text);
-}
-.civic-ui .public-brand small {
-    font-size: 10px;
-    color: var(--muted-text);
-}
-.civic-ui .public-site .btn {
-    border-radius: 13px!important;
-}
-.civic-ui .public-site .btn-lg {
-    min-height: 54px;
-    padding: 15px 23px;
-    font-size: 15px;
-}
-.civic-ui .public-hero {
-    background: var(--page-background);
-    padding-block: 20px 32px;
-}
-.civic-ui .public-hero h1 {
-    font-size: clamp(42px,4.7vw,67px);
-    font-weight: 750;
-    line-height: 1.06;
-    letter-spacing: -.055em;
-    max-width: 680px;
-}
-.civic-ui .public-hero h1 em {
-    color: var(--civic-blue);
-    font-style: normal;
-}
-.civic-ui .public-hero .lead {
-    max-width: 470px;
-    font-size: 17px;
-    color: var(--muted-text);
-    line-height: 1.8;
-}
-.civic-ui .public-eyebrow {
-    font-size: 10px;
-    letter-spacing: .13em;
-    color: var(--community-green);
-}
-.civic-ui .public-journey {
-    border-radius: 26px!important;
-    box-shadow: 0 20px 60px rgb(40 70 60 / 7%)!important;
-    background: var(--surface);
-    border-color: var(--border-color);
-    position: relative;
-}
-.civic-ui .public-journey h2 {
-    font-size: 28px;
-    letter-spacing: -.04em;
-}
-.civic-ui .public-journey-steps li {
-    border: 0;
-    padding-block: 15px;
-    gap: 14px;
-}
-.civic-ui .public-journey-steps li>span {
-    display: grid;
-    place-items: center;
-    flex-shrink: 0;
-    width: 31px;
-    height: 31px;
-    border-radius: 50%;
-    background: var(--sb-mint);
-    font-size: 11px;
-    padding: 0;
-    color: var(--community-green);
-}
-.civic-ui .public-journey-steps h3 {
-    font-size: 15px;
-}
-.civic-ui .public-journey-steps p {
-    font-size: 13px;
-    color: var(--muted-text);
-}
-.civic-ui .public-community-note {
-    border-top: 1px solid var(--border-color);
-    padding-top: 20px;
-    color: var(--muted-text);
-}
-.civic-ui .public-icon {
-    border-radius: 15px;
-    background: var(--sb-soft);
-    color: var(--civic-blue);
-}
-.civic-ui .public-site h2.display-6 {
-    font-size: clamp(28px,3vw,38px);
-    font-weight: 700;
-    letter-spacing: -.045em;
-}
-.civic-ui .public-service-card {
-    background: var(--surface);
-    border: 1px solid var(--border-color)!important;
-    border-radius: 20px!important;
-    box-shadow: var(--sb-shadow)!important;
-}
-.civic-ui .public-service-card .card-body {
-    padding: 29px!important;
-}
-.civic-ui .public-service-card h3 {
-    font-size: 21px;
-}
-.civic-ui .public-service-card p {
-    font-size: 14px;
-    color: var(--muted-text)!important;
-}
-.civic-ui .public-service-link {
-    display: inline-flex;
-    align-items: center;
-    gap: 18px;
-    min-height: 44px;
-    color: var(--civic-dark);
-    font-size: 14px;
-}
-.civic-ui .public-soft-section {
-    background: var(--sb-mint);
-}
-.civic-ui .public-step {
-    background: var(--surface);
-    border-color: var(--border-color);
-    border-radius: 20px!important;
-}
-.civic-ui .public-step h3 {
-    font-size: 21px;
-}
-.civic-ui .public-step-number {
-    background: var(--sb-mint);
-    color: var(--community-green);
-}
-.civic-ui .public-contact {
-    border-color: var(--border-color);
-    background: var(--sb-mint);
-    border-radius: 24px!important;
-}
-.civic-ui .public-footer {
-    border-color: var(--border-color);
-    color: var(--muted-text);
-}
 .civic-ui .resident-mobile-nav {
     display: none;
 }
@@ -1002,31 +845,6 @@ body.civic-ui {
 @media(min-width:992px) {
     .civic-ui .app-sidebar {
         background: var(--surface)!important;
-    }
-    .civic-ui .public-hero .col-lg-5 {
-        position: relative;
-    }
-    .civic-ui .public-hero .col-lg-5::before {
-        content: '';
-        position: absolute;
-        inset: -24px 20px 10px -15px;
-        background: var(--sb-mint);
-        border-radius: 50%;
-        transform: rotate(-8deg);
-    }
-    .civic-ui .public-hero .col-lg-5::after {
-        content: '';
-        position: absolute;
-        right: 0;
-        bottom: -20px;
-        width: 130px;
-        height: 130px;
-        background: #FCEDDC;
-        border-radius: 50%;
-        z-index: 0;
-    }
-    .civic-ui .public-journey {
-        z-index: 1;
     }
 }
 @media(max-width:1199.98px) {
@@ -1222,37 +1040,6 @@ body.civic-ui {
     .civic-ui .dashboard-quick-actions {
         padding: 22px;
     }
-    .civic-ui .public-brand {
-        gap: 9px;
-    }
-    .civic-ui .public-brand strong {
-        font-size: 20px;
-    }
-    .civic-ui .public-brand small {
-        font-size: 9px;
-        max-width: 195px;
-    }
-    .civic-ui .public-brand .sb-brand-mark {
-        width: 38px;
-        height: 38px;
-        flex-basis: 38px;
-    }
-    .civic-ui .public-hero h1 {
-        font-size: 46px;
-        max-width: 400px;
-    }
-    .civic-ui .public-hero .lead {
-        font-size: 16px;
-    }
-    .civic-ui .public-hero .btn {
-        width: 100%;
-    }
-    .civic-ui .public-hero {
-        padding-block: 0 12px;
-    }
-    .civic-ui .public-journey {
-        padding: 25px!important;
-    }
     .civic-ui .auth-heading h2 {
         font-size: 29px;
     }
@@ -1303,9 +1090,6 @@ body.civic-ui {
         scroll-behavior: auto!important;
         animation: none!important;
         transition: none!important;
-    }
-    .civic-ui .public-service-card:hover,.civic-ui .public-service-card:focus-within {
-        transform: none;
     }
 }
 @media print {

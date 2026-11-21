@@ -177,14 +177,26 @@ class UserPreferencesTest extends TestCase
         for ($i = 1; $i <= 14; $i++) {
             Service::create(['name' => sprintf('Public %02d', $i), 'description' => '<script>alert(1)</script>', 'is_active' => true, 'fee_amount' => '9876.54']);
         }
-        Service::create(['name' => 'Hidden inactive service', 'is_active' => false]);
+        Service::create(['name' => 'Hidden inactive service', 'is_active' => false, 'fee_amount' => '1234.56']);
         $response = $this->get('/');
         $response->assertOk()->assertSee('Public 01')->assertSee('Public 12')->assertDontSee('Public 13')
-            ->assertDontSee('Hidden inactive service')->assertDontSee('9876.54')->assertSee('&lt;script&gt;', false)
+            ->assertDontSee('Hidden inactive service')->assertSee('₱9,876.54')->assertDontSee('₱1,234.56')->assertSee('&lt;script&gt;', false)
             ->assertDontSee('<script>alert(1)</script>', false);
         $this->assertCount(12, $response->viewData('services'));
-        $this->assertSame(['id', 'name', 'description'], array_keys($response->viewData('services')->first()->getAttributes()));
+        $this->assertSame(14, $response->viewData('activeServiceCount'));
+        $this->assertSame(['id', 'name', 'description', 'fee_amount', 'service_requirements_count'], array_keys($response->viewData('services')->first()->getAttributes()));
         $this->get('/?services_page=2')->assertOk()->assertSee('Public 13')->assertSee('Public 14')->assertDontSee('Public 01');
+    }
+
+    public function test_landing_shows_free_fees_hides_unrecorded_fees_and_counts_requirements(): void
+    {
+        $free = Service::create(['name' => 'Free Service', 'is_active' => true, 'fee_amount' => '0.00']);
+        $free->serviceRequirements()->createMany([['name' => 'Valid ID', 'is_required' => true], ['name' => 'Proof', 'is_required' => false]]);
+        Service::create(['name' => 'Unrecorded Fee Service', 'is_active' => true]);
+        $response = $this->get('/')->assertOk()->assertSee('Free Service')->assertSee('Unrecorded Fee Service')
+            ->assertSee('>Free</span>', false)->assertSee('2 requirements')->assertDontSee('Not recorded');
+        $this->assertSame(2, $response->viewData('activeServiceCount'));
+        $this->assertNull($response->viewData('services')->firstWhere('name', 'Unrecorded Fee Service')->fee_amount);
     }
 
     public function test_viewing_settings_and_public_page_does_not_write_preferences(): void
