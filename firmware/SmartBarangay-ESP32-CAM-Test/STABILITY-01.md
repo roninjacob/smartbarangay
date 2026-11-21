@@ -1,7 +1,7 @@
 # First stability enhancement — ESP32-CAM
 
 Historical report: baseline copies/rollback paths below are in the preserved
-standalone project. See the [consolidation guide](../../docs/iot-project-consolidation.md)
+standalone project. See the [consolidation guide](../../docs/archive/iot-project-consolidation.md)
 for the current folder and IoT-01 safe-default instructions.
 
 Scope: standalone firmware only. User confirmed original upload, Wi-Fi connection, camera initialization and initial MJPEG operation, with 1–2 second latency and intermittent freezing. Physical performance of this enhancement has NOT been verified. No automatic reset or periodic reconnect is used to hide freezes.

@@ -22,3 +22,7 @@
 Homestead.json
 Homestead.yaml
 Thumbs.db
+/artifacts
+*.zip
+*.code-workspace
+__pycache__/

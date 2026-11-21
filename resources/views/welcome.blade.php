@@ -53,7 +53,7 @@
         <section class="container pb-5" id="contact" aria-labelledby="contact-title"><div class="public-contact rounded-5 p-4 p-md-5"><div class="row g-4"><div class="col-lg-5"><span class="public-eyebrow">WE'RE HERE TO HELP</span><h2 class="h2 mt-2" id="contact-title">Connect with your barangay.</h2><p class="mb-0">A clearer next step, online or at the barangay office.</p><a class="btn btn-light mt-4" href="{{ $requests }}">{{ $viewer && ! $resident ? 'Open reservations' : 'Track your request' }} &rarr;</a></div><div class="col-lg-7"><dl class="row g-4 mb-0">
             <div class="col-md-6"><dt>Office location</dt><dd class="public-copy">Barangay Calayo, Nasugbu, Batangas</dd></div><div class="col-md-6"><dt>Plan your visit</dt><dd class="public-copy">Confirm office hours and collection instructions before travelling.</dd></div>
             <div class="col-md-6"><dt>Request updates</dt><dd>Sign in to follow your request. Wait for Ready for Pickup before collecting your document.</dd></div><div class="col-md-6"><dt>Account assistance</dt><dd>Ask the barangay office for help if you cannot access your account.</dd></div>
-        </dl><p class="small mt-3 mb-0">Exact office address, hours, public telephone and email are being confirmed.</p></div></div></div></section>
+        </dl></div></div></div></section>
     </main>
     <footer class="public-footer py-4"><div class="container d-flex flex-wrap justify-content-between gap-3"><div><strong>SmartBarangay</strong><p class="small mb-0">Barangay Calayo &middot; Nasugbu, Batangas</p></div><a class="public-top-action" href="#hero-title"><span>Back to top</span><span class="public-top-icon" aria-hidden="true">&uarr;</span></a></div></footer>
 </div>

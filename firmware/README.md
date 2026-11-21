@@ -1,7 +1,7 @@
 # SmartBarangay firmware workspace
 
 - [ESP32-CAM PlatformIO project](SmartBarangay-ESP32-CAM-Test/README.md)
-- [Folder consolidation, development and recovery guide](../docs/iot-project-consolidation.md)
+- [Folder consolidation, development and recovery guide](../docs/archive/iot-project-consolidation.md)
 
 Open the ESP32-CAM subfolder in PlatformIO, or use its `platformio.ini` explicitly.
 The enclosing repository owns version control; there is no nested repository.

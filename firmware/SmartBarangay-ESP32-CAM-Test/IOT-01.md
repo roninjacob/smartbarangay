@@ -3,7 +3,7 @@
 Consolidation note: this is the IoT-01 implementation record. Current development
 is in `firmware/SmartBarangay-ESP32-CAM-Test/`. Private `backups/` stays in the
 preserved original standalone project; it is not part of Git or a test dependency.
-See [current folder/recovery guide](../../docs/iot-project-consolidation.md).
+See [current folder/recovery guide](../../docs/archive/iot-project-consolidation.md).
 
 Date: November 6, 2026. Scope: standalone firmware readiness only. Laravel stays
 at `feature/iot-integration` / `602affb`. No device API, credential transmission,
