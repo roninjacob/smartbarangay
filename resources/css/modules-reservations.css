@@ -47,6 +47,14 @@
 :where(.civic-ui.civic-refined) .rv-filter { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; align-items: end; margin: 0; }
 :where(.civic-ui.civic-refined) .rv-filter .form-label { margin-bottom: 6px; color: var(--ds-ink); font-size: .8125rem; font-weight: 700; }
 :where(.civic-ui.civic-refined) .rv-filter :is(.form-control, .form-select) { min-height: 42px; border-color: var(--ds-input-border); border-radius: var(--ds-radius-sm); }
+@media (min-width: 768px) {
+    .rv-filter.rv-request-search { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (min-width: 1200px) {
+    .rv-filter.rv-request-search { grid-template-columns: minmax(8rem, 1fr) minmax(11rem, 1.3fr) minmax(10rem, 1.5fr) auto; }
+}
+.rv-request-search:not([hidden]) + .civic-filter-chips { display: none; }
+.rv-request-search .rv-filter-actions > .btn { min-height: 42px; }
 :where(.civic-ui.civic-refined) .rv-filter-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 @media (min-width: 768px) {
     :where(.civic-ui.civic-refined) .rv-filter { grid-template-columns: minmax(0, 2fr) repeat(var(--rv-filter-selects, 1), minmax(0, 1fr)) auto; }

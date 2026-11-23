@@ -1,8 +1,9 @@
 /* Schedule workspace: scoped to this module; historical records remain visible on demand. */
-.civic-ui.civic-refined .schedule-catalog .schedule-tabs { display:flex; flex-wrap:wrap; gap:8px; padding:0 26px 20px; border-bottom:1px solid var(--border-color); }
-.schedule-tab { padding:12px 20px; border-radius:12px; color:var(--muted-text); text-decoration:none; font-weight:650; min-height:46px; }
-.schedule-tab:hover { background:var(--sb-soft); color:var(--civic-dark); }
-.schedule-tab.is-selected { background:var(--civic-blue); color:#fff; box-shadow:0 4px 12px #225fe520; }
+.civic-ui.civic-refined .schedule-catalog .schedule-tabs { display:flex; flex-wrap:wrap; gap:8px; padding:14px 22px; border-bottom:1px solid var(--ds-border); }
+.schedule-tab { display:inline-flex; align-items:center; justify-content:center; padding:8px 16px; border-radius:var(--ds-radius-sm); color:var(--ds-muted); text-decoration:none; font-weight:650; min-height:42px; }
+.schedule-tab:hover { background:var(--ds-hover); color:var(--ds-ink); }
+.schedule-tab:focus-visible { outline:3px solid var(--ds-focus); outline-offset:2px; }
+.schedule-tab.is-selected { background:var(--ds-solid); color:#fff; }
 .schedule-workspace { padding:26px; display:grid; gap:24px; }
 .schedule-context { display:flex; gap:16px; align-items:flex-start; padding:20px; border:1px solid var(--border-color); border-radius:16px; background:linear-gradient(120deg,var(--sb-soft),var(--surface)); }
 .schedule-context-icon { padding:10px; border-radius:12px; color:var(--civic-dark); background:var(--surface); display:flex; flex-shrink:0; }

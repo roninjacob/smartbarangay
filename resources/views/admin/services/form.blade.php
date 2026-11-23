@@ -1,6 +1,6 @@
 @extends('layouts.authenticated')
 @section('dashboard')
-<x-page-intro :subtitle="$service->exists ? $service->name : 'New services start active.'">
+<x-page-intro class="admin-catalog-intro" :subtitle="$service->exists ? $service->name : 'New services start active.'">
     <x-slot:actions><a class="btn btn-outline-secondary" href="{{ route('admin.services.index') }}">Back to services</a></x-slot:actions>
 </x-page-intro>
 <form method="POST" action="{{ $service->exists ? route('admin.services.update', $service) : route('admin.services.store') }}" enctype="multipart/form-data" class="admin-editor" data-service-submit>
@@ -28,22 +28,25 @@
                 <div class="admin-form-field">
                     <label for="service-fee" class="form-label">Service Fee (₱) <span class="service-required">(required)</span></label>
                     @if($service->exists && $service->fee_amount === null)<p class="text-warning-emphasis">Fee setup required.</p>@endif
-                    <input id="service-fee" name="fee_amount" type="number" min="0" max="99999999.99" step="0.01" required inputmode="decimal" @class(['form-control', 'is-invalid' => $errors->has('fee_amount')]) value="{{ is_scalar(old('fee_amount', $service->fee_amount)) ? old('fee_amount', $service->fee_amount) : '' }}" aria-describedby="service-fee-help{{ $errors->has('fee_amount') ? ' service-fee-error' : '' }}" @if($errors->has('fee_amount')) aria-invalid="true" @endif>
+                    <div class="catalog-amount-input">
+                        <span aria-hidden="true">₱</span>
+                        <input id="service-fee" name="fee_amount" type="number" min="0" max="99999999.99" step="0.01" required inputmode="decimal" @class(['form-control', 'is-invalid' => $errors->has('fee_amount')]) value="{{ is_scalar(old('fee_amount', $service->fee_amount)) ? old('fee_amount', $service->fee_amount) : '' }}" aria-describedby="service-fee-help{{ $errors->has('fee_amount') ? ' service-fee-error' : '' }}" @if($errors->has('fee_amount')) aria-invalid="true" @endif>
+                    </div>
                     <div id="service-fee-help" class="form-text">Enter 0.00 for a free service. Existing reservations retain their original fee.</div>
-                    @error('fee_amount')<div id="service-fee-error" class="invalid-feedback">{{ $message }}</div>@enderror
+                    @error('fee_amount')<div id="service-fee-error" class="invalid-feedback d-block">{{ $message }}</div>@enderror
                 </div>
             </div>
         </section>
-        <section class="dashboard-panel rv-section">
+        <section class="dashboard-panel rv-section catalog-file-panel">
             <div class="dashboard-panel-heading"><h2><span class="panel-icon is-indigo" aria-hidden="true"><x-app-icon name="document"/></span>Official Certificate PDF</h2></div>
             <div class="rv-section-body">
                 <p class="app-note mb-0">The master PDF is separate from the files a resident submits.</p>
                 @if($service->exists && $service->documentTemplate)
                     @php($template = $service->documentTemplate)
-                    <dl class="mb-3">
-                        <dt>Current file</dt><dd class="text-break">{{ $template->original_filename }}</dd>
-                        <dt>Format / Size</dt><dd>{{ $template->format() }} · {{ number_format($template->file_size / 1024, 1) }} KB</dd>
-                        <dt>Uploaded</dt><dd>{{ $template->uploaded_at->timezone('Asia/Manila')->format('F j, Y, g:i A') }} · Philippine time</dd>
+                    <dl class="catalog-template-record">
+                        <div><dt>Current file</dt><dd class="text-break">{{ $template->original_filename }}</dd></div>
+                        <div><dt>Format / Size</dt><dd>{{ $template->format() }} · {{ number_format($template->file_size / 1024, 1) }} KB</dd></div>
+                        <div><dt>Uploaded</dt><dd>{{ $template->uploaded_at->timezone('Asia/Manila')->format('F j, Y, g:i A') }} · Philippine time</dd></div>
                     </dl>
                     @if($template->format() === 'PDF')<a href="{{ route('admin.services.template.download', $service) }}" class="btn btn-outline-primary mb-3">Download Blank PDF</a>@else<p class="alert alert-warning">Replace this legacy file with a PDF to preview or print blank templates.</p>@endif
                 @else

@@ -1,10 +1,5 @@
 @extends('layouts.authenticated')
 @section('dashboard')
-@php
-    $activeStatus = $filters['status'] ?? '';
-    $activeFollowup = $filters['followup'] ?? '';
-    $filterUrl = fn (array $changes) => route('admin.reservations.index', array_filter([...$filters, ...$changes], fn ($value) => $value !== null && $value !== ''));
-@endphp
 <x-page-intro subtitle="Review resident requests, process their status and follow up on appointments."/>
 
 <section class="rv-overview" aria-label="All requests overview">
@@ -20,24 +15,25 @@
     </div>
     <div class="rv-toolbar">
         @if($errors->any())<div class="alert alert-danger" role="alert">{{ $errors->first() }}</div>@endif
-        <nav aria-label="Filter by status">
-            <ul class="rv-chips">
-                <li><a class="rv-chip" href="{{ $filterUrl(['status' => null]) }}" @if($activeStatus === '') aria-current="page" @endif>All statuses</a></li>
-                @foreach($statuses as $status)
-                    <li><a class="rv-chip tone-{{ $status->value }}" href="{{ $filterUrl(['status' => $status->value]) }}" @if($activeStatus === $status->value) aria-current="page" @endif><span class="rv-chip-dot" aria-hidden="true"></span>{{ $status->label() }}</a></li>
-                @endforeach
-            </ul>
-        </nav>
-        <nav aria-label="Reservation follow-up filters">
-            <ul class="rv-chips">
-                @foreach(['' => 'All follow-ups', 'cancellation' => 'Cancellation requests', 'past_appointment' => 'Past appointment / no arrival', 'missed' => 'Recorded missed appointments'] as $value => $label)
-                    <li><a class="rv-chip" href="{{ $filterUrl(['followup' => $value ?: null]) }}" @if($activeFollowup === $value) aria-current="page" @endif>{{ $label }}</a></li>
-                @endforeach
-            </ul>
-        </nav>
-        <form method="GET" action="{{ route('admin.reservations.index') }}" class="worklist-filters rv-filter" data-worklist-filters>
-            @if($activeFollowup !== '')<input type="hidden" name="followup" value="{{ $activeFollowup }}">@endif
-            @if($activeStatus !== '')<input type="hidden" name="status" value="{{ $activeStatus }}">@endif
+        <form method="GET" action="{{ route('admin.reservations.index') }}" class="rv-filter rv-request-search" data-worklist-filters>
+            <div>
+                <label class="form-label" for="request-status">Status</label>
+                <select class="form-select" id="request-status" name="status">
+                    <option value="">All statuses</option>
+                    @foreach($statuses as $status)
+                        <option value="{{ $status->value }}" @selected(($filters['status'] ?? '') === $status->value)>{{ $status->label() }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div>
+                <label class="form-label" for="request-followup">Follow-up</label>
+                <select class="form-select" id="request-followup" name="followup">
+                    <option value="">All follow-ups</option>
+                    @foreach(['cancellation' => 'Cancellation requests', 'past_appointment' => 'Past appointment / no arrival', 'missed' => 'Recorded missed appointments'] as $value => $label)
+                        <option value="{{ $value }}" @selected(($filters['followup'] ?? '') === $value)>{{ $label }}</option>
+                    @endforeach
+                </select>
+            </div>
             <div><label class="form-label" for="search">Search</label><input class="form-control" id="search" name="search" type="search" maxlength="255" value="{{ $filters['search'] ?? '' }}" placeholder="Resident name or service"></div>
             <div class="rv-filter-actions"><button type="submit" class="btn btn-primary"><x-app-icon name="search"/> Search</button><a href="{{ route('admin.reservations.index') }}" class="btn btn-outline-secondary">Clear filters</a></div>
         </form>

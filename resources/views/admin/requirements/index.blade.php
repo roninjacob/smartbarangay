@@ -1,6 +1,6 @@
 @extends('layouts.authenticated')
 @section('dashboard')
-<x-page-intro :subtitle="$service->name">
+<x-page-intro class="admin-catalog-intro" :subtitle="$service->name">
     <x-slot:actions>
         <a class="btn btn-outline-secondary" href="{{ route('admin.services.index') }}">Back to services</a>
         <a class="btn btn-primary" href="{{ route('admin.services.requirements.create', $service) }}"><x-app-icon name="plus"/> Add Requirement</a>
@@ -27,8 +27,8 @@
                         <th scope="row"><strong>{{ $requirement->name }}</strong>
                             @if($requirement->description)<span class="reservation-reference">{{ \Illuminate\Support\Str::limit($requirement->description, 140) }}</span>@endif
                         </th>
-                        <td><span class="rv-badge is-muted"><x-app-icon name="document"/> File upload</span></td>
-                        <td><span @class(['rv-badge', 'is-gold' => $requirement->is_required, 'is-muted' => ! $requirement->is_required])>{{ $requirement->is_required ? 'Required' : 'Optional' }}</span></td>
+                        <td class="catalog-file-type"><span class="rv-badge is-muted"><x-app-icon name="document"/> File upload</span></td>
+                        <td class="catalog-submission"><span @class(['rv-badge', 'is-gold' => $requirement->is_required, 'is-muted' => ! $requirement->is_required])>{{ $requirement->is_required ? 'Required' : 'Optional' }}</span></td>
                         <td class="rv-row-action"><div class="admin-row-actions">
                             <a class="btn btn-sm btn-outline-primary" href="{{ route('admin.services.requirements.edit', [$service, $requirement]) }}" aria-label="Edit {{ $requirement->name }}">Edit</a>
                             @if($requirement->attachments_exists)

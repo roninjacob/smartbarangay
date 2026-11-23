@@ -59,7 +59,7 @@ if (!document.querySelector('[data-print-document]')) {
 
     // Progressive disclosure on phones; the same GET forms and validation remain authoritative.
     const mobile = window.matchMedia('(max-width: 767px)');
-    document.querySelectorAll('form.request-filters,form.schedule-filters,form.worklist-filters,.report-controls form').forEach((form, index) => {
+    document.querySelectorAll('form.request-filters,form.schedule-filters,form[data-worklist-filters],.report-controls form').forEach((form, index) => {
         form.dataset.civicFilter = '';
         const toggle = document.createElement('button');
         toggle.type = 'button';

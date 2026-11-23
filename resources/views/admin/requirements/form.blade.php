@@ -1,6 +1,6 @@
 @extends('layouts.authenticated')
 @section('dashboard')
-<x-page-intro :subtitle="$service->name">
+<x-page-intro class="admin-catalog-intro" :subtitle="$service->name">
     <x-slot:actions><a class="btn btn-outline-secondary" href="{{ route('admin.services.requirements.index', $service) }}">Back to requirements</a></x-slot:actions>
 </x-page-intro>
 <form method="POST" action="{{ $requirement->exists ? route('admin.services.requirements.update', [$service, $requirement]) : route('admin.services.requirements.store', $service) }}" class="admin-editor" data-service-submit>
@@ -25,7 +25,7 @@
                 </div>
             </div>
         </section>
-        <section class="dashboard-panel rv-section">
+        <section class="dashboard-panel rv-section catalog-rule-panel">
             <div class="dashboard-panel-heading"><h2><span class="panel-icon is-gold" aria-hidden="true"><x-app-icon name="check"/></span>Submission rule</h2></div>
             <div class="rv-section-body">
                 <div class="admin-form-field">

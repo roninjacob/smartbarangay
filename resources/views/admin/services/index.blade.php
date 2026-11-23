@@ -1,6 +1,6 @@
 @extends('layouts.authenticated')
 @section('dashboard')
-<x-page-intro subtitle="Manage service fees, requirements and official documents.">
+<x-page-intro class="admin-catalog-intro" subtitle="Manage service fees, requirements and official documents.">
     <x-slot:actions><a class="btn btn-primary" href="{{ route('admin.services.create') }}"><x-app-icon name="plus"/> Create Service</a></x-slot:actions>
 </x-page-intro>
 
@@ -31,8 +31,12 @@
                     </header>
                     @if($service->description)<p class="admin-service-description">{{ $service->description }}</p>@endif
                     <dl class="admin-service-facts">
-                        <div><dt>Service fee</dt><dd>{{ \App\Support\ServiceFee::format($service->fee_amount, 'Fee setup required') }}</dd></div>
-                        <div><dt>Requirements</dt><dd>{{ number_format($service->service_requirements_count) }}</dd></div>
+                        <div @class(['catalog-metric', 'fee-missing' => $service->fee_amount === null, 'fee-free' => $service->fee_amount !== null && (float) $service->fee_amount === 0.0])>
+                            <dt>Service fee</dt><dd>{{ \App\Support\ServiceFee::format($service->fee_amount, 'Fee setup required') }}
+                                @if($service->fee_amount !== null && (float) $service->fee_amount === 0.0)<small>Free of charge</small>@endif
+                            </dd>
+                        </div>
+                        <div class="catalog-metric"><dt>Requirements</dt><dd>{{ number_format($service->service_requirements_count) }}</dd></div>
                         <div><dt>Official File</dt><dd>{{ $service->documentTemplate?->format() ?? 'Not uploaded' }}@if($service->documentTemplate)<small>{{ $service->documentTemplate->original_filename }}</small>@endif</dd></div>
                         <div><dt>Document workflow</dt><dd>{{ $readiness[$service->id] }}</dd></div>
                     </dl>
@@ -42,6 +46,7 @@
                             <button class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" type="button" aria-expanded="false" aria-label="More actions for {{ $service->name }}">More</button>
                             <ul class="dropdown-menu dropdown-menu-end">
                                 <li><a class="dropdown-item" href="{{ route('admin.services.requirements.index', $service) }}">Requirements</a></li>
+                                <li><hr class="dropdown-divider"></li>
                                 <li><a class="dropdown-item" href="{{ route('admin.services.certificates.index', $service) }}">Preview Blank Template</a></li>
                                 @if($service->documentTemplate?->format() === 'PDF')
                                     <li><a class="dropdown-item" href="{{ route('admin.services.template.print', $service) }}">Print Blank Template</a></li>
