@@ -10,7 +10,8 @@
 </ol>
 <x-auth-feedback />
 <div class="au-destination"><span>Verification email destination</span><strong>{{ auth()->user()->email }}</strong></div>
-<p class="au-muted au-sync" data-verification-sync data-status-url="{{ route('verification.status') }}" role="status" aria-live="polite">This page checks automatically when your email is verified, including on another device.</p>
+<p class="au-muted au-sync" data-verification-sync data-status-url="{{ route('verification.status', absolute: false) }}" role="status" aria-live="polite">This page checks automatically when your email is verified, including on another device.</p>
+<p class="au-muted"><a class="au-link" href="{{ route('verification.notice', absolute: false) }}">Check verification status</a></p>
 <p class="au-muted">Didn't receive the email? Check your Spam or Junk folder, or request another verification link.</p>
 @if(auth()->user()->role === \App\Enums\UserRole::Resident)
 <p class="au-muted">Wrong email address? <a class="au-link" href="{{ route('verification.email.edit') }}">Change Email Address</a></p>

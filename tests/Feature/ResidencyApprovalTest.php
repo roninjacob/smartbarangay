@@ -206,6 +206,10 @@ class ResidencyApprovalTest extends TestCase
     {
         $resident = User::factory()->state(['role' => UserRole::Resident, 'is_active' => true])->unverified()->create();
         $link = URL::temporarySignedRoute('verification.verify', now()->addMinutes(30), ['id' => $resident->id, 'hash' => sha1($resident->email)]);
+        $this->actingAs($resident)->get(route('verification.notice'))->assertOk()
+            ->assertSee('data-status-url="/email/verification-status"', false)
+            ->assertSee('Check verification status');
+        $this->post(route('logout'));
         $this->get($link)->assertRedirect(route('login'));
         $this->assertGuest();
         $this->assertFalse($resident->fresh()->hasVerifiedEmail());
@@ -213,7 +217,7 @@ class ResidencyApprovalTest extends TestCase
         $this->get($link)->assertRedirect(route('resident.home'));
         // A different session can still hold the pre-verification User instance.
         $this->actingAs($resident)->getJson(route('verification.status'))->assertOk()
-            ->assertJsonPath('verified', true)->assertJsonPath('redirect', route('resident.home'))
+            ->assertJsonPath('verified', true)->assertJsonPath('redirect', route('resident.home', absolute: false))
             ->assertHeader('Cache-Control', 'no-store, private');
         $this->get(route('verification.notice'))->assertRedirect(route('resident.home'));
         $this->post(route('verification.send'))->assertRedirect(route('resident.home'));

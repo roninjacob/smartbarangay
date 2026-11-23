@@ -33,7 +33,7 @@ class EmailVerificationController extends Controller
         $request->setUserResolver(fn () => $user);
 
         return response()->json(['verified' => $user->hasVerifiedEmail(),
-            'redirect' => $user->hasVerifiedEmail() ? route($user->homeRouteName()) : null])
+            'redirect' => $user->hasVerifiedEmail() ? route($user->homeRouteName(), absolute: false) : null])
             ->header('Cache-Control', 'no-store, private');
     }
 

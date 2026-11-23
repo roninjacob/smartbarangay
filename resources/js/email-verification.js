@@ -57,6 +57,7 @@ export function watchEmailVerification(element, win, doc, fetcher) {
         else check();
     });
     win.addEventListener('pageshow', () => { paused = false; if (!stopped) check(); });
+    win.addEventListener('focus', check);
     win.addEventListener('pagehide', () => { paused = true; win.clearTimeout(timer); controller?.abort(); });
     check();
 }

@@ -30,7 +30,7 @@ function fixture(t, responses = []) {
         await entry[1].fn();
     };
     watchEmailVerification(element, win, doc, fetcher);
-    return {element, win, doc, handlers, timers, calls, redirects, advance};
+    return {element, win, doc, handlers, timers, calls, redirects, advance, elapse: ms => { now += ms; }};
 }
 
 function response(data, status = 200) {
@@ -51,6 +51,16 @@ test('periodic authenticated rechecking redirects only after confirmed verificat
     assert.equal(f.calls[0].options.redirect, 'error');
     await f.advance();
     assert.deepEqual(f.redirects, ['https://smartbarangay.test/resident/home']);
+    assert.equal(f.timers.size, 0);
+});
+
+test('returning focus checks verification without waiting for the next poll', async t => {
+    const f = fixture(t, [response({verified: false}), response({verified: true, redirect: '/admin/home'})]);
+    await flush();
+    f.elapse(5000);
+    await f.handlers.focus();
+    assert.equal(f.calls.length, 2);
+    assert.deepEqual(f.redirects, ['https://smartbarangay.test/admin/home']);
     assert.equal(f.timers.size, 0);
 });
 
