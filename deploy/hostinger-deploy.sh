@@ -4,7 +4,7 @@
 # Runs ON THE SERVER over SSH. The private Laravel application and the public
 # document root are separate folders (see docs/DEPLOYMENT.md):
 #
-#   ~/domains/smartbarangay.site/smartbarangay   private application (.env, vendor, storage)
+#   ~/domains/smartbarangay.site/smartbarangay/app   private application (.env, vendor, storage)
 #   ~/domains/smartbarangay.site/public_html     public adapter (index.php, .htaccess, build/)
 #   ~/smartbarangay-repo                        Git clone used only as the deployment source
 #
@@ -21,8 +21,19 @@
 
 set -Eeuo pipefail
 
+# Run from a private copy: `update_repo` resets the clone, which may replace this
+# very file while Bash is still reading it.
+if [ -z "${SB_DEPLOY_SELF_COPY:-}" ]; then
+    self_copy="$(mktemp "${TMPDIR:-/tmp}/sb-deploy.XXXXXX")"
+    cp "$0" "$self_copy"
+    SB_DEPLOY_SELF_COPY="$self_copy" exec bash "$self_copy" "$@"
+fi
+rm -f "$SB_DEPLOY_SELF_COPY"
+
 SITE_ROOT="${SB_SITE_ROOT:-$HOME/domains/smartbarangay.site}"
-APP="${SB_APP_DIR:-$SITE_ROOT/smartbarangay}"
+# public_html/index.php requires smartbarangay/app/public/index.php, so the
+# application (artisan, .env, vendor, storage) lives in smartbarangay/app.
+APP="${SB_APP_DIR:-$SITE_ROOT/smartbarangay/app}"
 PUB="${SB_PUBLIC_DIR:-$SITE_ROOT/public_html}"
 REPO="${SB_REPO_DIR:-$HOME/smartbarangay-repo}"
 BRANCH="${SB_BRANCH:-main}"
@@ -226,5 +237,5 @@ case "${1:-}" in
     deploy) deploy "${2:-}" ;;
     rollback) rollback "${2:-}" ;;
     status) status ;;
-    *) sed -n '2,22p' "$0"; exit 1 ;;
+    *) echo "Usage: bash hostinger-deploy.sh check | deploy [--with-migrations] | rollback [BACKUP_DIR] | status"; exit 1 ;;
 esac

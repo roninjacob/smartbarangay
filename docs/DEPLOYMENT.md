@@ -5,8 +5,11 @@ Production: `https://smartbarangay.site`. The layout follows
 
 ```text
 ~/domains/smartbarangay.site/
-  smartbarangay/      private Laravel application: .env, vendor/, storage/ (never public)
-  public_html/        document root: index.php adapter, .htaccess, build/, images/, favicon, robots
+  smartbarangay/app/  private Laravel application: artisan, .env, vendor/, storage/ (never public)
+    public/           its own public folder; public/index.php is the real entry point and
+                      Laravel reads public/build/manifest.json from here
+  public_html/        document root: index.php (only requires smartbarangay/app/public/index.php),
+                      .htaccess, build/ (what browsers download), images/, favicon, robots
 ~/smartbarangay-repo/ Git clone of main, used only as the deployment source
 ~/.smartbarangay-deploy/
   current             deployed commit
@@ -138,7 +141,7 @@ and database migrations are not reverted.
 hPanel > Advanced > Cron Jobs, every minute:
 
 ```text
-cd /home/<account>/domains/smartbarangay.site/smartbarangay && php artisan schedule:run >> /dev/null 2>&1
+cd /home/<account>/domains/smartbarangay.site/smartbarangay/app && php artisan schedule:run >> /dev/null 2>&1
 ```
 
 `check` warns when no `schedule:run` cron exists. It drives IoT nonce/scanner
