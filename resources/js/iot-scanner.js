@@ -9,6 +9,7 @@ if (root) {
     let handoff = false;
     let frameRunning = false;
     let pollTimer, frameTimer, expiryTimer, frameUrl;
+    let frameSequence;
     let mutations = Promise.resolve();
     const reads = new Set();
     root.dataset.scannerMode = 'laptop';
@@ -50,6 +51,7 @@ if (root) {
         clearTimeout(expiryTimer);
         if (frameUrl) URL.revokeObjectURL(frameUrl);
         frameUrl = undefined;
+        frameSequence = undefined;
         node('preview-image').hidden = true;
         node('preview-image').removeAttribute('src');
         node('live').hidden = true;
@@ -93,13 +95,21 @@ if (root) {
                 if (!response.ok || !response.headers.get('content-type')?.startsWith('image/jpeg')) throw new Error('Preview unavailable');
                 const age = Number(response.headers.get('X-SB-Frame-Age-Ms'));
                 if (!response.headers.get('X-SB-Frame-Age-Ms') || !Number.isFinite(age) || age < 0 || age >= 5000) throw new Error('Image expired');
+                const sequence = response.headers.get('X-SB-Frame-Sequence');
+                if (sequence && sequence === frameSequence && frameUrl) return;
                 const blob = await response.blob();
                 if (blob.size > 32768 || !isCurrent(current) || !online) return;
-                if (frameUrl) URL.revokeObjectURL(frameUrl);
-                frameUrl = URL.createObjectURL(blob);
+                const nextUrl = URL.createObjectURL(blob);
+                const nextImage = new Image();
+                nextImage.src = nextUrl;
+                try { await nextImage.decode(); }
+                catch (error) { URL.revokeObjectURL(nextUrl); throw error; }
+                if (!isCurrent(current) || !online) { URL.revokeObjectURL(nextUrl); return; }
                 const image = node('preview-image');
-                image.src = frameUrl;
-                await image.decode();
+                image.src = nextUrl;
+                if (frameUrl) URL.revokeObjectURL(frameUrl);
+                frameUrl = nextUrl;
+                frameSequence = sequence;
                 const remaining = 5000 - age - (performance.now() - began);
                 if (!isCurrent(current) || !online) return;
                 if (remaining <= 0) { clearImage('Image expired. Waiting for the next frame'); return; }

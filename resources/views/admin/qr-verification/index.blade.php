@@ -37,7 +37,7 @@
             <div class="qr-camera-frame iot-camera-viewport" aria-label="Authenticated ESP32-CAM camera preview">
                 <img alt="Recent image from the selected ESP32-CAM" data-iot-preview-image hidden>
                 <div class="qr-camera-placeholder" data-iot-preview-placeholder><x-app-icon name="qr"/><p data-iot-preview-note>Waiting for a scanner</p></div>
-                <span class="iot-live-badge" data-iot-live hidden>LIVE</span>
+                <span class="iot-live-badge" data-iot-live hidden>Recent snapshot</span>
             </div>
             <dl class="iot-scanner-summary"><div><dt>Device activity</dt><dd data-iot-activity>Not connected</dd></div>
                 <div><dt>Latest scan</dt><dd data-iot-latest>No scan received</dd></div></dl>

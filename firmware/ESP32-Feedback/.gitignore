@@ -1,0 +1,4 @@
+.pio
+include/secrets.h
+**/feedback_keys.h
+**/smartbarangay_wifi_private.h

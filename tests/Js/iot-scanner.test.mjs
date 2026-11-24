@@ -20,6 +20,7 @@ function harness({ poll = {}, frameStatus = 200, frameAge = '0' } = {}) {
     const document = { hidden: false, querySelector: (selector) => selector.includes('meta') ? { content: 'synthetic-csrf' } : root,
         addEventListener(name, callback) { events[name] = callback; }, dispatchEvent(event) { dispatched.push(event); } };
     vm.runInNewContext(source, { document, window: { addEventListener(name, callback) { events[name] = callback; } },
+        Image: class { async decode() {} },
         AbortController, Date, performance: { now: () => 0 }, URL: { createObjectURL: () => 'blob:private', revokeObjectURL() {} },
         Option: function (text, value) { this.text = text; this.value = value; },
         Event: class { constructor(type) { this.type = type; } }, CustomEvent: class { constructor(type, options) { this.type = type; this.detail = options.detail; } },
@@ -29,7 +30,7 @@ function harness({ poll = {}, frameStatus = 200, frameAge = '0' } = {}) {
             const data = path === 'devices' ? { devices: [{ id: 'synthetic-device', name: 'Test device', available: true }] }
                 : path === 'poll' ? { state: 'connected', online: true, device: 'Test device', preview: true, ...poll } : { preview: true };
             return { ok: path === 'frame' ? frameStatus === 200 : true, status: path === 'frame' ? frameStatus : 200,
-                headers: { get: (name) => name === 'X-SB-Frame-Age-Ms' ? frameAge : 'image/jpeg' }, blob: async () => ({ size: 100 }), json: async () => data };
+                headers: { get: (name) => name === 'X-SB-Frame-Age-Ms' ? frameAge : name === 'X-SB-Frame-Sequence' ? '1' : 'image/jpeg' }, blob: async () => ({ size: 100 }), json: async () => data };
         } });
     return { node, modes, requests, timers, events, document, dispatched };
 }

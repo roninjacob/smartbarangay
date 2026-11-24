@@ -1,6 +1,6 @@
 {
   "description": "QR-06 non-secret code/config checksum evidence; no recovery payload or secret hash",
-  "camera_init_sha256": "851c1a0f1bae0cf82f099ced5bfaa17b5d9b053a7f1378447b34655708157d0c",
+  "camera_init_sha256": "2465fa131e218f59008f3fd2cddf36c463a7e4e547cb782e066ff541db2937fd",
   "library_files": [
     {
       "path": "lib/README",

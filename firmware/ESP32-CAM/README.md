@@ -1,6 +1,6 @@
-# SmartBarangay ESP32-CAM standalone hardware test
+# SmartBarangay ESP32-CAM scanner
 
-Canonical development folder: `firmware/SmartBarangay-ESP32-CAM-Test/` inside
+Canonical development folder: `firmware/ESP32-CAM/` inside
 the SmartBarangay repository. The PlatformIO project still builds independently.
 See [consolidation and recovery instructions](../../docs/archive/iot-project-consolidation.md).
 The original standalone folder is preserved as a private rollback copy. `backups/`
@@ -8,7 +8,9 @@ is deliberately not copied or required by the portable tests. Locally generated
 `include/secrets.h` is a legacy ignored placeholder and is no longer read by builds.
 Wi-Fi configuration now lives outside htdocs as described below.
 
-This project tests an AI Thinker ESP32-CAM with OV2640 over local Wi-Fi. It includes on-camera QR decoding using quirc. [IoT-04 integration and acceptance](../../docs/archive/iot-04-integration.md) adds an optional authenticated HTTPS client for Laravel pairing and verification. Without an external enabled private IoT configuration, `esp32cam` retains the standalone IoT-01 baseline. An enabled client starts QR mode automatically and blocks unauthenticated LAN mode changes. No raw QR text, camera images or video are exposed by the safe build. The explicit `esp32cam-diagnostics` build remains client-disabled and restores unauthenticated LAN images/video for synthetic/dummy codes ONLY. QR-06 camera scheduling/locking and the stable 1000 ms QR floor are preserved; fast experiments remain disabled. Physical IoT-04 acceptance and deployment remain pending.
+This is the SmartBarangay QR scanner firmware for an AI Thinker ESP32-CAM with OV2640. It decodes QR codes on the camera with quirc and, with an external enabled private IoT configuration, sends `SBQ1:` tickets to Laravel over authenticated HTTPS (`/api/iot/v1/status`, `/scans`, `/preview`; see [automatic scanning](../../docs/archive/iot-automatic-scanning.md)). Pairing QR codes are no longer used. It also answers authenticated ESP-NOW status requests from the [ESP32 feedback device](../ESP32-Feedback/README.md), which drives the OLED and LEDs. Without the private IoT configuration, `esp32cam` keeps the scanner-only baseline. An enabled client starts QR mode automatically and blocks unauthenticated LAN mode changes. No raw QR text, camera images or video are exposed by the production build. The explicit `esp32cam-diagnostics` build remains client-disabled and restores unauthenticated LAN images/video for synthetic/dummy codes ONLY.
+
+QR pipeline: VGA JPEG capture, direct JPEG-to-luminance decoding into quirc's buffer (`include/jpeg_luminance.h`, no VGA RGB buffer), 1000 ms scan interval that drops to 500 ms only after 20 consecutive attempts finish within 350 ms with healthy heap and stack. The camera JPEG stays in colour; the sensor's special effect, colour bar, saturation and automatic white balance are set explicitly at every camera initialization.
 
 Earlier QR-02 through QR-06 and STABILITY-01 documents are historical change records. IoT-01 supersedes instructions there that expose raw payloads or assume camera endpoints are enabled by default. No IoT-01 physical upload or device acceptance has been performed.
 
@@ -62,7 +64,7 @@ Use a USB data cable with the ESP32-CAM properly seated in its MB programmer. Po
 In the PlatformIO terminal:
 
 ```powershell
-cd "C:\xampp\htdocs\smartbarangay\firmware\SmartBarangay-ESP32-CAM-Test"
+cd "C:\xampp\htdocs\smartbarangay\firmware\ESP32-CAM"
 pio run -e esp32cam
 pio device list
 pio run -e esp32cam -t upload --upload-port COM3

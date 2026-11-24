@@ -259,7 +259,7 @@
 :where(.civic-ui.civic-refined) .rv-ticket-qr { display: grid; justify-items: center; gap: 8px; padding: 24px 22px 18px; }
 /* The QR always renders black on white with a quiet zone, also in dark mode, so it stays scannable. */
 :where(.civic-ui.civic-refined) .rv-ticket-qr-frame { padding: 16px; border-radius: 16px; background: #FFF; box-shadow: 0 0 0 1px rgb(15 27 45 / 10%); }
-:where(.civic-ui.civic-refined) .rv-ticket-qr-frame img { display: block; width: 240px; max-width: 100%; height: auto; image-rendering: pixelated; }
+:where(.civic-ui.civic-refined) .rv-ticket-qr-frame img { display: block; width: min(72vw, 320px); max-width: 100%; height: auto; }
 :where(.civic-ui.civic-refined) .rv-ticket-qr p { margin: 0; color: var(--ds-muted); font-size: .8125rem; text-align: center; }
 :where(.civic-ui.civic-refined) .rv-ticket-cut { position: relative; height: 24px; }
 :where(.civic-ui.civic-refined) .rv-ticket-cut::before { content: ""; position: absolute; left: 20px; right: 20px; top: 50%; border-top: 2px dashed var(--ds-border-strong); }
@@ -285,3 +285,6 @@
     :where(.civic-ui.civic-refined) .rv-ticket { max-width: 100mm; border: 1px solid #999; box-shadow: none; break-inside: avoid; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
     :where(.civic-ui.civic-refined) .rv-ticket-cut::after { content: none; }
 }
+
+/* Bootstrap places its backdrop at body level. Keep floating notices beneath it during confirmation. */
+body.modal-open:has(> .reservation-confirmation[aria-modal="true"]) .civic-toast-region { z-index: 1040; }

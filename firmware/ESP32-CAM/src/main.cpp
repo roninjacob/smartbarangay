@@ -4,6 +4,7 @@
 #include <cerrno>
 #include <atomic>
 #include "img_converters.h"
+#include "jpeg_luminance.h"
 #include "esp_heap_caps.h"
 #include "quirc.h"
 #include "esp_camera.h"
@@ -28,7 +29,7 @@ constexpr uint32_t DIAGNOSTIC_INTERVAL_MS = 5000;
 constexpr int64_t FRAME_SEND_BUDGET_US = 1500000;
 constexpr uint32_t FRAME_INTERVAL_MS = 125;
 constexpr uint32_t QR_SCAN_INTERVAL_MS = 1000;
-constexpr bool QR_ENABLE_FAST_EXPERIMENT = false;
+constexpr bool adaptiveScan = !readiness::cameraDiagnostics;
 constexpr bool QR_BENCHMARK_LOG_EACH_SCAN = false;
 constexpr uint32_t QR_EXPERIMENT_INTERVAL_MS = 500;
 constexpr uint32_t QR_FAST_HEADROOM_US = 350000;
@@ -182,10 +183,10 @@ int pageSend(httpd_handle_t, int socket, const char *buffer, size_t length, int 
 const char TEST_PAGE[] PROGMEM = R"HTML(<!doctype html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>ESP32-CAM Hardware Test</title>
+<title>SmartBarangay Scanner Status</title>
 <style>body{font:16px system-ui,sans-serif;margin:24px auto;padding:0 16px;max-width:800px;background:#14212b;color:#edf4f7}img{display:block;width:100%;height:auto;background:#000;margin:16px 0}#video{max-width:320px}#snapshot{max-width:640px}img[hidden]{display:none}button{padding:12px 18px;margin:4px;font:inherit}p{line-height:1.6}a{color:#8dd9ff}</style></head>
-<body><h1>ESP32-CAM Hardware Test</h1>
-<p>AI Thinker / OV2640 &middot; JPEG camera test over local Wi-Fi.</p>
+<body><h1>SmartBarangay Scanner Status</h1>
+<p>AI Thinker ESP32-CAM / OV2640 &middot; local scanner status.</p>
 <button id="start" type="button" hidden>Start / reconnect</button>
 <button id="stop" type="button" hidden>Stop stream</button>
 <button id="qr" type="button">Enter QR test mode</button>
@@ -460,9 +461,20 @@ bool initializeCamera(bool forQr = false) {
     }
     sensor_t *sensor = esp_camera_sensor_get();
     if (sensor == nullptr || sensor->id.PID != OV2640_PID) {
-        Serial.println("[CAM] OV2640 not detected; stopping test.");
+        Serial.println("[CAM] OV2640 not detected; camera stopped.");
         esp_camera_deinit();
         return false;
+    }
+    // Pin normal colour output explicitly: no special effect (grayscale/sepia),
+    // no colour bar, neutral saturation and automatic white balance/gain.
+    // QR decoding still uses its own luminance copy; the JPEG stays in colour.
+    const bool colourOk = sensor->set_special_effect(sensor, 0) == 0
+        && sensor->set_colorbar(sensor, 0) == 0
+        && sensor->set_saturation(sensor, 0) == 0
+        && sensor->set_whitebal(sensor, 1) == 0
+        && sensor->set_awb_gain(sensor, 1) == 0;
+    if (!colourOk) {
+        Serial.println("[CAM] Colour defaults could not be applied; sensor keeps driver defaults.");
     }
     Serial.printf("[CAM] OV2640 initialized: PID=0x%02x, %s JPEG, buffers=%d.\n",
         sensor->id.PID, forQr ? "640x480 QR" : "320x240 preview", config.fb_count);
@@ -484,7 +496,7 @@ void recordQrTiming(QrTimings timing, int64_t started) {
         ESP.getFreeHeap() >= 65536 && uxTaskGetStackHighWaterMark(nullptr) >= 4096;
     const uint32_t good = headroom ? qrHeadroomSamples.load() + 1 : 0;
     qrHeadroomSamples = good > QR_FAST_REQUIRED_SAMPLES ? QR_FAST_REQUIRED_SAMPLES : good;
-    qrCurrentIntervalMs = QR_ENABLE_FAST_EXPERIMENT && qrHeadroomSamples >= QR_FAST_REQUIRED_SAMPLES ? QR_EXPERIMENT_INTERVAL_MS : QR_SCAN_INTERVAL_MS;
+    qrCurrentIntervalMs = adaptiveScan && qrHeadroomSamples >= QR_FAST_REQUIRED_SAMPLES ? QR_EXPERIMENT_INTERVAL_MS : QR_SCAN_INTERVAL_MS;
     xSemaphoreTake(qrResultMutex, portMAX_DELAY);
     timing.completionPeriodMs = qrCompletedAt ? timing.completedMs - qrCompletedAt : 0;
     qrCompletedAt = timing.completedMs;
@@ -505,14 +517,14 @@ void qrWorker(void *) {
     quirc *decoder = nullptr;
     quirc_code *code = nullptr;
     quirc_data *data = nullptr;
-    uint8_t *rgb = nullptr;
+    JpegLuminance *converter = nullptr;
     uint32_t lastScan = 0, lastPublished = 0;
     uint32_t previousAttempt = 0;
     auto releaseDecoder = [&]() {
         if (decoder) { quirc_destroy(decoder); decoder = nullptr; }
         free(code); code = nullptr;
         free(data); data = nullptr;
-        free(rgb); rgb = nullptr;
+        free(converter); converter = nullptr;
         xSemaphoreTake(snapshotMutex, portMAX_DELAY);
         free(qrSnapshot); qrSnapshot = nullptr;
         qrSnapshotSize = 0;
@@ -538,13 +550,13 @@ void qrWorker(void *) {
                 decoder = quirc_new();
                 code = static_cast<quirc_code *>(heap_caps_calloc(1, sizeof(quirc_code), MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT));
                 data = static_cast<quirc_data *>(heap_caps_calloc(1, sizeof(quirc_data), MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT));
-                rgb = static_cast<uint8_t *>(heap_caps_malloc(640 * 480 * 3, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT));
+                converter = static_cast<JpegLuminance *>(heap_caps_malloc(sizeof(JpegLuminance), MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT));
                 xSemaphoreTake(snapshotMutex, portMAX_DELAY);
                 if (readiness::cameraDiagnostics) {
                     qrSnapshot = static_cast<uint8_t *>(heap_caps_malloc(128 * 1024, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT));
                 }
                 xSemaphoreGive(snapshotMutex);
-                if (!decoder || !code || !data || !rgb || (readiness::cameraDiagnostics && !qrSnapshot) || quirc_resize(decoder, 640, 480) < 0) {
+                if (!decoder || !code || !data || !converter || (readiness::cameraDiagnostics && !qrSnapshot) || quirc_resize(decoder, 640, 480) < 0) {
                     setQrMessage("Insufficient QR workspace memory. Returning to preview.");
                     releaseDecoder();
                     qrRequested = false;
@@ -633,7 +645,7 @@ void qrWorker(void *) {
                     } else { qrSnapshotsSkipped++; }
                 }
                 const int64_t convertStarted = esp_timer_get_time();
-                converted = fmt2rgb888(frame->buf, frame->len, PIXFORMAT_JPEG, rgb);
+                converted = converter->decode(frame->buf, frame->len, quirc_begin(decoder, nullptr, nullptr), frame->width, frame->height);
                 timing.convertUs = static_cast<uint32_t>(esp_timer_get_time() - convertStarted);
             }
             if (frame) { deviceiot::offerFrame(frame->buf, frame->len, transportAcquiredMs); esp_camera_fb_return(frame); }
@@ -644,13 +656,6 @@ void qrWorker(void *) {
                 vTaskDelay(pdMS_TO_TICKS(100));
                 continue;
             }
-            uint8_t *gray = quirc_begin(decoder, nullptr, nullptr);
-            const int64_t grayStarted = esp_timer_get_time();
-            // Driver converter returns three color channels; average is order-independent.
-            for (size_t i = 0; i < 640 * 480; ++i) {
-                gray[i] = (static_cast<unsigned int>(rgb[i * 3]) + rgb[i * 3 + 1] + rgb[i * 3 + 2]) / 3;
-            }
-            timing.grayUs = static_cast<uint32_t>(esp_timer_get_time() - grayStarted);
             const int64_t detectStarted = esp_timer_get_time();
             quirc_end(decoder);
             timing.detectUs = static_cast<uint32_t>(esp_timer_get_time() - detectStarted);
@@ -894,7 +899,7 @@ void connectWifi() {
 void setup() {
     Serial.begin(115200);
     delay(1000);
-    Serial.println("\n[BOOT] Standalone AI Thinker ESP32-CAM / OV2640 test");
+    Serial.println("\n[BOOT] SMART BARANGAY PRODUCTION QR SCANNER");
     Serial.printf("[BOOT] Reset reason=%d (1=power-on, 3=software, 4=panic, 5=int-WDT, 6=task-WDT, 7=other-WDT, 9=brownout).\n", static_cast<int>(esp_reset_reason()));
     pinMode(4, OUTPUT);
     digitalWrite(4, LOW); // Flash LED off.
@@ -927,8 +932,11 @@ void setup() {
     connectWifi();
 }
 
+void feedbackTick();
+
 void loop() {
     deviceiot::tick();
+    feedbackTick();
     reportDiagnostics();
     if (!credentialsReady) {
         delay(1000);
@@ -969,3 +977,4 @@ void loop() {
     }
     delay(250);
 }
+

@@ -32,7 +32,8 @@ def main():
     camera = section(source, 'bool initializeCamera(', 'void setQrMessage(')
     assert hashlib.sha256(camera.encode()).hexdigest() == baseline['camera_init_sha256']
     assert 'constexpr uint32_t QR_SCAN_INTERVAL_MS = 1000;' in source
-    assert 'constexpr bool QR_ENABLE_FAST_EXPERIMENT = false;' in source
+    assert 'constexpr bool adaptiveScan = !readiness::cameraDiagnostics;' in source
+    assert 'qrHeadroomSamples >= QR_FAST_REQUIRED_SAMPLES' in source
     assert 'Serial.write(byte)' not in source and 'renderQrText' not in source
     assert 'readiness::cameraDiagnostics && (!lastPublished' in source
     for function in ['streamHandler', 'qrFrameHandler']:
@@ -49,7 +50,7 @@ def main():
     assert current_environment.pop('extra_scripts').split() == ['pre:scripts/private_wifi.py', 'pre:scripts/private_iot.py']
     assert baseline['default_environment'] == current_environment
     assert new_config['platformio']['default_envs'] == 'esp32cam'
-    print('PASS: portable camera/pins/decoder/config baseline; 1000ms/no fast experiment; no payload logging; image guards', flush=True)
+    print('PASS: portable camera/pins/decoder/config baseline; 1000ms baseline/adaptive scan pacing; no payload logging; image guards', flush=True)
     run(['php', ROOT/'test/iot01-vectors.php', args.autoload, out])
     objects = []
     for file in (ROOT/'lib/quirc/lib').glob('*.c'):

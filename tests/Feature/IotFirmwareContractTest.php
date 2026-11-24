@@ -54,7 +54,7 @@ class IotFirmwareContractTest extends TestCase
             'status' => ReservationStatus::ReadyForPickup]);
         $ticket = app(QrTicketIssuer::class)->issue($reservation);
         $ticket->forceFill(['qr_payload' => '550e8400-e29b-41d4-a716-446655440000', 'ticket_code' => '550e8400-e29b-41d4-a716-446655440000'])->save();
-        $vectors = json_decode(file_get_contents(base_path('firmware/SmartBarangay-ESP32-CAM-Test/test/iot04-vectors.json')), true, 8, JSON_THROW_ON_ERROR);
+        $vectors = json_decode(file_get_contents(base_path('firmware/ESP32-CAM/test/iot04-vectors.json')), true, 8, JSON_THROW_ON_ERROR);
         foreach ($vectors as $vector) {
             $server = ['REMOTE_ADDR' => '127.0.0.1', 'HTTPS' => 'off', 'CONTENT_TYPE' => 'application/json',
                 'HTTP_ACCEPT' => 'application/json', 'HTTP_X_SB_DEVICE' => $device->id, 'HTTP_X_SB_KEY_VERSION' => '1',

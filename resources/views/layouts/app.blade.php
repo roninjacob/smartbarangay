@@ -21,5 +21,6 @@
 <body class="civic-ui civic-refined">
     <a class="skip-link" href="#main-content">Skip to main content</a>
     @yield('content')
+    @stack('modals')
 </body>
 </html>

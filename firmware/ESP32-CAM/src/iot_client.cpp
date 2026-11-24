@@ -64,7 +64,27 @@ uint64_t monotonicMs() { return static_cast<uint64_t>(esp_timer_get_time() / 100
 uint64_t utcMs() { timeval time{}; gettimeofday(&time, nullptr); return static_cast<uint64_t>(time.tv_sec) * 1000 + time.tv_usec / 1000; }
 bool clockReady() { return synchronized.load() && static_cast<uint32_t>(millis() - syncedAt.load()) < 900000 && utcMs() >= 1767225600000ULL; }
 void synchronizedTime(timeval *) { syncedAt = millis(); synchronized = true; }
-void publish(Status status) { currentStatus = static_cast<int>(status); }
+portMUX_TYPE feedbackMux = portMUX_INITIALIZER_UNLOCKED;
+uint32_t feedbackResultAt = 0;
+std::atomic<uint32_t> feedbackControlAt{0};
+
+void publish(Status status) {
+    uint32_t now = millis();
+
+    portENTER_CRITICAL(&feedbackMux);
+
+    if (status == Status::Valid ||
+        status == Status::Invalid)
+        feedbackResultAt = now;
+
+    if (status == Status::Unknown ||
+        status == Status::Revoked)
+        feedbackControlAt = 0;
+
+    currentStatus = static_cast<int>(status);
+
+    portEXIT_CRITICAL(&feedbackMux);
+}
 
 std::atomic<uint32_t> allocationFailures{0}, failedBytes{0};
 void allocationFailed(size_t bytes, uint32_t caps, const char *) {
@@ -266,6 +286,9 @@ Reply send(const char *input, size_t inputLength, const char *path, uint64_t acq
     const bool connected = client.connected();
     client.metrics.reused = connected;
     if (!connected) {
+        // Release a server-closed TLS session first; its buffers would otherwise
+        // count against the admission check and block every reconnection.
+        client.stop();
         if (!transport::memoryAvailable(heap_caps_get_free_size(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT),
                 heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT))) {
             client.metrics.category = "internal_heap_pressure"; return finish();
@@ -284,7 +307,7 @@ Reply send(const char *input, size_t inputLength, const char *path, uint64_t acq
         portEXIT_CRITICAL(&performanceMux);
         const int length = snprintf(statusJson, sizeof(statusJson),
             "{\"boot_id\":\"%s\",\"captured_at_ms\":%llu,\"camera_state\":\"%s\",\"telemetry\":{"
-            "\"firmware\":\"sb-iot-16.3\",\"uptime_ms\":%llu,\"rssi\":%d,\"heap\":%lu,\"largest\":%lu,\"psram\":%lu,"
+            "\"firmware\":\"sb-iot-16.4\",\"uptime_ms\":%llu,\"rssi\":%d,\"heap\":%lu,\"largest\":%lu,\"psram\":%lu,"
             "\"attempts\":%lu,\"decodes\":%lu,\"capture_fail\":%lu,\"avg_us\":%lu,\"p95_us\":%lu,"
             "\"capture_us\":%lu,\"convert_us\":%lu,\"gray_us\":%lu,\"detect_us\":%lu,\"decode_us\":%lu,"
             "\"preview_copy_us\":%lu,\"preview_sent\":%lu,\"http_ms\":%lu,\"http_code\":%d,\"error\":\"%s\",\"alloc_fail\":%lu,\"reset\":%d}}",
@@ -408,6 +431,7 @@ void worker(void *) {
         if (monotonicMs() >= nextControl) {
             const Reply reply = send("{}", "/api/iot/v1/status", monotonicMs());
             nextControl = monotonicMs() + 5000; lastHttp = reply.http;
+            if (reply.http == 200 && reply.wellFormed) feedbackControlAt = millis();
             if (reply.http == 401 || reply.http == 403) { previewWanted = false; publish(Status::Revoked); backoff = UINT64_MAX; }
             else if (!reply.wellFormed || reply.http != 200) { previewWanted = false; publish(Status::Unknown); }
             else if (monotonicMs() - finishedAt >= 2000) publish(Status::Paired);
@@ -483,6 +507,50 @@ const char *statusText() {
         case Status::RateLimited: return "rate_limited_wait_60_seconds";
         default: return "connection_unavailable";
     }
+}
+uint8_t feedbackState() {
+    if (WiFi.status() != WL_CONNECTED)
+        return 0;
+
+    if (!clockReady()) return 1;
+
+    portENTER_CRITICAL(&feedbackMux);
+
+    const Status status =
+        static_cast<Status>(currentStatus.load());
+
+    const uint32_t resultAt = feedbackResultAt;
+
+    portEXIT_CRITICAL(&feedbackMux);
+
+    const uint32_t now = millis();
+    const uint32_t controlAt = feedbackControlAt.load();
+
+    if (status == Status::Revoked) return 6;
+    if (status == Status::RateLimited) return 7;
+    if (status == Status::Unknown) return 0;
+
+    if (!cameraOk.load() || !decoderOk.load())
+        return 1;
+
+    if (status == Status::Disabled ||
+        status == Status::NeedTime)
+        return 1;
+
+    if (status == Status::Valid ||
+        status == Status::Invalid) {
+
+        if (now - resultAt < 3000)
+            return status == Status::Valid ? 4 : 5;
+    }
+
+    if (!controlAt || now - controlAt > 15000)
+        return 0;
+
+    if (status == Status::Processing)
+        return 3;
+
+    return 2;
 }
 int httpStatus() { return lastHttp.load(); }
 int tlsStatus() { return lastTls.load(); }
@@ -573,3 +641,4 @@ void tick() {
 #endif
 }
 } // namespace deviceiot
+

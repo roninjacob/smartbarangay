@@ -28,8 +28,8 @@ if (dashboard) {
         const display = {
             ...metrics, name: device.name, online: device.revoked ? 'Revoked' : device.online ? 'Online' : 'Offline',
             heartbeat: date(device.heartbeat_at), last_seen: date(device.last_seen_at),
-            camera: { ready: 'Ready', camera_error: 'Error', detection_error: 'Decoder unavailable' }[device.camera_state] || 'Not reported',
-            preview: device.preview ? 'Authorized viewing active' : 'Off',
+            camera: !device.online ? 'Last report is stale' : { ready: 'Ready', camera_error: 'Error', detection_error: 'Decoder unavailable' }[device.camera_state] || 'Not reported',
+            preview: device.preview ? 'Authorized snapshot session' : 'Off',
             uptime: metrics.uptime_ms === undefined ? null : `${Math.floor(metrics.uptime_ms / 60000)} minutes`,
             scans: device.scans, valid: device.valid, invalid: device.invalid,
             latest: device.last_scan_at ? `${date(device.last_scan_at)} - ${device.last_result}` : null,

@@ -29,7 +29,7 @@
         @if($status->canDisplayQrTicket())
             <figure class="rv-ticket-qr m-0">
                 <div class="rv-ticket-qr-frame"><img src="{{ route('resident.qr-tickets.image', $ticket) }}" width="320" height="320" alt="{{ $completed ? 'Historical QR ticket' : 'QR ticket' }} for request #{{ $reservation->id }}"></div>
-                <figcaption><p>{{ $completed ? 'Historical record' : 'Present this ticket at the barangay office when your document is ready for pickup.' }}</p></figcaption>
+                <figcaption><p>{{ $completed ? 'Historical record' : 'Hold your screen steady with the whole code visible. Increase brightness if needed.' }}</p></figcaption>
             </figure>
         @endif
         <div class="rv-ticket-cut" aria-hidden="true"></div>
