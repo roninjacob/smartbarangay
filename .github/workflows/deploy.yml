@@ -1,0 +1,93 @@
+# Push to main -> run the test suites -> deploy that exact commit to Hostinger.
+# Setup (one time): docs/DEPLOYMENT.md, section "Automatic deploy from GitHub".
+name: Deploy to Hostinger
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# One production deploy at a time; a newer push waits instead of cancelling one mid-way.
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: bcmath, ctype, fileinfo, gd, intl, mbstring, pdo_sqlite, sqlite3, zip
+          coverage: none
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 'lts/*'
+          cache: npm
+
+      - name: Install dependencies
+        run: |
+          composer install --no-interaction --prefer-dist --no-progress
+          npm ci
+
+      - name: Prepare test environment
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+
+      - name: Check committed frontend build
+        run: |
+          npm run build
+          git diff --quiet -- public/build/manifest.json \
+            || echo "::warning::public/build differs from a fresh build. Run npm run build locally and commit public/build."
+
+      - name: PHP tests
+        run: php artisan test
+
+      - name: JavaScript tests
+        run: node --test tests/Js/
+
+  deploy:
+    needs: test
+    # Off until the repository variable HOSTINGER_DEPLOY is set to "enabled",
+    # after the first manual `check` + `deploy` on the server succeeded.
+    if: vars.HOSTINGER_DEPLOY == 'enabled'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: production
+    steps:
+      - name: Configure SSH (host key verified, never skipped)
+        env:
+          SSH_KEY: ${{ secrets.HOSTINGER_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.HOSTINGER_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+
+      - name: Deploy ${{ github.sha }}
+        env:
+          HOST: ${{ secrets.HOSTINGER_HOST }}
+          PORT: ${{ secrets.HOSTINGER_PORT }}
+          USER: ${{ secrets.HOSTINGER_USER }}
+          SHA: ${{ github.sha }}
+          REPO_URL: https://github.com/${{ github.repository }}.git
+        run: |
+          ssh -i ~/.ssh/deploy_key -p "$PORT" -o StrictHostKeyChecking=yes -o BatchMode=yes "$USER@$HOST" \
+            "set -e; test -d ~/smartbarangay-repo/.git || git clone -q --branch main '$REPO_URL' ~/smartbarangay-repo; \
+             git -C ~/smartbarangay-repo fetch -q origin main; \
+             git -C ~/smartbarangay-repo reset -q --hard '$SHA'; \
+             SB_REF='$SHA' bash ~/smartbarangay-repo/deploy/hostinger-deploy.sh deploy"
+
+      - name: Remove SSH key
+        if: always()
+        run: rm -f ~/.ssh/deploy_key
