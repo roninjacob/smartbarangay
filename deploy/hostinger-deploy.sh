@@ -49,6 +49,7 @@ EXCLUDES=(
     --exclude=/node_modules/ --exclude=/vendor/ --exclude=/storage/ --exclude=/bootstrap/cache/
     --exclude=/.env --exclude='/.env.*' --exclude=/public/hot
 )
+# Server-only access rules (e.g. public_html/build/.htaccess) are never deleted or replaced.
 PUBLIC_EXCLUDES=(--exclude=/index.php --exclude=/.htaccess --exclude=/build/ --exclude=/hot)
 
 say() { printf '\n== %s\n' "$*"; }
@@ -109,7 +110,7 @@ show_changes() {
     rsync -rlcn --itemize-changes "${EXCLUDES[@]}" "$REPO/" "$APP/" | grep -v '/$' || echo "(none)"
     say "Public files that will be added or replaced"
     rsync -rlcn --itemize-changes "${PUBLIC_EXCLUDES[@]}" "$REPO/public/" "$PUB/" | grep -v '/$' || echo "(none)"
-    rsync -rlcn --itemize-changes --delete "$REPO/public/build/" "$PUB/build/" | grep -v '/$' | sed 's#^#build/ #' || true
+    rsync -rlcn --itemize-changes --delete --exclude=/.htaccess "$REPO/public/build/" "$PUB/build/" | grep -v '/$' | sed 's#^#build/ #' || true
     cmp -s "$REPO/public/.htaccess" "$PUB/.htaccess" \
         || warn "public_html/.htaccess differs from public/.htaccess in Git. It is NOT replaced automatically; review it by hand."
     say "Application files on the server that are no longer in Git (left in place)"
@@ -195,7 +196,7 @@ deploy() {
     rsync -rlc --backup --backup-dir="$BK/public_html" "${PUBLIC_EXCLUDES[@]}" "$REPO/public/" "$PUB/"
     [ -d "$PUB/build" ] && cp -a "$PUB/build" "$BK/public_html-build"
     mkdir -p "$PUB/build"
-    rsync -rlc --delete "$REPO/public/build/" "$PUB/build/"
+    rsync -rlc --delete --exclude=/.htaccess "$REPO/public/build/" "$PUB/build/"
 
     say "Rebuilding caches"
     (cd "$APP" && "$PHP" artisan optimize:clear && "$PHP" artisan optimize)
@@ -217,7 +218,7 @@ rollback() {
     trap '(cd "$APP" && "$PHP" artisan up >/dev/null 2>&1) || true' EXIT
     [ -d "$bk/app" ] && rsync -rlc "$bk/app/" "$APP/"
     [ -d "$bk/public_html" ] && rsync -rlc "$bk/public_html/" "$PUB/"
-    [ -d "$bk/public_html-build" ] && rsync -rlc --delete "$bk/public_html-build/" "$PUB/build/"
+    [ -d "$bk/public_html-build" ] && rsync -rlc --delete --exclude=/.htaccess "$bk/public_html-build/" "$PUB/build/"
     (cd "$APP" && "$PHP" artisan optimize:clear && "$PHP" artisan optimize)
     (cd "$APP" && "$PHP" artisan up)
     trap - EXIT
