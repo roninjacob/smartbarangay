@@ -90,8 +90,9 @@
                         <button type="submit" class="btn btn-primary w-100 mt-2" data-saving-label="Saving…">{{ $status === ReservationStatus::ReadyForPickup ? 'Mark Completed' : 'Update status' }}</button>
                     </form>
                     @if($status === ReservationStatus::Approved)
-                        <div class="modal fade" id="ready-confirmation-modal" tabindex="-1" aria-labelledby="ready-modal-heading" aria-hidden="true">
-                            <div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-header"><h3 class="modal-title h5" id="ready-modal-heading">Mark this request as Ready for Pickup?</h3><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+                        @push('modals')
+                        <div class="modal fade reservation-confirmation" id="ready-confirmation-modal" tabindex="-1" aria-labelledby="ready-modal-heading" aria-hidden="true">
+                            <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable"><div class="modal-content"><div class="modal-header"><h3 class="modal-title h5" id="ready-modal-heading">Mark this request as Ready for Pickup?</h3><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
                                 <div class="modal-body">
                                     @if(! $hasPreparedCertificate)
                                         <p class="alert alert-warning">No prepared certificate/document was found for this request. Confirm that the certificate was prepared manually before continuing.</p>
@@ -102,6 +103,7 @@
                                 <div class="modal-footer"><button class="btn btn-outline-secondary" type="button" data-bs-dismiss="modal">Cancel</button><button class="btn btn-primary" type="button" data-ready-continue>{{ $hasPreparedCertificate ? 'Confirm Ready for Pickup' : 'Continue Anyway' }}</button></div>
                             </div></div>
                         </div>
+                        @endpush
                     @endif
                 @endif
             </div>

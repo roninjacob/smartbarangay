@@ -13,13 +13,15 @@
     </form>
     </div>
 </section>
-<div class="modal fade" id="reservation-cancel-confirmation" tabindex="-1" aria-labelledby="cancel-confirmation-heading" aria-describedby="cancel-confirmation-description" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered"><section class="modal-content">
+@push('modals')
+<div class="modal fade reservation-confirmation" id="reservation-cancel-confirmation" tabindex="-1" aria-labelledby="cancel-confirmation-heading" aria-describedby="cancel-confirmation-description" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable"><section class="modal-content">
         <div class="modal-header"><h2 id="cancel-confirmation-heading" class="modal-title fs-5">Cancel this request?</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close cancellation confirmation"></button></div>
         <div class="modal-body"><p id="cancel-confirmation-description" class="mb-0">This Pending request will stop processing. Your reservation and cancellation reason will remain in its history.</p></div>
         <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Keep reservation</button><button type="button" class="btn btn-danger" data-cancellation-confirm>Confirm cancellation</button></div>
     </section></div>
 </div>
+@endpush
 @elseif($errors->has('reason'))
     <div class="alert alert-danger mt-3" role="alert">{{ $errors->first('reason') }}</div>
 @endif
