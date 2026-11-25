@@ -60,9 +60,14 @@ class ReservationController extends Controller
                 app(ReservationFollowups::class)->filter($query, $filter);
             })
             ->latest()->orderByDesc('id')->paginate(10)->appends($filters);
+        // Only the Past appointment list offers "Mark as missed"; null means the action is available for that row.
+        $markMissed = ($filters['followup'] ?? null) === 'past_appointment'
+            ? $reservations->getCollection()->mapWithKeys(fn (Reservation $row) => [$row->id => app(ReservationFollowups::class)->markMissedBlock($row)])->all()
+            : [];
 
         return view('admin.reservations.index', [...$this->shellData('Reservations'),
-            'overview' => $overview, 'reservations' => $reservations, 'filters' => $filters, 'statuses' => ReservationStatus::cases()]);
+            'overview' => $overview, 'reservations' => $reservations, 'filters' => $filters, 'statuses' => ReservationStatus::cases(),
+            'markMissed' => $markMissed]);
     }
 
     public function show(Reservation $reservation, CertificatePreparationState $documents, GeneratedReservationDocuments $generated): View

@@ -182,6 +182,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/reservations/{reservation}/check-in', [ReservationCheckInController::class, 'store'])->whereNumber('reservation')->name('reservations.check-in.store');
         Route::post('/reservations/{reservation}/cancellation-requests/{cancellation}/review', [ReservationFollowupController::class, 'reviewCancellation'])->whereNumber(['reservation', 'cancellation'])->middleware('throttle:10,1')->name('reservations.cancellation-requests.review');
         Route::post('/reservations/{reservation}/missed-appointment', [ReservationFollowupController::class, 'missed'])->whereNumber('reservation')->middleware('throttle:10,1')->name('reservations.missed.store');
+        Route::post('/reservations/{reservation}/mark-missed', [ReservationFollowupController::class, 'markMissed'])->whereNumber('reservation')->middleware('throttle:10,1')->name('reservations.mark-missed.store');
         Route::get('/reservations/{reservation}/certificate/print', [ReservationDocumentController::class, 'print'])->whereNumber('reservation')->name('reservations.document.print');
         Route::get('/certificates/print/{token}', [CertificatePrintController::class, 'show'])->where('token', '[A-Za-z0-9]{40}')->name('certificates.print.show');
         Route::get('/certificates/print/{token}/pdf', [CertificatePrintController::class, 'pdf'])->where('token', '[A-Za-z0-9]{40}')->name('certificates.print.pdf');

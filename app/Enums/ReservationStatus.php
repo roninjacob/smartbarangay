@@ -45,7 +45,7 @@ enum ReservationStatus: string
             self::ReadyForPickup => 'Your document is ready for pickup. Contact the Barangay Calayo office for collection guidance.',
             self::Completed => 'Your request has been completed.',
             self::Rejected => 'Your request was rejected. Contact the Barangay Calayo office for clarification and next steps.',
-            self::Cancelled => 'You cancelled this request. It will no longer be processed. You may submit a new reservation if needed.',
+            self::Cancelled => 'This request was cancelled. It will no longer be processed. You may submit a new reservation if needed.',
         };
     }
 

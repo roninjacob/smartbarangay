@@ -16,6 +16,8 @@ use Illuminate\Validation\ValidationException;
 
 class ReservationFollowups
 {
+    public const MISSED = 'Missed appointment';
+
     public function filter(Builder $query, ?string $filter): void
     {
         if ($filter === 'cancellation') {
@@ -92,13 +94,7 @@ class ReservationFollowups
                 if ($reason = $this->cancellationBlock($reservation)) {
                     $this->reject($reason);
                 }
-                $previous = $reservation->status;
-                $reservation->update(['status' => ReservationStatus::Cancelled]);
-                $history = $reservation->statusHistories()->create([
-                    'from_status' => $previous, 'to_status' => ReservationStatus::Cancelled,
-                    'changed_by' => $admin->id, 'notes' => $message, 'resident_message' => $message, 'changed_at' => now('UTC'),
-                ]);
-                app(ReservationNotifications::class)->record('cancelled', $reservation, $history);
+                $this->cancel($admin, $reservation, $message, $message);
             }
             $request->update(['status' => $decision, 'open_reservation_id' => null,
                 'reviewed_by' => $admin->id, 'decision_message' => $message, 'reviewed_at' => now('UTC')]);
@@ -149,6 +145,67 @@ class ReservationFollowups
 
             return $reservation->attendanceReview()->create(['recorded_by' => $admin->id, 'notes' => $notes, 'recorded_at' => now('UTC')]);
         });
+    }
+
+    /** Why "Mark as missed" is unavailable, or null when the admin may record the missed visit and cancel. */
+    public function markMissedBlock(Reservation $reservation): ?string
+    {
+        if ($reservation->status !== ReservationStatus::ReadyForPickup) {
+            return 'Available only for a Ready for Pickup request.';
+        }
+        if (app(GeneratedReservationDocuments::class)->checkedIn($reservation)) {
+            return 'Check-in is already recorded.';
+        }
+        $end = $this->appointmentEnd($reservation);
+        if (! $end) {
+            return 'This request has no preserved appointment.';
+        }
+        if ($end->greaterThanOrEqualTo(now('Asia/Manila'))) {
+            return 'Available after the appointment ends.';
+        }
+        $readyAt = $reservation->statusHistories()->where('to_status', ReservationStatus::ReadyForPickup)->min('changed_at');
+        if (! $readyAt || CarbonImmutable::parse($readyAt, 'UTC')->greaterThan($end->utc())) {
+            return 'It was not ready before the appointment ended.';
+        }
+        if ($reservation->payment()->exists()) {
+            return 'A payment is recorded.';
+        }
+        if ($reservation->document()->exists()) {
+            return 'A finalized certificate exists.';
+        }
+
+        return null;
+    }
+
+    /** Records the missed appointment (once) and cancels the request in one transaction. */
+    public function markMissed(User $admin, int $reservationId, string $expectedStatus): void
+    {
+        DB::transaction(function () use ($admin, $reservationId, $expectedStatus) {
+            app(AccountEligibility::class)->lock($admin, UserRole::Admin);
+            $reservation = Reservation::lockForUpdate()->findOrFail($reservationId);
+            if ($reservation->status->value !== $expectedStatus) {
+                $this->reject('The request status changed. Reload the request.');
+            }
+            if ($reason = $this->markMissedBlock($reservation) ?? $this->cancellationBlock($reservation)) {
+                $this->reject($reason);
+            }
+            if (! $reservation->attendanceReview()->exists()) {
+                $reservation->attendanceReview()->create(['recorded_by' => $admin->id, 'notes' => self::MISSED, 'recorded_at' => now('UTC')]);
+            }
+            $this->cancel($admin, $reservation, self::MISSED, self::MISSED);
+        });
+    }
+
+    // Shared cancellation step: status, history and the existing "cancelled" notification, inside the caller's locked transaction.
+    private function cancel(User $admin, Reservation $reservation, string $notes, string $residentMessage): void
+    {
+        $previous = $reservation->status;
+        $reservation->update(['status' => ReservationStatus::Cancelled]);
+        $history = $reservation->statusHistories()->create([
+            'from_status' => $previous, 'to_status' => ReservationStatus::Cancelled,
+            'changed_by' => $admin->id, 'notes' => $notes, 'resident_message' => $residentMessage, 'changed_at' => now('UTC'),
+        ]);
+        app(ReservationNotifications::class)->record('cancelled', $reservation, $history);
     }
 
     private function reject(string $message): never

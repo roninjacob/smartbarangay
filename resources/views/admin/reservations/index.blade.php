@@ -52,7 +52,16 @@
                         <td class="rv-cell-service"><span class="reservation-service">{{ $reservation->service->name }}</span></td>
                         <td><time class="rv-time" datetime="{{ $reservation->appointment->date->toDateString() }}">{{ $reservation->appointment->date->format('M j, Y') }}</time><span class="reservation-reference">{{ \Illuminate\Support\Carbon::parse($reservation->appointment->start_time)->format('g:i A') }} – {{ \Illuminate\Support\Carbon::parse($reservation->appointment->end_time)->format('g:i A') }}</span></td>
                         <td><x-reservation-status :status="$reservation->status"/></td>
-                        <td class="rv-row-action"><a href="{{ route('admin.reservations.show', $reservation) }}" class="recent-open" aria-label="View request #{{ $reservation->id }}"><span class="rv-row-label">View request</span><x-app-icon name="arrow"/></a></td>
+                        <td class="rv-row-action">
+                            @if(array_key_exists($reservation->id, $markMissed))
+                                @if($markMissed[$reservation->id] === null)
+                                    <div class="mb-2">@include('admin.reservations.mark-missed', ['compact' => true])</div>
+                                @else
+                                    <p class="app-note text-start mb-2">Mark as missed: {{ $markMissed[$reservation->id] }}</p>
+                                @endif
+                            @endif
+                            <a href="{{ route('admin.reservations.show', $reservation) }}" class="recent-open" aria-label="View request #{{ $reservation->id }}"><span class="rv-row-label">View request</span><x-app-icon name="arrow"/></a>
+                        </td>
                     </tr>
                 @endforeach</tbody>
             </table>

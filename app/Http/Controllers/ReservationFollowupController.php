@@ -34,4 +34,12 @@ class ReservationFollowupController extends Controller
 
         return to_route('admin.reservations.show', $reservation)->with('status', 'Missed appointment confirmed. Processing status, payment, QR and document remain unchanged.');
     }
+
+    public function markMissed(Request $request, Reservation $reservation, ReservationFollowups $followups): RedirectResponse
+    {
+        $data = $request->validate(['expected_status' => ['required', 'string'], 'confirm_mark_missed' => ['required', 'accepted']]);
+        $followups->markMissed($request->user(), $reservation->id, $data['expected_status']);
+
+        return to_route('admin.reservations.show', $reservation)->with('status', 'Marked as missed. The request is cancelled and the slot is free.');
+    }
 }

@@ -10,17 +10,23 @@
     $appointmentEnd = $followupService->appointmentEnd($reservation);
     $pastAppointment = $appointmentEnd && $appointmentEnd->isPast();
     $reviewBlock = $isOffice ? $followupService->attendanceBlock($reservation) : null;
+    $markMissedBlock = $isOffice ? $followupService->markMissedBlock($reservation) : null;
+    $isCancelled = $reservation->status === \App\Enums\ReservationStatus::Cancelled;
 @endphp
 <section class="card dashboard-panel rv-section text-break" aria-labelledby="followup-heading">
     <div class="dashboard-panel-heading"><h2 id="followup-heading"><span class="panel-icon is-gold" aria-hidden="true"><x-app-icon name="calendar"/></span>Appointment &amp; cancellation follow-up</h2></div>
     <div class="rv-section-body">
-    @if($errors->has('followup') || $errors->has('decision_message') || $errors->has('confirm_review') || $errors->has('confirm_request') || $errors->has('confirm_missed'))
+    @if($errors->has('followup') || $errors->has('decision_message') || $errors->has('confirm_review') || $errors->has('confirm_request') || $errors->has('confirm_missed') || $errors->has('confirm_mark_missed'))
         <div class="alert alert-danger" role="alert">{{ $errors->first() }}</div>
     @endif
     @if($attendanceReview)
         <div class="alert {{ $hasArrival ? 'alert-info' : 'alert-warning' }}">
             <strong>{{ $hasArrival ? 'Arrived after a recorded missed appointment.' : 'Missed appointment confirmed by the office.' }}</strong>
+            @if($isCancelled)
+                <p class="mb-0">Recorded {{ $attendanceReview->recorded_at->timezone('Asia/Manila')->format('M j, Y g:i A') }}. The request was cancelled and its slot was released.</p>
+            @else
             <p class="mb-0">Recorded {{ $attendanceReview->recorded_at->timezone('Asia/Manila')->format('M j, Y g:i A') }}. This does not cancel the request or mark it Completed. {{ $hasArrival ? 'The later arrival remains separately recorded.' : 'Contact the office before making a late visit.' }}</p>
+            @endif
             @if($isOffice)<p class="mt-2 mb-0">Office note: {{ $attendanceReview->notes }}</p>@endif
         </div>
     @elseif($pastAppointment && ! $hasArrival && ! in_array($reservation->status, [\App\Enums\ReservationStatus::Completed, \App\Enums\ReservationStatus::Cancelled, \App\Enums\ReservationStatus::Rejected], true))
@@ -28,7 +34,12 @@
     @elseif(! $reservation->hasAppointmentSnapshot())
         <p class="app-note">This legacy request has no preserved appointment snapshot. Its current schedule cannot establish a historical missed appointment.</p>
     @endif
-    @if($isOffice && ! $reviewBlock)
+    @if($isOffice && ! $markMissedBlock)
+        @include('admin.reservations.mark-missed')
+    @elseif($isOffice && $reservation->status === \App\Enums\ReservationStatus::ReadyForPickup)
+        <p class="app-note mt-3">Mark as missed: {{ $markMissedBlock }}</p>
+    @endif
+    @if($isOffice && ! $reviewBlock && $markMissedBlock)
         <form class="mt-3" method="POST" action="{{ route('admin.reservations.missed.store', $reservation) }}" data-service-submit>
             @csrf
             <label class="form-label" for="missed-notes">Office attendance review note (Admin only)</label>
