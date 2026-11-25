@@ -315,7 +315,9 @@ class IotAutomaticScannerTest extends TestCase
         $jpeg = ob_get_clean();
         imagedestroy($image);
         $this->api('/api/iot/v1/preview', $this->frameBody(['image' => base64_encode($jpeg)]))->assertOk();
-        $this->assertSame(320, getimagesizefromstring($this->automatic()->frame($this->browser))[0]);
+        // The camera's own resolution is kept; it is only re-encoded (no 320 px downscale).
+        $stored = getimagesizefromstring($this->automatic()->frame($this->browser));
+        $this->assertSame([640, 480], [$stored[0], $stored[1]]);
         $path = 'iot-preview/'.$this->device->id.'.frame';
         $this->assertStringNotContainsString('JFIF', Storage::disk('local')->get($path));
         $this->travel(2)->seconds();
@@ -506,5 +508,23 @@ class IotAutomaticScannerTest extends TestCase
         $this->assertSame(['denied', 'unknown', false], [$result['outcome'], $result['reason'], $result['valid']]);
         $this->assertArrayNotHasKey('reservation', $result);
         $this->assertSame('review', $this->scannerResult()['reason']);
+    }
+
+    public function test_preview_spacing_and_unchanged_frames_are_cheap_to_confirm(): void
+    {
+        $this->automatic()->connect($this->browser, $this->device->id, true);
+        $this->control()->assertOk()->assertJsonPath('preview', true);
+        $this->api('/api/iot/v1/preview', $this->frameBody())->assertOk();
+        $this->travel(300)->milliseconds();
+        $this->api('/api/iot/v1/preview', $this->frameBody(['sequence' => 2, 'captured_at_ms' => (int) now()->getTimestampMs()]))->assertStatus(409);
+        $this->travel(300)->milliseconds();
+        $this->api('/api/iot/v1/preview', $this->frameBody(['sequence' => 3, 'captured_at_ms' => (int) now()->getTimestampMs()]))->assertOk();
+        $current = $this->automatic()->frameSnapshot($this->browser);
+        $this->assertSame(3, $current['sequence']);
+        $this->assertNotNull($current['jpeg']);
+        $confirmed = $this->automatic()->frameSnapshot($this->browser, 3);
+        $this->assertNull($confirmed['jpeg'], 'An unchanged frame is not sent again.');
+        $this->assertSame(3, $confirmed['sequence']);
+        $this->assertNotNull($this->automatic()->frameSnapshot($this->browser, 2)['jpeg']);
     }
 }

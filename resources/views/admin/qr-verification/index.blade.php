@@ -40,8 +40,11 @@
             <div class="qr-camera-frame iot-camera-viewport" aria-label="Authenticated ESP32-CAM camera preview">
                 <img alt="Recent image from the selected ESP32-CAM" data-iot-preview-image hidden>
                 <div class="qr-camera-placeholder" data-iot-preview-placeholder><x-app-icon name="qr"/><p data-iot-preview-note>Waiting for a scanner</p></div>
+                <div class="iot-scan-guide" data-iot-guide aria-hidden="true" hidden><span></span></div>
                 <span class="iot-live-badge" data-iot-live hidden>Recent snapshot</span>
             </div>
+            <p class="iot-preview-meta" data-iot-preview-meta aria-live="off"></p>
+            <p class="app-note mb-0">Periodic snapshots, not live video. Hold the whole QR flat inside the guide, about 15–25 cm from the camera, with screen brightness up.</p>
             <dl class="iot-scanner-summary"><div><dt>Device activity</dt><dd data-iot-activity>Not connected</dd></div>
                 <div><dt>Latest scan</dt><dd data-iot-latest>No scan received</dd></div></dl>
             <p class="app-note mb-0">The camera opens automatically for your session. Keep the complete ticket QR visible. Each result stays on screen, and on the scanner's lights and display, until you select Done or confirm check-in.</p>

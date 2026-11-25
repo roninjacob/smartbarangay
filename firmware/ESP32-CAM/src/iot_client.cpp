@@ -75,6 +75,8 @@ constexpr uint32_t STANDALONE_RESULT_MS = 15000; // config iot.result.standalone
 constexpr uint32_t RECORDED_RESULT_MS = 4000;    // config iot.result.recorded_seconds
 constexpr uint32_t MAX_RESULT_MS = 120000;       // config iot.result.max_hold_seconds
 constexpr uint32_t CONTROL_IDLE_MS = 5000, CONTROL_RESULT_MS = 1500, CONTROL_RETRY_MS = 1000;
+// Preview snapshots while an Admin views the camera (server accepts one per 500 ms, 90/min).
+constexpr uint32_t PREVIEW_INTERVAL_MS = 800;
 enum class ResultMode : uint8_t { None, Pending, Hold, Standalone, Recorded };
 struct ResultDisplay {
     char eventId[37] = {};
@@ -144,6 +146,8 @@ transport::LogGate diagnosticGate;
 portMUX_TYPE performanceMux = portMUX_INITIALIZER_UNLOCKED;
 QrPerformance qrPerformance;
 std::atomic<uint32_t> previewCopyUs{0}, previewSent{0}, lastDurationMs{0};
+// Preview path diagnostics ([PREVIEW] line): why frames do or do not reach the Admin.
+std::atomic<uint32_t> previewOffered{0}, previewTooLarge{0}, previewFailed{0}, previewBytes{0}, previewUploadMs{0};
 const char *lastCategory = "ok"; // Static allowlisted strings only, owned by transport task.
 void diagnose(const char *operation, const TransportMetrics &metrics, uint64_t began, int http, int tls) {
     if (!diagnosticGate.allow(monotonicMs(), !strcmp(metrics.category, "ok"))) return;
@@ -416,12 +420,21 @@ Reply send(const char *input, size_t inputLength, const char *path, uint64_t acq
     reply.http = http.POST(reinterpret_cast<uint8_t *>(const_cast<char *>(input)), inputLength);
     client.metrics.httpMs = monotonicMs() - httpStarted;
     ResponseBuffer response;
-    if (reply.http == 200 && (http.getSize() > 768 || http.writeToStream(&response) < 0)) {
-        http.end(); client.stop(); client.metrics.category = "http_response_bounds_or_read_failed"; return finish();
+    // Read every bounded body, including small error bodies. HTTPClient would otherwise discard
+    // unread bytes at the raw socket, which breaks the TLS session; a fully read error response
+    // keeps the connection, so an expected 409/422 does not cost a new TLS handshake (internal RAM).
+    bool bodyRead = false;
+    if (reply.http > 0) {
+        bodyRead = http.getSize() <= 768 && http.writeToStream(&response) >= 0;
+        if (reply.http == 200 && !bodyRead) {
+            http.end(); client.stop(); client.metrics.category = "http_response_bounds_or_read_failed"; return finish();
+        }
     }
     http.end();
     if (reply.http != 200 || !clockReady() || monotonicMs() >= client.deadline || WiFi.status() != WL_CONNECTED) {
-        client.stop();
+        const bool applicationAnswer = reply.http > 0 && bodyRead && clockReady() && monotonicMs() < client.deadline
+            && WiFi.status() == WL_CONNECTED;
+        if (!applicationAnswer) client.stop();
         if (!strcmp(client.metrics.category, "ok")) {
             client.metrics.category = reply.http > 0 ? "application_http_error"
                 : reply.http == HTTPC_ERROR_READ_TIMEOUT ? "http_read_timeout" : "http_connection_failed";
@@ -612,9 +625,14 @@ void worker(void *) {
                     if (mbedtls_base64_encode(reinterpret_cast<unsigned char *>(json + prefixLength), capacity - prefixLength,
                             &length, frame.bytes, frame.length) == 0) {
                         json[prefixLength + length] = '"'; json[prefixLength + length + 1] = '}'; json[prefixLength + length + 2] = 0;
+                        const uint64_t uploadBegan = monotonicMs();
                         const Reply reply = send(json, prefixLength + length + 2, "/api/iot/v1/preview", frame.acquiredMs);
-                        if (reply.http != 200) previewWanted = false;
-                        else ++previewSent;
+                        previewUploadMs = monotonicMs() - uploadBegan;
+                        previewBytes = frame.length;
+                        // 409 means "too soon" or a lease change; keep the preview and let the next
+                        // status decide. Authorization or other failures stop it until then.
+                        if (reply.http == 200) ++previewSent;
+                        else { ++previewFailed; if (reply.http != 409) previewWanted = false; }
                     }
                 } else {
                     TransportMetrics info; info.category = "preview_psram_allocation_failed";
@@ -622,7 +640,7 @@ void worker(void *) {
                     diagnose("preview", info, monotonicMs(), 0, 0);
                 }
                 if (json) { memset(json, 0, capacity); free(json); }
-                nextFrame = monotonicMs() + 1100;
+                nextFrame = monotonicMs() + PREVIEW_INTERVAL_MS;
             }
             memset(frame.bytes, 0, frame.length); free(frame.bytes);
         }
@@ -723,8 +741,10 @@ void sceneEmpty(bool empty) {
 void cameraState(bool ready, bool decoderReady) { cameraOk = ready; decoderOk = decoderReady; }
 void offerFrame(const uint8_t *jpeg, size_t length, uint64_t acquiredMs) {
     static uint64_t lastOffered = 0;
-    if (!frames || !previewWanted || !clockReady() || previewExpires.load() <= utcMs() || length > 32768
-        || monotonicMs() - lastOffered < 1100 || length < 4 || jpeg[0] != 0xff || jpeg[1] != 0xd8) return;
+    if (!frames || !previewWanted || !clockReady() || previewExpires.load() <= utcMs()
+        || monotonicMs() - lastOffered < PREVIEW_INTERVAL_MS || length < 4 || jpeg[0] != 0xff || jpeg[1] != 0xd8) return;
+    previewOffered++;
+    if (length > 32768) { previewTooLarge++; return; }
     // Copy only; no TLS/network, waiting, extra capture, or decoding on the camera task.
     auto *copy = static_cast<uint8_t *>(heap_caps_malloc(length, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT));
     if (!copy) return;
@@ -754,6 +774,15 @@ void tick() {
     const int state = currentStatus.load();
     const ResultDisplay result = resultSnapshot();
     const ResultMode mode = resultVisible(result, millis()) ? result.mode : ResultMode::None;
+    static uint32_t lastPreviewLog = 0, loggedOffered = 0;
+    if (millis() - lastPreviewLog >= 10000 && previewOffered.load() != loggedOffered) {
+        lastPreviewLog = millis();
+        loggedOffered = previewOffered.load();
+        Serial.printf("[PREVIEW] offered=%lu too_large=%lu sent=%lu failed=%lu last_bytes=%lu upload_ms=%lu\n",
+            static_cast<unsigned long>(loggedOffered), static_cast<unsigned long>(previewTooLarge.load()),
+            static_cast<unsigned long>(previewSent.load()), static_cast<unsigned long>(previewFailed.load()),
+            static_cast<unsigned long>(previewBytes.load()), static_cast<unsigned long>(previewUploadMs.load()));
+    }
     if (state != previous || mode != previousMode) {
         // Event ids are server UUIDs, safe for correlation; QR payloads are never logged.
         Serial.printf("[IoT] state=%s result=%s event=%.8s feedback=%u http=%d tls=%d up_s=%lu heap=%lu min_heap=%lu rssi=%d ch=%d\n",

@@ -31,8 +31,15 @@ constexpr uint32_t FRAME_INTERVAL_MS = 125;
 constexpr uint32_t QR_SCAN_INTERVAL_MS = 1000;
 constexpr bool adaptiveScan = !readiness::cameraDiagnostics;
 constexpr bool QR_BENCHMARK_LOG_EACH_SCAN = false;
-constexpr uint32_t QR_EXPERIMENT_INTERVAL_MS = 500;
-constexpr uint32_t QR_FAST_HEADROOM_US = 350000;
+// Fast pacing once half-resolution attempts prove they finish well inside the interval.
+// Measured: half-scale attempts ~425 ms, full VGA ~675 ms. With headroom the next attempt starts
+// 450 ms after the previous one began, i.e. almost back to back.
+constexpr uint32_t QR_EXPERIMENT_INTERVAL_MS = 450;
+constexpr uint32_t QR_FAST_HEADROOM_US = 500000;
+// Most attempts decode the VGA JPEG at 1/2 scale (320x240); every QR_FULL_EVERY-th attempt,
+// and the attempt after a half-scale miss on a located code, uses full VGA for small codes.
+constexpr uint32_t QR_FULL_EVERY = 3;
+constexpr size_t QR_INTERNAL_HEADROOM_BYTES = 16384;
 constexpr uint32_t QR_FAST_REQUIRED_SAMPLES = 20;
 constexpr uint32_t QR_SNAPSHOT_INTERVAL_MS = 1000;
 constexpr uint32_t QR_MIN_YIELD_MS = 20;
@@ -66,9 +73,14 @@ struct QrTimings {
     uint32_t convertUs = 0, grayUs = 0, detectUs = 0, decodeUs = 0;
     uint32_t totalUs = 0, periodMs = 0;
     uint32_t readyUs = 0, completedMs = 0, completionPeriodMs = 0, attempt = 0;
-    bool captured = false, processed = false, decoded = false;
+    uint32_t jpegBytes = 0;
+    bool captured = false, processed = false, decoded = false, full = true, located = false;
 };
 QrTimings qrLastTiming;
+// Per-resolution window for [QRMODE]; reset every diagnostic report.
+struct QrModeStats { uint32_t attempts = 0, located = 0, decodes = 0; uint64_t convertUs = 0, detectUs = 0, totalUs = 0; };
+QrModeStats qrModeStats[2]; // [0] = half 320x240, [1] = full 640x480 (guarded by qrResultMutex)
+uint32_t qrJpegLast = 0, qrJpegMax = 0;
 uint32_t qrTimingSamples = 0;
 int64_t snapshotDeadline = 0;
 bool snapshotTimedOut = false;
@@ -130,7 +142,25 @@ void reportDiagnostics() {
         const uint32_t attempts = qrAttempts, decodes = qrDecodes;
         const QrTimings timing = qrLastTiming;
         const uint32_t samples = qrTimingSamples;
+        const QrModeStats half = qrModeStats[0], full = qrModeStats[1];
+        const uint32_t jpegLast = qrJpegLast, jpegMax = qrJpegMax;
+        qrModeStats[0] = {}; qrModeStats[1] = {}; qrJpegMax = 0;
         xSemaphoreGive(qrResultMutex);
+        for (int i = 0; i < 2; ++i) {
+            const QrModeStats &mode = i ? full : half;
+            if (!mode.attempts) continue;
+            Serial.printf("[QRMODE] res=%s attempts=%lu located=%lu decodes=%lu convert_ms=%.1f detect_ms=%.1f total_ms=%.1f\n",
+                i ? "640x480" : "320x240", static_cast<unsigned long>(mode.attempts), static_cast<unsigned long>(mode.located),
+                static_cast<unsigned long>(mode.decodes), mode.convertUs / 1000.0 / mode.attempts,
+                mode.detectUs / 1000.0 / mode.attempts, mode.totalUs / 1000.0 / mode.attempts);
+        }
+        Serial.printf("[QRJPEG] last_bytes=%lu max_bytes=%lu internal_free=%lu internal_min=%lu internal_largest=%lu psram_free=%lu psram_largest=%lu\n",
+            static_cast<unsigned long>(jpegLast), static_cast<unsigned long>(jpegMax),
+            static_cast<unsigned long>(heap_caps_get_free_size(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)),
+            static_cast<unsigned long>(heap_caps_get_minimum_free_size(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)),
+            static_cast<unsigned long>(heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)),
+            static_cast<unsigned long>(heap_caps_get_free_size(MALLOC_CAP_SPIRAM)),
+            static_cast<unsigned long>(heap_caps_get_largest_free_block(MALLOC_CAP_SPIRAM)));
         Serial.printf("[QRDIAG] active=%d requested=%d attempts=%lu decodes=%lu worker_stack_free=%u\n",
             qrActive.load(), qrRequested.load(), static_cast<unsigned long>(attempts),
             static_cast<unsigned long>(decodes), qrTask ? static_cast<unsigned int>(uxTaskGetStackHighWaterMark(qrTask)) : 0);
@@ -492,16 +522,36 @@ void recordQrTiming(QrTimings timing, int64_t started) {
     timing.completedMs = millis();
     deviceiot::recordQrAttempt({timing.captureUs, timing.convertUs, timing.grayUs, timing.detectUs,
         timing.decodeUs, timing.totalUs, timing.captured, timing.decoded});
-    const bool headroom = timing.processed && timing.totalUs <= QR_FAST_HEADROOM_US &&
-        ESP.getFreeHeap() >= 65536 && uxTaskGetStackHighWaterMark(nullptr) >= 4096;
-    const uint32_t good = headroom ? qrHeadroomSamples.load() + 1 : 0;
-    qrHeadroomSamples = good > QR_FAST_REQUIRED_SAMPLES ? QR_FAST_REQUIRED_SAMPLES : good;
-    qrCurrentIntervalMs = adaptiveScan && qrHeadroomSamples >= QR_FAST_REQUIRED_SAMPLES ? QR_EXPERIMENT_INTERVAL_MS : QR_SCAN_INTERVAL_MS;
+    // Headroom is judged on the common half-scale attempts; periodic full-VGA attempts neither
+    // count nor reset it. Memory health uses internal RAM, not PSRAM-inflated totals.
+    if (!timing.full || !timing.processed) {
+        const bool headroom = timing.processed && timing.totalUs <= QR_FAST_HEADROOM_US
+            && heap_caps_get_free_size(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT) >= QR_INTERNAL_HEADROOM_BYTES
+            && uxTaskGetStackHighWaterMark(nullptr) >= 4096;
+        // Hysteresis: one slow attempt (for example during a TLS handshake) costs 5 points, so
+        // fast pacing ends only after repeated slow attempts, not on a single outlier.
+        const uint32_t current = qrHeadroomSamples.load();
+        const uint32_t next = headroom ? current + 1 : (current > 5 ? current - 5 : 0);
+        qrHeadroomSamples = next > QR_FAST_REQUIRED_SAMPLES ? QR_FAST_REQUIRED_SAMPLES : next;
+    }
+    static bool fastPacing = false;
+    if (qrHeadroomSamples >= QR_FAST_REQUIRED_SAMPLES) fastPacing = true;
+    else if (qrHeadroomSamples < QR_FAST_REQUIRED_SAMPLES / 2) fastPacing = false;
+    qrCurrentIntervalMs = adaptiveScan && fastPacing ? QR_EXPERIMENT_INTERVAL_MS : QR_SCAN_INTERVAL_MS;
     xSemaphoreTake(qrResultMutex, portMAX_DELAY);
     timing.completionPeriodMs = qrCompletedAt ? timing.completedMs - qrCompletedAt : 0;
     qrCompletedAt = timing.completedMs;
     qrLastTiming = timing;
     qrTimingSamples++;
+    if (timing.processed) {
+        QrModeStats &mode = qrModeStats[timing.full ? 1 : 0];
+        mode.attempts++;
+        mode.decodes += timing.decoded ? 1 : 0;
+        mode.located += timing.located ? 1 : 0;
+        mode.convertUs += timing.convertUs; mode.detectUs += timing.detectUs; mode.totalUs += timing.totalUs;
+    }
+    qrJpegLast = timing.jpegBytes;
+    if (timing.jpegBytes > qrJpegMax) qrJpegMax = timing.jpegBytes;
     xSemaphoreGive(qrResultMutex);
     if (QR_BENCHMARK_LOG_EACH_SCAN) {
         Serial.printf("[QRBENCH] session=%lu attempt=%lu completed_ms=%lu total_us=%lu capture_us=%lu convert_us=%lu gray_us=%lu detect_us=%lu decode_us=%lu ready_us=%lu decoded=%d captured=%d\n",
@@ -514,7 +564,10 @@ void recordQrTiming(QrTimings timing, int64_t started) {
 }
 
 void qrWorker(void *) {
-    quirc *decoder = nullptr;
+    quirc *decoder = nullptr;      // 640x480
+    quirc *halfDecoder = nullptr;  // 320x240, reused every half-scale attempt
+    uint32_t attemptIndex = 0;
+    bool forceFull = false;
     quirc_code *code = nullptr;
     quirc_data *data = nullptr;
     JpegLuminance *converter = nullptr;
@@ -522,6 +575,7 @@ void qrWorker(void *) {
     uint32_t previousAttempt = 0;
     auto releaseDecoder = [&]() {
         if (decoder) { quirc_destroy(decoder); decoder = nullptr; }
+        if (halfDecoder) { quirc_destroy(halfDecoder); halfDecoder = nullptr; }
         free(code); code = nullptr;
         free(data); data = nullptr;
         free(converter); converter = nullptr;
@@ -548,6 +602,7 @@ void qrWorker(void *) {
             if (enterQr) {
                 setQrMessage("Switching to VGA QR capture; please wait.");
                 decoder = quirc_new();
+                halfDecoder = quirc_new();
                 code = static_cast<quirc_code *>(heap_caps_calloc(1, sizeof(quirc_code), MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT));
                 data = static_cast<quirc_data *>(heap_caps_calloc(1, sizeof(quirc_data), MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT));
                 converter = static_cast<JpegLuminance *>(heap_caps_malloc(sizeof(JpegLuminance), MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT));
@@ -556,7 +611,8 @@ void qrWorker(void *) {
                     qrSnapshot = static_cast<uint8_t *>(heap_caps_malloc(128 * 1024, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT));
                 }
                 xSemaphoreGive(snapshotMutex);
-                if (!decoder || !code || !data || !converter || (readiness::cameraDiagnostics && !qrSnapshot) || quirc_resize(decoder, 640, 480) < 0) {
+                if (!decoder || !halfDecoder || !code || !data || !converter || (readiness::cameraDiagnostics && !qrSnapshot)
+                    || quirc_resize(decoder, 640, 480) < 0 || quirc_resize(halfDecoder, 320, 240) < 0) {
                     setQrMessage("Insufficient QR workspace memory. Returning to preview.");
                     releaseDecoder();
                     qrRequested = false;
@@ -588,6 +644,8 @@ void qrWorker(void *) {
             modeSwitching = false;
             lastScan = millis();
             previousAttempt = 0;
+            attemptIndex = 0;
+            forceFull = false;
             qrHeadroomSamples = 0;
             qrCurrentIntervalMs = QR_SCAN_INTERVAL_MS;
             lastPublished = 0;
@@ -627,6 +685,10 @@ void qrWorker(void *) {
             timing.attempt = qrAttempts;
             xSemaphoreGive(qrResultMutex);
             bool converted = false;
+            const bool full = forceFull || attemptIndex++ % QR_FULL_EVERY == 0;
+            quirc *active = full ? decoder : halfDecoder;
+            timing.full = full;
+            timing.jpegBytes = frame ? frame->len : 0;
             if (valid) {
                 // Optional publication never waits for an HTTP reader. Recognition
                 // keeps running if the cache is busy; the page retains its last image.
@@ -645,7 +707,7 @@ void qrWorker(void *) {
                     } else { qrSnapshotsSkipped++; }
                 }
                 const int64_t convertStarted = esp_timer_get_time();
-                converted = converter->decode(frame->buf, frame->len, quirc_begin(decoder, nullptr, nullptr), frame->width, frame->height);
+                converted = converter->decode(frame->buf, frame->len, quirc_begin(active, nullptr, nullptr), frame->width, frame->height, full ? 0 : 1);
                 timing.convertUs = static_cast<uint32_t>(esp_timer_get_time() - convertStarted);
             }
             if (frame) { deviceiot::offerFrame(frame->buf, frame->len, transportAcquiredMs); esp_camera_fb_return(frame); }
@@ -657,15 +719,18 @@ void qrWorker(void *) {
                 continue;
             }
             const int64_t detectStarted = esp_timer_get_time();
-            quirc_end(decoder);
+            quirc_end(active);
             timing.detectUs = static_cast<uint32_t>(esp_timer_get_time() - detectStarted);
             timing.processed = true;
-            const int count = quirc_count(decoder);
-            deviceiot::sceneEmpty(count == 0);
+            const int count = quirc_count(active);
+            timing.located = count > 0;
+            // Only a full-resolution miss proves the scene is empty: a half-scale miss may just be a
+            // small code, and counting it would re-arm a ticket that is still in view.
+            if (full || count) deviceiot::sceneEmpty(count == 0);
             setQrMessage(count ? "QR located; attempting decode." : "No QR found. Adjust distance, focus and lighting.");
             for (int i = 0; i < count; ++i) {
                 const int64_t decodeStarted = esp_timer_get_time();
-                quirc_extract(decoder, i, code);
+                quirc_extract(active, i, code);
                 quirc_decode_error_t error = quirc_decode(code, data);
                 if (error == QUIRC_ERROR_DATA_ECC) {
                     quirc_flip(code);
@@ -694,6 +759,8 @@ void qrWorker(void *) {
                 }
                 break; // First successfully decoded code per capture is enough for feasibility.
             }
+            // A located but unreadable half-scale code gets a full-resolution attempt next.
+            forceFull = !full && count > 0 && !timing.decoded;
             recordQrTiming(timing, attemptStarted);
             xSemaphoreGive(cameraMutex);
         }

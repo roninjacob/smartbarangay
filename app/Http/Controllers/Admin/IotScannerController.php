@@ -63,9 +63,11 @@ class IotScannerController extends Controller
 
     public function frame(Request $request, IotAutomaticScanner $scanner): Response
     {
-        $frame = $scanner->frameSnapshot($request);
+        // Optional: the sequence the page already shows. An unchanged frame returns 204 with fresh age.
+        $known = $request->header('X-SB-Frame-After');
+        $frame = $scanner->frameSnapshot($request, is_string($known) && ctype_digit($known) && strlen($known) <= 10 ? (int) $known : null);
 
-        return response($frame['jpeg'])->header('X-SB-Frame-Age-Ms', (string) $frame['age_ms'])
+        return response($frame['jpeg'] ?? '', $frame['jpeg'] === null ? 204 : 200)->header('X-SB-Frame-Age-Ms', (string) $frame['age_ms'])
             ->header('X-SB-Frame-Sequence', (string) $frame['sequence'])->header('Content-Type', 'image/jpeg')
             ->header('Cache-Control', 'private, no-store')->header('X-Content-Type-Options', 'nosniff')
             ->header('Referrer-Policy', 'no-referrer');

@@ -12,6 +12,19 @@ if (root) {
     const delivered = new Set();
     let pollTimer, frameTimer, expiryTimer, frameUrl;
     let frameSequence;
+    // Freshness of the image on screen: device capture age when received, and when that was.
+    let frameAge = 0, frameShownAt, freshnessTimer;
+    const STALE_MS = 2500;
+    const describeFreshness = () => {
+        const image = node('preview-image');
+        if (image.hidden || frameShownAt === undefined) { node('preview-meta').textContent = ''; return; }
+        const age = frameAge + performance.now() - frameShownAt;
+        const stale = age >= STALE_MS;
+        node('live').textContent = stale ? 'Stale snapshot' : 'Recent snapshot';
+        node('live').classList.toggle('is-stale', stale);
+        node('preview-meta').textContent = `Snapshot ${image.naturalWidth}×${image.naturalHeight} · ${(age / 1000).toFixed(1)} s old`
+            + (stale ? ' · waiting for a newer image' : '');
+    };
     let mutations = Promise.resolve();
     const reads = new Set();
     root.dataset.scannerMode = 'laptop';
@@ -51,12 +64,17 @@ if (root) {
     };
     const clearImage = (text) => {
         clearTimeout(expiryTimer);
+        clearInterval(freshnessTimer);
+        freshnessTimer = undefined;
+        frameShownAt = undefined;
+        node('preview-meta').textContent = '';
         if (frameUrl) URL.revokeObjectURL(frameUrl);
         frameUrl = undefined;
         frameSequence = undefined;
         node('preview-image').hidden = true;
         node('preview-image').removeAttribute('src');
         node('live').hidden = true;
+        node('guide').hidden = true;
         node('preview-placeholder').hidden = false;
         node('preview-note').textContent = text;
     };
@@ -87,12 +105,24 @@ if (root) {
         const timeout = setTimeout(() => controller.abort(), 6000);
         const began = performance.now();
         try {
+            // Name the frame already on screen: an unchanged frame is confirmed with 204, not re-sent.
+            const headers = { Accept: 'image/jpeg' };
+            if (frameSequence && frameUrl) headers['X-SB-Frame-After'] = frameSequence;
             const response = await fetch(`${root.dataset.iotUrl}/frame`, {
-                credentials: 'same-origin', cache: 'no-store', headers: { Accept: 'image/jpeg' }, signal: controller.signal,
+                credentials: 'same-origin', cache: 'no-store', headers, signal: controller.signal,
             });
             if (!isCurrent(current) || !online) return;
             if (response.status === 404) {
                 clearImage('Waiting for a recent image from the scanner');
+            } else if (response.status === 204) {
+                const age = Number(response.headers.get('X-SB-Frame-Age-Ms'));
+                if (!Number.isFinite(age) || age < 0 || age >= 5000) throw new Error('Image expired');
+                frameAge = age;
+                frameShownAt = performance.now();
+                const remaining = 5000 - age;
+                clearTimeout(expiryTimer);
+                expiryTimer = setTimeout(() => clearImage('Image expired. Waiting for the next frame'), remaining);
+                describeFreshness();
             } else {
                 if (!response.ok || !response.headers.get('content-type')?.startsWith('image/jpeg')) throw new Error('Preview unavailable');
                 const age = Number(response.headers.get('X-SB-Frame-Age-Ms'));
@@ -100,7 +130,7 @@ if (root) {
                 const sequence = response.headers.get('X-SB-Frame-Sequence');
                 if (sequence && sequence === frameSequence && frameUrl) return;
                 const blob = await response.blob();
-                if (blob.size > 32768 || !isCurrent(current) || !online) return;
+                if (blob.size > 65536 || !isCurrent(current) || !online) return;
                 const nextUrl = URL.createObjectURL(blob);
                 const nextImage = new Image();
                 nextImage.src = nextUrl;
@@ -119,6 +149,11 @@ if (root) {
                 image.hidden = false;
                 node('preview-placeholder').hidden = true;
                 node('live').hidden = false;
+                node('guide').hidden = false;
+                frameAge = age + (performance.now() - began);
+                frameShownAt = performance.now();
+                describeFreshness();
+                if (!freshnessTimer) freshnessTimer = setInterval(describeFreshness, 500);
                 expiryTimer = setTimeout(() => clearImage('Image expired. Waiting for the next frame'), remaining);
             }
         } catch (error) {
@@ -127,7 +162,8 @@ if (root) {
             clearTimeout(timeout);
             reads.delete(controller);
             frameRunning = false;
-            if (isCurrent(current) && online) frameTimer = setTimeout(() => { frameTimer = undefined; void frame(current); }, 1200);
+            // The scanner uploads about every 0.8 s; checking every 0.6 s costs little thanks to 204.
+            if (isCurrent(current) && online) frameTimer = setTimeout(() => { frameTimer = undefined; void frame(current); }, 600);
         }
     };
     const date = (value) => value ? new Date(value).toLocaleString() : 'Not reported';

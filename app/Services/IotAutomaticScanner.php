@@ -20,6 +20,14 @@ class IotAutomaticScanner
 {
     public const FRAME_BYTES = 32768;
 
+    // Stored preview after re-encoding at the camera's own resolution (no downscaling).
+    public const STORED_FRAME_BYTES = 65536;
+
+    public const PREVIEW_QUALITY = 82;
+
+    // Smallest accepted spacing between uploads; the scanner sends one about every 0.8 s.
+    public const PREVIEW_MIN_SPACING_MS = 500;
+
     private function device(Request $request): IotDevice
     {
         $device = IotDevice::lockForUpdate()->find($request->attributes->get('iot_device_id'));
@@ -202,18 +210,17 @@ class IotAutomaticScanner
         abort_unless(is_string($jpeg) && strlen($jpeg) <= self::FRAME_BYTES, 422);
         $size = @getimagesizefromstring($jpeg);
         abort_unless($size && $size[2] === IMAGETYPE_JPEG && $size[0] <= 640 && $size[1] <= 480, 422);
-        // Re-encode bounded pixels to strip EXIF/extra segments; only low-resolution output survives.
+        // Re-encode the bounded pixels to strip metadata and any non-image segments. The camera's
+        // own resolution (at most 640x480) is kept: downscaling to 320 px at quality 55 and then
+        // enlarging in the browser was what made the preview look heavily pixelated.
         abort_unless(function_exists('imagecreatefromstring'), 503);
         $image = @imagecreatefromstring($jpeg);
         abort_unless($image, 422);
-        $small = imagescale($image, min(320, $size[0]));
-        imagedestroy($image);
-        abort_unless($small, 422);
         ob_start();
-        imagejpeg($small, null, 55);
+        imagejpeg($image, null, self::PREVIEW_QUALITY);
         $clean = ob_get_clean();
-        imagedestroy($small);
-        abort_unless(is_string($clean) && strlen($clean) <= self::FRAME_BYTES, 422);
+        imagedestroy($image);
+        abort_unless(is_string($clean) && strlen($clean) <= self::STORED_FRAME_BYTES, 422);
 
         return DB::transaction(function () use ($request, $body, $clean) {
             $device = $this->device($request);
@@ -228,7 +235,8 @@ class IotAutomaticScanner
             $state = IotDeviceState::find($device->id);
             abort_unless($state && $state->boot_id === $body['boot_id'], 409);
             if ($state->frame_lease === $lease->id) {
-                abort_if($body['sequence'] <= $state->frame_sequence || $state->frame_at?->gt(now()->subSecond()), 409);
+                abort_if($body['sequence'] <= $state->frame_sequence
+                    || ($state->frame_at && now()->getTimestampMs() - $state->frame_at->getTimestampMs() < self::PREVIEW_MIN_SPACING_MS), 409);
             }
             abort_unless(Storage::disk('local')->put($this->framePath($device->id), Crypt::encryptString(base64_encode($clean))), 503);
             $state->forceFill(['frame_at' => now('UTC'), 'frame_captured_ms' => $body['captured_at_ms'], 'frame_sequence' => $body['sequence'], 'frame_lease' => $lease->id,
@@ -243,9 +251,9 @@ class IotAutomaticScanner
         return $this->frameSnapshot($request)['jpeg'];
     }
 
-    public function frameSnapshot(Request $request): array
+    public function frameSnapshot(Request $request, ?int $known = null): array
     {
-        return DB::transaction(function () use ($request) {
+        return DB::transaction(function () use ($request, $known) {
             [$device, $lease] = $this->browserLease($request);
             $state = IotDeviceState::find($device->id);
             abort_unless($lease->preview_until?->isFuture() && $state?->frame_lease === $lease->id
@@ -253,9 +261,15 @@ class IotAutomaticScanner
             $age = now()->getTimestampMs() - ($state->frame_captured_ms ?? 0);
             abort_unless($age >= 0 && $age < 5000, 404);
 
+            $sequence = (int) $state->frame_sequence;
+            $ageMs = max($age, now()->getTimestampMs() - $state->frame_at->getTimestampMs());
+            // The browser already shows this frame: confirm freshness without sending it again.
+            if ($known !== null && $known === $sequence) {
+                return ['jpeg' => null, 'age_ms' => $ageMs, 'sequence' => $sequence];
+            }
+
             return ['jpeg' => base64_decode(Crypt::decryptString(Storage::disk('local')->get($this->framePath($device->id))), true),
-                'age_ms' => max($age, now()->getTimestampMs() - $state->frame_at->getTimestampMs()),
-                'sequence' => $state->frame_sequence];
+                'age_ms' => $ageMs, 'sequence' => $sequence];
         });
     }
 

@@ -25,11 +25,12 @@ function harness({ poll = {}, frameStatus = 200, frameAge = '0' } = {}) {
         Option: function (text, value) { this.text = text; this.value = value; },
         Event: class { constructor(type) { this.type = type; } }, CustomEvent: class { constructor(type, options) { this.type = type; this.detail = options.detail; } },
         setTimeout(callback, delay) { const id = ++sequence; timers.set(id, { callback, delay }); return id; },
-        clearTimeout(id) { timers.delete(id); }, fetch: async (url, options) => {
+        clearTimeout(id) { timers.delete(id); }, setInterval: () => 0, clearInterval() {}, fetch: async (url, options) => {
             requests.push({ url, options }); const path = url.split('/').pop();
             const data = path === 'devices' ? { devices: [{ id: 'synthetic-device', name: 'Test device', available: true }] }
                 : path === 'poll' ? { state: 'connected', online: true, device: 'Test device', preview: true, ...poll } : { preview: true };
-            return { ok: path === 'frame' ? frameStatus === 200 : true, status: path === 'frame' ? frameStatus : 200,
+            const status = path === 'frame' ? (typeof frameStatus === 'function' ? frameStatus(options) : frameStatus) : 200;
+            return { ok: status >= 200 && status < 300, status,
                 headers: { get: (name) => name === 'X-SB-Frame-Age-Ms' ? frameAge : name === 'X-SB-Frame-Sequence' ? '1' : 'image/jpeg' }, blob: async () => ({ size: 100 }), json: async () => data };
         } });
     return { node, modes, requests, timers, events, document, dispatched };
@@ -115,4 +116,17 @@ test('a refreshed page recovers the active result, and Done acknowledges only th
     assert.deepEqual(pollBodies(h).at(-1), { ack: EVENT });
     await nextPoll(h);
     assert.deepEqual(pollBodies(h).at(-1), {}, 'No renewal after acknowledgment.');
+});
+
+test('an unchanged frame is confirmed with 204 and never downloaded again', async () => {
+    const h = harness({ frameStatus: (options) => options.headers['X-SB-Frame-After'] ? 204 : 200 }); await connect(h);
+    const frames = () => h.requests.filter((r) => r.url.endsWith('/frame'));
+    assert.equal(frames().length, 1);
+    assert.equal(frames()[0].options.headers['X-SB-Frame-After'], undefined);
+    const [id, timer] = [...h.timers].find(([, t]) => t.delay === 600);
+    h.timers.delete(id); await timer.callback(); await flush();
+    assert.equal(frames().length, 2);
+    assert.equal(frames()[1].options.headers['X-SB-Frame-After'], '1');
+    assert.equal(h.node('preview-image').hidden, false, 'The shown image stays while the server confirms it is current.');
+    assert.match(h.node('preview-meta').textContent, /s old/);
 });
