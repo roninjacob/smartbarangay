@@ -96,6 +96,9 @@ std::atomic<uint32_t> lastApiOkAt{0};
 // across power cycles; flash is written only when an accepted value changes.
 std::atomic<bool> scannerOn{true}, restartPending{false};
 std::atomic<uint32_t> controlRevision{0}, restartRevision{0}, restartAt{0};
+// When the scanner was last switched ON: the QR camera restarts then, which is not a fault.
+std::atomic<uint32_t> enabledAt{0};
+constexpr uint32_t ENABLE_SETTLE_MS = 8000;
 void loadControl() {
     Preferences store;
     if (!store.begin("sbctl", true)) return; // never written yet: enabled, revision 0
@@ -567,6 +570,7 @@ void applyControl(const Reply &reply) {
     bool changed = false;
     if (reply.controlRevision != controlRevision.load() || reply.controlEnabled != scannerOn.load()) {
         if (!reply.controlEnabled && scannerOn.load()) { invalidate(); previewWanted = false; }
+        if (reply.controlEnabled && !scannerOn.load()) enabledAt = millis();
         scannerOn = reply.controlEnabled;
         controlRevision = reply.controlRevision;
         changed = true;
@@ -769,6 +773,9 @@ uint8_t feedbackState() {
     const ResultDisplay result = resultSnapshot();
     const bool showing = resultVisible(result, millis());
     if (!showing && !scannerOn.load()) return ScannerOff;
+    // Just switched ON: the decoder is restarting, report Starting rather than a camera fault.
+    const uint32_t onAt = enabledAt.load();
+    if (!showing && onAt && !decoderOk.load() && millis() - onAt < ENABLE_SETTLE_MS) return Starting;
     if (!showing && (!cameraOk.load() || !decoderOk.load())) return CameraError;
     if (showing) {
         if (result.mode == ResultMode::Recorded) return CheckInRecorded;
