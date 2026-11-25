@@ -24,7 +24,7 @@ class CertificatePrintRenderer
 
     public function generatedTicket(Reservation $reservation, User $admin): string
     {
-        abort_unless($reservation->status->canPrepareDocument(), 403);
+        abort_if(app(GeneratedReservationDocuments::class)->printBlock($reservation) !== null, 403);
         $pdf = app(GeneratedReservationDocuments::class)->bytes($reservation);
         $token = Str::random(40);
         $document = $reservation->document()->firstOrFail();
@@ -103,7 +103,9 @@ class CertificatePrintRenderer
         abort_unless(is_array($artifact) && $artifact['owner'] === $admin->id, 404);
         if (isset($artifact['generated_id'])) {
             $reservation = Reservation::find($artifact['reservation_id']);
-            abort_unless($reservation && $reservation->service_id === $artifact['service_id'] && $reservation->status->canPrepareDocument()
+            // The print page re-checks the gate: a token issued earlier cannot outlive the check-in rule.
+            abort_unless($reservation && $reservation->service_id === $artifact['service_id']
+                && app(GeneratedReservationDocuments::class)->printBlock($reservation) === null
                 && $reservation->document?->id === $artifact['generated_id'], 404);
             $bytes = app(GeneratedReservationDocuments::class)->bytes($reservation);
             abort_unless(hash_equals($artifact['source_hash'], hash('sha256', $bytes)), 404);

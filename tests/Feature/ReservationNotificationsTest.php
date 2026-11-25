@@ -22,10 +22,13 @@ use Illuminate\Support\Str;
 use PHPUnit\Framework\Attributes\DataProvider;
 use RuntimeException;
 use Tests\Support\CertificatePdf;
+use Tests\Support\RecordsCheckIn;
 use Tests\TestCase;
 
 class ReservationNotificationsTest extends TestCase
 {
+    use RecordsCheckIn;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -115,6 +118,7 @@ class ReservationNotificationsTest extends TestCase
         $admin = $this->user(UserRole::Admin);
         if ($from === 'ready_for_pickup') {
             app(QrTicketIssuer::class)->issue($r);
+            $this->recordCheckIn($r, $admin->id);
         }
         $this->actingAs($admin);
         $payload = ['resident_message' => $to === 'rejected' ? 'Please submit a readable ID.' : null, 'expected_status' => $from, 'status' => $to, 'notes' => 'INTERNAL SECRET NOTE', 'confirm_ready' => '1'];
@@ -185,6 +189,9 @@ class ReservationNotificationsTest extends TestCase
             $r->forceFill(['fee_snapshot' => '50.00'])->save();
         }
         $admin = $this->user(UserRole::Admin);
+        if ($event === 'completion') {
+            $this->recordCheckIn($r, $admin->id);
+        }
         $before = $r->fresh()->getRawOriginal();
         DatabaseNotification::creating(fn () => throw new RuntimeException('Simulated notification failure'));
         $this->withoutExceptionHandling();
@@ -330,6 +337,7 @@ class ReservationNotificationsTest extends TestCase
         $information = app(ReservationDocumentInformation::class);
         $information->store($r, $template->load('fields'), [], $information->profile($r->user));
         $this->actingAs($admin);
+        $r = $this->recordCheckIn($r, $admin->id);
         $artifact = $this->get(route('admin.reservations.document-preview.show', $r))->assertOk()->viewData('artifact');
         $reviewed = $this->get(route('admin.reservations.document-preview.pdf', [$r, 'preview' => $artifact['token']]))->assertOk()->getContent();
         $this->post(route('admin.reservations.generated.store', $r), ['preview_token' => $artifact['token']])->assertSessionHasNoErrors();
@@ -342,6 +350,6 @@ class ReservationNotificationsTest extends TestCase
         $this->get(route('admin.services.template.download', $service))->assertOk();
         $this->assertDatabaseCount('notifications', 0);
         $this->assertDatabaseCount('reservation_status_histories', 0);
-        $this->assertSame('approved', $r->fresh()->status->value);
+        $this->assertSame('ready_for_pickup', $r->fresh()->status->value);
     }
 }

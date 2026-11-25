@@ -15,6 +15,7 @@
             <a class="btn btn-outline-primary" href="{{ route($documentRole.'.reservations.generated.download', $reservation) }}">Download</a>
             @if($documentRole === 'admin' && $certificateState['can_print'])<a class="btn btn-outline-primary" href="{{ route('admin.reservations.document.print', $reservation) }}">Print Certificate</a>@endif
         </div>
+        @if($documentRole === 'admin' && ($certificateState['print_block'] ?? null))<p class="app-note mt-2 mb-0">Print: {{ $certificateState['print_block'] }}</p>@endif
         @endif
     </div>
 @endif

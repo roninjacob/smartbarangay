@@ -19,10 +19,13 @@ use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Component\HttpKernel\Exception\TooManyRequestsHttpException;
 use Tests\Support\CertificatePdf;
+use Tests\Support\RecordsCheckIn;
 use Tests\TestCase;
 
 class PdfPreviewResourceProtectionTest extends TestCase
 {
+    use RecordsCheckIn;
+
     private int $renders = 0;
 
     protected function setUp(): void
@@ -77,6 +80,7 @@ class PdfPreviewResourceProtectionTest extends TestCase
         $information = app(ReservationDocumentInformation::class);
         $information->store($reservation, $template->load('fields'), [], $information->profile($resident));
         $this->actingAs($actor);
+        $reservation = $this->recordCheckIn($reservation);
 
         return [$actor, $reservation, $service, $template];
     }

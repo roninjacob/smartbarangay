@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Enums\ReservationStatus as Status;
 use App\Enums\UserRole;
+use App\Http\Controllers\Admin\ReservationController;
 use App\Models\QrTicket;
 use App\Models\Schedule;
 use App\Models\Service;
@@ -151,7 +152,9 @@ class QrVerificationTest extends TestCase
         $response->assertOk()->assertJsonPath('reservation_url', route('admin.reservations.show', $ticket->reservation))
             ->assertJsonMissingPath('reservation.id')->assertDontSee($ticket->qr_payload, false);
         $this->get($response->json('reservation_url'))->assertOk()->assertSee($ticket->reservation->user->name)
-            ->assertSee('Active')->assertSee('Mark Completed')->assertDontSee($other->reservation->user->name);
+            // A verified scan is not a check-in: completion stays blocked until the arrival is recorded.
+            ->assertSee('Active')->assertSee(ReservationController::COMPLETION_CHECKIN_REQUIRED)->assertDontSee('Mark Completed')
+            ->assertDontSee($other->reservation->user->name);
         $this->assertSame($before, $this->snapshot());
         $this->assertFalse($ticket->fresh()->isUsed());
     }

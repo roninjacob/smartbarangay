@@ -7,6 +7,7 @@ use App\Models\Reservation;
 use App\Models\Schedule;
 use App\Models\Service;
 use App\Models\User;
+use App\Services\GeneratedReservationDocuments;
 use App\Services\QrTicketIssuer;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Cache;
@@ -14,10 +15,13 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\Support\CertificatePdf;
+use Tests\Support\RecordsCheckIn;
 use Tests\TestCase;
 
 class ControlledCertificatePrintingTest extends TestCase
 {
+    use RecordsCheckIn;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -36,7 +40,7 @@ class ControlledCertificatePrintingTest extends TestCase
         parent::tearDown();
     }
 
-    private function fixture(string $status = 'approved'): Reservation
+    private function fixture(string $status = 'ready_for_pickup', bool $checkedIn = true): Reservation
     {
         $admin = User::factory()->create(['role' => UserRole::Admin, 'is_active' => true]);
         $this->actingAs($admin);
@@ -48,7 +52,9 @@ class ControlledCertificatePrintingTest extends TestCase
         $schedule = Schedule::create(['date' => '2026-11-01', 'start_time' => '09:00', 'end_time' => '10:00', 'capacity' => 10]);
         $resident = User::factory()->create(['role' => UserRole::Resident, 'is_active' => true]);
 
-        return $resident->reservations()->create(['service_id' => $service->id, 'schedule_id' => $schedule->id, 'status' => $status]);
+        $reservation = $resident->reservations()->create(['service_id' => $service->id, 'schedule_id' => $schedule->id, 'status' => $status]);
+
+        return $checkedIn ? $this->recordCheckIn($reservation, $admin->id) : $reservation;
     }
 
     private function saved(Reservation $reservation): string
@@ -98,7 +104,7 @@ class ControlledCertificatePrintingTest extends TestCase
 
     public static function eligible(): array
     {
-        return [['approved'], ['ready_for_pickup']];
+        return [['ready_for_pickup']];
     }
 
     #[DataProvider('eligible')]
@@ -121,10 +127,6 @@ class ControlledCertificatePrintingTest extends TestCase
         $this->get($url)->assertOk()->assertSee('Print Certificate');
         $this->assertSame($bytes, $this->get($url.'/pdf')->assertOk()->getContent());
         $this->get(route('admin.reservations.show', $reservation))->assertSee('Print Certificate')->assertSee('Preview Generated Document');
-        if ($status === 'approved') {
-            $this->get(route('admin.services.certificates.index', $reservation->service))->assertOk()
-                ->assertSee(route('admin.reservations.document.print', $reservation), false);
-        }
         $this->assertSame($before, $this->records());
         $this->assertSame($bytes, Storage::disk('local')->get($reservation->fresh()->document->stored_path));
         $this->assertFalse($reservation->qrTicket()->sole()->isUsed());
@@ -197,7 +199,7 @@ class ControlledCertificatePrintingTest extends TestCase
         $reservation->update(['status' => 'completed']);
         $this->get($url)->assertNotFound();
         $this->get($url.'/pdf')->assertNotFound();
-        $reservation->update(['status' => 'approved']);
+        $reservation->update(['status' => 'ready_for_pickup']);
         $token = basename($url);
         $artifact = Cache::get('certificate-print:'.$token);
         $artifact['generated_id']++;
@@ -223,7 +225,7 @@ class ControlledCertificatePrintingTest extends TestCase
         $this->assertDatabaseCount('reservation_documents', 0);
     }
 
-    public function test_generated_printing_remains_admin_only_and_resident_history_access_is_unchanged(): void
+    public function test_generated_printing_remains_admin_only_and_residents_never_receive_the_finalized_pdf(): void
     {
         $reservation = $this->fixture();
         $bytes = $this->saved($reservation);
@@ -242,24 +244,27 @@ class ControlledCertificatePrintingTest extends TestCase
             $this->actingAs($admin)->get($route)->assertRedirect(route('login'));
         }
         $reservation->update(['status' => 'completed']);
-        $this->actingAs($owner);
-        $this->assertSame($bytes, $this->get(route('resident.reservations.generated.pdf', $reservation))->assertOk()->getContent());
-        $this->get(route('resident.reservations.generated.show', $reservation))->assertOk();
-        $this->get(route('resident.reservations.generated.download', $reservation))->assertOk();
-        $this->actingAs(User::factory()->create(['role' => UserRole::Resident, 'is_active' => true]));
-        foreach (['show', 'pdf', 'download'] as $action) {
-            $this->get(route('resident.reservations.generated.'.$action, $reservation))->assertNotFound();
+        // Even the owner of a Completed request never receives the finalized PDF online.
+        foreach ([$owner, User::factory()->create(['role' => UserRole::Resident, 'is_active' => true])] as $resident) {
+            $this->actingAs($resident);
+            foreach (['show', 'pdf', 'download'] as $action) {
+                $this->get(route('resident.reservations.generated.'.$action, $reservation))->assertNotFound()->assertDontSee($bytes, false);
+            }
         }
     }
 
     public function test_lightweight_row_hint_never_bypasses_authoritative_integrity_checks(): void
     {
-        $reservation = $this->fixture();
+        // The service list shows Approved requests only, where printing is never allowed.
+        $reservation = $this->fixture('approved', false);
         $this->saved($reservation);
         // Real retrieval still verifies bytes, but a list should only inspect existence and size.
         Storage::disk('local')->put($reservation->fresh()->document->stored_path, str_repeat('x', $reservation->document->file_size));
         $response = $this->get(route('admin.services.certificates.index', $reservation->service))->assertOk();
-        $response->assertSee(route('admin.reservations.document.print', $reservation), false);
+        $response->assertSee(route('admin.reservations.generated.show', $reservation), false)
+            ->assertDontSee(route('admin.reservations.document.print', $reservation), false)
+            ->assertSee(GeneratedReservationDocuments::READY_REQUIRED);
+        $this->recordCheckIn($reservation);
         $this->get(route('admin.reservations.document.print', $reservation))->assertNotFound();
         $this->get(route('admin.reservations.show', $reservation))->assertOk()
             ->assertSee('saved certificate is unavailable or invalid')

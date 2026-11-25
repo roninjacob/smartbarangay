@@ -2,7 +2,7 @@
 <section class="card dashboard-panel rv-section" aria-labelledby="certificate-heading">
     <div class="dashboard-panel-heading"><h2 id="certificate-heading"><span class="panel-icon is-green" aria-hidden="true"><x-app-icon name="document"/></span>Certificate</h2></div>
     <div class="rv-section-body">
-        <p class="app-note">Print Certificate uses this request’s saved personalized PDF. Printing does not change request status. Update Ready for Pickup or Completed manually.</p>
+        <p class="app-note">Certificate is finalized after check-in. Print Certificate uses this request’s saved personalized PDF and does not change request status.</p>
         @if($reservation->document?->mime_type === 'application/pdf')
             @include('reservations.generated-actions', ['documentRole' => 'admin'])
         @else
@@ -10,6 +10,8 @@
             @if($canGenerateCertificate)
                 <a class="btn btn-primary mb-3" href="{{ route('admin.reservations.document-preview.show', $reservation) }}">Preview &amp; Finalize Certificate</a>
                 <p class="app-note">Uses the information and layout saved with this request. A generated certificate is retained without overwriting.</p>
+            @elseif($documentPreviewAvailable && $finalizeBlock)
+                <p class="app-note">Finalize: {{ $finalizeBlock }}</p>
             @elseif(!$reservation->document)
                 <p class="app-note">Generation is unavailable because the original PDF or complete historical information is missing. Do not substitute the current profile or layout.</p>
             @endif

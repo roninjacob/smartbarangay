@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Enums\UserRole;
 use App\Models\Reservation;
 use App\Services\CanonicalDocumentPreview;
+use App\Services\GeneratedReservationDocuments;
 use App\Services\ReservationDocumentPreview;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -23,8 +24,19 @@ class ReservationDocumentPreviewController extends Controller
     {
         $record = $this->reservation($request, $reservation);
         $role = $request->user()->role === UserRole::Admin ? 'admin' : 'resident';
-        if ($record->document()->exists()) {
-            return redirect()->route($role.'.reservations.generated.show', $record);
+        $finalized = $record->document()->exists();
+        if ($finalized && $role === 'admin') {
+            return redirect()->route('admin.reservations.generated.show', $record);
+        }
+        if ($finalized) {
+            // The finalized certificate is not shown online; tell the resident where to get it.
+            return response()->view('reservations.document-preview', [
+                'roleLabel' => 'Resident', 'navigation' => config('navigation.resident'), 'dashboardDate' => now('Asia/Manila'),
+                'pageTitle' => 'Preview Document', 'pageHeading' => 'Preview Document', 'pageSection' => 'Reservation Details',
+                'reservation' => $record, 'artifact' => null, 'previewError' => null, 'documentRole' => $role,
+                'previewNotice' => 'Your certificate is ready. Collect it at the barangay office.',
+                'backUrl' => route('resident.reservations.show', $record),
+            ])->header('Cache-Control', 'private, no-store');
         }
         if ($request->isMethod('HEAD')) {
             return response('', 200, ['Cache-Control' => 'private, no-store']);
@@ -47,6 +59,7 @@ class ReservationDocumentPreviewController extends Controller
             'roleLabel' => ucfirst($role), 'navigation' => config('navigation.'.$role), 'dashboardDate' => now('Asia/Manila'),
             'pageTitle' => 'Preview Document', 'pageHeading' => 'Preview Document', 'pageSection' => 'Reservation Details',
             'reservation' => $record, 'artifact' => $artifact, 'previewError' => $error, 'documentRole' => $role, 'backUrl' => route($role.'.reservations.show', $record),
+            'finalizeBlock' => $role === 'admin' ? app(GeneratedReservationDocuments::class)->finalizeBlock($record) : null,
         ], $status, $headers)->header('Cache-Control', 'private, no-store');
     }
 
@@ -55,6 +68,8 @@ class ReservationDocumentPreviewController extends Controller
         $record = $this->reservation($request, $reservation);
 
         abort_unless(is_string($request->query('preview')), 410, CanonicalDocumentPreview::STALE);
+        // A preview opened before finalization has the same bytes as the finalized certificate: residents lose it once finalized.
+        abort_if($request->user()->role !== UserRole::Admin && $record->document()->exists(), 410, CanonicalDocumentPreview::STALE);
         try {
             // GET delivers the PDF for review; HEAD validates metadata without recording a review.
             $bytes = app(CanonicalDocumentPreview::class)->reviewed(

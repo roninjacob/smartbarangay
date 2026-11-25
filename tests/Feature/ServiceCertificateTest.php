@@ -16,10 +16,13 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\Support\CertificatePdf;
+use Tests\Support\RecordsCheckIn;
 use Tests\TestCase;
 
 class ServiceCertificateTest extends TestCase
 {
+    use RecordsCheckIn;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -116,7 +119,7 @@ class ServiceCertificateTest extends TestCase
         $before = $this->records();
         $this->get(route('admin.reservations.show', $reservation))->assertSee('no saved personalized PDF')
             ->assertDontSee('href="'.route('admin.reservations.document.print', $reservation).'"', false);
-        $this->get(route('admin.reservations.document.print', $reservation))->assertRedirect(route('admin.reservations.show', $reservation))->assertSessionHasErrors('document');
+        $this->get(route('admin.reservations.document.print', $reservation))->assertForbidden();
         $this->assertSame($before, $this->records());
         $this->assertSame('Resident evidence', Storage::disk('local')->get($path));
         $this->assertSame(Status::Approved, $reservation->fresh()->status);
@@ -142,31 +145,52 @@ class ServiceCertificateTest extends TestCase
         $this->get(route('admin.reservations.document.print', $reservation))->assertForbidden();
     }
 
-    public function test_ready_warning_requires_reason_and_printing_does_not_bypass_it(): void
+    public function test_ready_for_pickup_needs_no_reason_and_printing_does_not_bypass_check_in(): void
+    {
+        // The certificate is finalized after check-in, so Ready for Pickup never has one yet: no reason is asked.
+        $reservation = $this->reservation($this->service());
+        $this->get(route('admin.reservations.document.print', $reservation))->assertForbidden();
+        $this->get(route('admin.reservations.show', $reservation))->assertSee('Certificate is finalized after check-in.')
+            ->assertSee('Confirm Ready for Pickup')->assertSee('data-certificate-prepared="0"', false)
+            ->assertDontSee('No prepared certificate/document was found')->assertDontSee('Continue Anyway')
+            ->assertDontSee('data-ready-reason', false);
+        $data = ['status' => 'ready_for_pickup', 'expected_status' => 'approved', 'confirm_ready' => 1];
+        $this->patch(route('admin.reservations.status', $reservation), $data)->assertSessionHasNoErrors()->assertSessionHas('status');
+        $this->assertSame(Status::ReadyForPickup, $reservation->fresh()->status);
+        $this->assertNull($reservation->statusHistories()->sole()->notes);
+        $this->get(route('admin.reservations.document.print', $reservation))->assertForbidden();
+    }
+
+    public function test_optional_ready_for_pickup_note_is_still_recorded(): void
     {
         $reservation = $this->reservation($this->service());
-        $this->get(route('admin.reservations.document.print', $reservation))->assertSessionHasErrors('document');
-        $this->get(route('admin.reservations.show', $reservation))->assertSee('No prepared certificate/document was found for this request.')
-            ->assertSee('Continue Anyway')->assertSee('data-certificate-prepared="0"', false);
-        $data = ['status' => 'ready_for_pickup', 'expected_status' => 'approved', 'confirm_ready' => 1];
-        $this->patch(route('admin.reservations.status', $reservation), $data)->assertSessionHasErrors('notes');
+        $this->patch(route('admin.reservations.status', $reservation), ['status' => 'ready_for_pickup', 'expected_status' => 'approved',
+            'confirm_ready' => 1, 'notes' => 'Resident asked to collect in the afternoon.'])->assertSessionHasNoErrors();
+        $history = $reservation->statusHistories()->sole();
+        $this->assertSame(Status::ReadyForPickup, $history->to_status);
+        $this->assertSame('Resident asked to collect in the afternoon.', $history->notes);
+        $this->get(route('admin.reservations.show', $reservation))->assertSee('Resident asked to collect in the afternoon.');
+    }
+
+    public function test_ready_for_pickup_still_requires_explicit_confirmation(): void
+    {
+        $reservation = $this->reservation($this->service());
+        $this->patch(route('admin.reservations.status', $reservation), ['status' => 'ready_for_pickup', 'expected_status' => 'approved'])
+            ->assertSessionHasErrors('confirm_ready');
         $this->assertSame(Status::Approved, $reservation->fresh()->status);
         $this->assertDatabaseCount('reservation_status_histories', 0);
-        $this->patch(route('admin.reservations.status', $reservation), $data + ['notes' => 'Certificate was prepared manually.'])->assertSessionHas('status');
-        $this->assertSame(Status::ReadyForPickup, $reservation->fresh()->status);
-        $this->assertSame('Certificate was prepared manually.', $reservation->statusHistories()->sole()->notes);
     }
 
     public static function printableStatuses(): array
     {
-        return [[Status::Approved], [Status::ReadyForPickup]];
+        return [[Status::ReadyForPickup]];
     }
 
     #[DataProvider('printableStatuses')]
-    public function test_approved_and_ready_print_saved_pdf_without_status_or_qr_changes(Status $status): void
+    public function test_checked_in_ready_request_prints_saved_pdf_without_status_or_qr_changes(Status $status): void
     {
         $service = $this->service();
-        $reservation = $this->reservation($service, $status);
+        $reservation = $this->recordCheckIn($this->reservation($service, $status));
         $bytes = $this->saved($reservation);
         app(QrTicketIssuer::class)->issue($reservation);
         $before = $this->records();
@@ -180,17 +204,16 @@ class ServiceCertificateTest extends TestCase
     public function test_expiration_ownership_replacement_and_status_changes_invalidate_print_views(): void
     {
         $service = $this->service();
-        $reservation = $this->reservation($service);
+        $reservation = $this->recordCheckIn($this->reservation($service));
         $admin = auth()->user();
         $bytes = $this->saved($reservation);
         $url = $this->assertPrint(route('admin.reservations.document.print', $reservation), $bytes);
         $this->actingAs($this->admin())->get($url)->assertNotFound();
         $this->actingAs($admin);
-        $reservation->update(['status' => Status::ReadyForPickup]);
         $this->get($url)->assertOk();
         $reservation->update(['status' => Status::Completed]);
         $this->get($url)->assertNotFound();
-        $reservation->update(['status' => Status::Approved]);
+        $reservation->update(['status' => Status::ReadyForPickup]);
         $this->travel(11)->minutes();
         $this->get($url)->assertNotFound();
         $this->travelBack();
@@ -236,6 +259,8 @@ class ServiceCertificateTest extends TestCase
         $template->update(['stored_path' => $legacy, 'mime_type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']);
         $this->get(route('admin.services.template.preview', $service))->assertNotFound();
         $this->get(route('admin.services.template.download', $service))->assertNotFound();
+        $this->get(route('admin.reservations.document.print', $reservation))->assertForbidden(); // Approved: check-in gate
+        $this->recordCheckIn($reservation);
         $this->get(route('admin.reservations.document.print', $reservation))->assertSessionHasErrors('document');
         $this->assertSame('Historical document', Storage::disk('local')->get($legacy));
         $this->assertDatabaseCount('service_document_templates', 1);
@@ -298,12 +323,14 @@ class ServiceCertificateTest extends TestCase
         $before = $this->records();
         $this->get(route('admin.reservations.show', $reservation))->assertSee('data-certificate-prepared="1"', false)
             ->assertDontSee('Historical.docx')->assertDontSee('Print prepared certificate');
-        $this->get(route('admin.reservations.document.print', $reservation))->assertNotFound();
+        $this->get(route('admin.reservations.document.print', $reservation))->assertForbidden(); // Approved: check-in gate
         $this->assertSame($before, $this->records());
         $this->assertSame($bytes, Storage::disk('local')->get($path));
         Storage::disk('local')->put($path, str_repeat('x', strlen($bytes)));
         $this->get(route('admin.reservations.show', $reservation))->assertSee('data-certificate-prepared="0"', false);
         $this->assertEquals($document->getAttributes(), $document->fresh()->getAttributes());
+        $this->recordCheckIn($reservation);
+        $this->get(route('admin.reservations.document.print', $reservation))->assertNotFound();
     }
 
     public function test_detected_mime_and_structure_override_client_claims(): void

@@ -16,10 +16,13 @@ use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use PHPUnit\Framework\Attributes\DataProvider;
+use Tests\Support\RecordsCheckIn;
 use Tests\TestCase;
 
 class QrTicketsTest extends TestCase
 {
+    use RecordsCheckIn;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -169,6 +172,9 @@ class QrTicketsTest extends TestCase
         $ticket = $this->ticket($reservation)->fresh();
         $this->actingAs($this->user(UserRole::Admin));
         foreach ([[Status::Approved, Status::ReadyForPickup], [Status::ReadyForPickup, Status::Completed]] as [$from, $to]) {
+            if ($to === Status::Completed) {
+                $this->recordCheckIn($reservation);
+            }
             $this->patch(route('admin.reservations.status', $reservation), ['expected_status' => $from->value, 'status' => $to->value,
                 'confirm_ready' => $to === Status::ReadyForPickup ? 1 : null, 'notes' => $to === Status::ReadyForPickup ? 'Certificate prepared manually.' : null])->assertSessionHas('status');
             $original = array_intersect_key($ticket->getAttributes(), array_flip(['id', 'reservation_id', 'ticket_code', 'qr_payload', 'generated_at', 'created_at']));
@@ -179,7 +185,7 @@ class QrTicketsTest extends TestCase
             ->assertSee('Historical ticket')->assertSee('not an active pickup ticket')->assertSee('Sunday, November 1, 2026')->assertSee('9:00 AM');
         $this->get(route('resident.qr-tickets.image', $ticket))->assertOk();
         $this->assertDatabaseCount('qr_tickets', 1);
-        $this->assertDatabaseCount('checkin_logs', 0);
+        $this->assertDatabaseCount('checkin_logs', 1); // the arrival recorded before completion
     }
 
     public function test_disallowed_legacy_tickets_do_not_display_usable_qr_graphics(): void

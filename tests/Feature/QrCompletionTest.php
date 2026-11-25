@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Enums\ReservationStatus as Status;
 use App\Enums\UserRole;
+use App\Http\Controllers\Admin\ReservationController;
 use App\Models\Reservation;
 use App\Models\Schedule;
 use App\Models\Service;
@@ -14,10 +15,13 @@ use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use PHPUnit\Framework\Attributes\DataProvider;
+use Tests\Support\RecordsCheckIn;
 use Tests\TestCase;
 
 class QrCompletionTest extends TestCase
 {
+    use RecordsCheckIn;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -40,6 +44,7 @@ class QrCompletionTest extends TestCase
         $this->travelTo(now()->startOfSecond());
         $reservation = $this->reservation(Status::ReadyForPickup);
         $ticket = app(QrTicketIssuer::class)->issue($reservation)->fresh();
+        $this->recordCheckIn($reservation);
         $credential = array_intersect_key($ticket->getAttributes(), array_flip(['id', 'ticket_code', 'qr_payload', 'generated_at', 'created_at', 'reservation_id']));
         $admin = $this->user(UserRole::Admin);
         $this->actingAs($admin)->get(route('admin.reservations.show', $reservation))->assertSee('QR Ticket')->assertSee('Active')->assertDontSee($ticket->qr_payload, false);
@@ -69,7 +74,7 @@ class QrCompletionTest extends TestCase
         $this->assertSame($before, $ticket->fresh()->getAttributes());
         $this->assertDatabaseCount('qr_tickets', 1);
         $this->assertDatabaseCount('reservation_status_histories', 1);
-        $this->assertDatabaseCount('checkin_logs', 0);
+        $this->assertDatabaseCount('checkin_logs', 1); // the fixture's arrival; completion adds none
     }
 
     public function test_approval_ready_and_repeated_verification_do_not_consume_ticket(): void
@@ -106,6 +111,7 @@ class QrCompletionTest extends TestCase
     {
         $reservation = $this->reservation(Status::ReadyForPickup);
         $ticket = app(QrTicketIssuer::class)->issue($reservation);
+        $this->recordCheckIn($reservation);
         $original = $reservation->fresh()->getAttributes();
         $originalTicket = $ticket->fresh()->getAttributes();
         DB::statement("CREATE TRIGGER fail_completion BEFORE $operation ON $table BEGIN SELECT RAISE(ABORT, 'Simulated failure'); END");
@@ -119,7 +125,7 @@ class QrCompletionTest extends TestCase
         $this->assertSame($original, $reservation->fresh()->getAttributes());
         $this->assertSame($originalTicket, $ticket->fresh()->getAttributes());
         $this->assertDatabaseCount('reservation_status_histories', 0);
-        $this->assertDatabaseCount('checkin_logs', 0);
+        $this->assertDatabaseCount('checkin_logs', 1); // the fixture's check-in only
     }
 
     public function test_used_ticket_is_invalid_even_if_reservation_is_still_eligible(): void
@@ -168,14 +174,15 @@ class QrCompletionTest extends TestCase
         $this->get(route('admin.reservations.show', $reservation))->assertSee('Used / Historical')->assertSee('not recorded for this earlier completion');
     }
 
-    public function test_legacy_reservation_without_ticket_can_complete_without_generating_one(): void
+    public function test_legacy_reservation_without_ticket_cannot_complete_and_no_ticket_is_generated(): void
     {
+        // Without a ticket no check-in can be recorded, so completion stays blocked.
         $reservation = $this->reservation(Status::ReadyForPickup);
         $this->actingAs($this->user(UserRole::Admin));
-        $this->complete($reservation)->assertSessionHas('status');
-        $this->assertSame(Status::Completed, $reservation->fresh()->status);
+        $this->complete($reservation)->assertSessionHasErrors(['status' => ReservationController::COMPLETION_CHECKIN_REQUIRED]);
+        $this->assertSame(Status::ReadyForPickup, $reservation->fresh()->status);
         $this->assertDatabaseCount('qr_tickets', 0);
-        $this->assertDatabaseCount('reservation_status_histories', 1);
+        $this->assertDatabaseCount('reservation_status_histories', 0);
     }
 
     public function test_direct_completion_from_approved_is_rejected_without_consumption(): void

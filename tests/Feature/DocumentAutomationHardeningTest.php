@@ -20,10 +20,13 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\Support\CertificatePdf;
+use Tests\Support\RecordsCheckIn;
 use Tests\TestCase;
 
 class DocumentAutomationHardeningTest extends TestCase
 {
+    use RecordsCheckIn;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -59,6 +62,7 @@ class DocumentAutomationHardeningTest extends TestCase
         $reservation = $resident->reservations()->create(['service_id' => $service->id, 'schedule_id' => $schedule->id, 'status' => 'approved']);
         app(ReservationDocumentInformation::class)->store($reservation, $template->load('fields'), [], app(ReservationDocumentInformation::class)->profile($resident));
         $this->actingAs($admin);
+        $reservation = $this->recordCheckIn($reservation, $admin->id);
 
         return [$admin, $resident, $service, $template, $reservation];
     }
@@ -101,7 +105,7 @@ class DocumentAutomationHardeningTest extends TestCase
         $this->assertSame(hash('sha256', $bytes), $reservation->fresh()->document->content_hash);
         $this->assertSame($before, $reservation->fresh()->getAttributes());
         $this->assertDatabaseCount('reservation_status_histories', 0);
-        $this->assertDatabaseCount('checkin_logs', 0);
+        $this->assertDatabaseCount('checkin_logs', 1); // the fixture's check-in only
         $this->assertDatabaseCount('qr_tickets', 0);
         $this->post($finalize, $input)->assertSessionHasErrors('document');
         $this->assertDatabaseCount('reservation_documents', 1);
@@ -148,6 +152,7 @@ class DocumentAutomationHardeningTest extends TestCase
         } elseif ($failure === 'reservation') {
             $target = $resident->reservations()->create(['service_id' => $service->id, 'schedule_id' => $reservation->schedule_id, 'status' => 'approved']);
             app(ReservationDocumentInformation::class)->store($target, $template->load('fields'), [], app(ReservationDocumentInformation::class)->profile($resident));
+            $target = $this->recordCheckIn($target, $admin->id);
         } elseif ($failure === 'expired') {
             $artifact['expires'] = now()->subSecond()->timestamp;
             Cache::put($key, $artifact, now()->addMinutes(30));
@@ -197,12 +202,12 @@ class DocumentAutomationHardeningTest extends TestCase
         $this->assertSame($before, $reservation->fresh()->getAttributes());
         $this->assertDatabaseCount('reservation_status_histories', 0);
         $this->assertDatabaseCount('qr_tickets', 0);
-        $this->assertDatabaseCount('checkin_logs', 0);
+        $this->assertDatabaseCount('checkin_logs', 1); // the fixture's check-in only
         $print = $this->get(route('admin.reservations.document.print', $reservation))->assertRedirect();
         $this->assertSame($saved, $this->get($print->headers->get('Location').'/pdf')->assertOk()->getContent());
         $this->post(route('admin.reservations.generated.store', $reservation), ['preview_token' => $artifact['token']])->assertSessionHasErrors('document');
         $this->assertDatabaseCount('reservation_documents', 1);
-        $this->actingAs($resident)->get(route('resident.reservations.generated.pdf', $reservation))->assertOk();
+        $this->actingAs($resident)->get(route('resident.reservations.generated.pdf', $reservation))->assertNotFound();
     }
 
     public function test_stale_source_blocks_mid_wizard_submission_and_explicit_reconfiguration_clears_old_placements(): void
@@ -328,7 +333,7 @@ class DocumentAutomationHardeningTest extends TestCase
         [$admin, , $service, , $reservation] = $this->fixture();
         [$artifact] = $this->review($reservation, $admin);
         $foreign = User::factory()->create(['role' => UserRole::Resident, 'is_active' => true]);
-        $other = $foreign->reservations()->create(['service_id' => $service->id, 'schedule_id' => $reservation->schedule_id, 'status' => 'approved']);
+        $other = $this->recordCheckIn($foreign->reservations()->create(['service_id' => $service->id, 'schedule_id' => $reservation->schedule_id, 'status' => 'approved']), $admin->id);
         $this->post(route('admin.reservations.generated.store', $other), ['preview_token' => $artifact['token']])->assertSessionHasErrors('document');
         $this->actingAs($foreign)->get(route('resident.reservations.document-preview.pdf', [$reservation, 'preview' => $artifact['token']]))->assertNotFound();
         $this->assertDatabaseCount('reservation_documents', 0);

@@ -22,10 +22,13 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
 use RuntimeException;
 use Tests\Support\CertificatePdf;
+use Tests\Support\RecordsCheckIn;
 use Tests\TestCase;
 
 class EndToEndWorkflowIntegrityTest extends TestCase
 {
+    use RecordsCheckIn;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -133,10 +136,25 @@ class EndToEndWorkflowIntegrityTest extends TestCase
         $this->get(route('resident.reservations.show', $record))->assertOk();
         $this->asUser($admin);
         $service->update(['fee_amount' => '999.00']);
-        $artifact = $this->get(route('admin.reservations.document-preview.show', $record))->assertOk()->viewData('artifact');
-        $reviewedBytes = Storage::disk('local')->get($artifact['path']);
         $finalize = route('admin.reservations.generated.store', $record);
-        $this->post($finalize, ['preview_token' => $artifact['token']])->assertSessionHasErrors('document');
+        // Approved: the certificate cannot be finalized or printed yet.
+        $early = $this->get(route('admin.reservations.document-preview.show', $record))->assertOk()
+            ->assertSee(GeneratedReservationDocuments::READY_REQUIRED)->assertDontSee('Finalize Certificate</button>', false)->viewData('artifact');
+        $this->get(route('admin.reservations.document-preview.pdf', [$record, 'preview' => $early['token']]))->assertOk();
+        $this->post($finalize, ['preview_token' => $early['token']])->assertForbidden();
+        $this->patch(route('admin.reservations.status', $record), ['status' => 'ready_for_pickup', 'expected_status' => 'approved',
+            'confirm_ready' => 1, 'notes' => 'Certificate is finalized after check-in.'])->assertSessionHasNoErrors();
+        $payload = $record->fresh()->qrTicket->encodedPayload();
+        $this->postJson('/admin/qr-verification', ['payload' => $payload])->assertJsonPath('valid', true);
+        // A verified scan alone is not a check-in.
+        $this->assertDatabaseCount('checkin_logs', 0);
+        $this->post($finalize, ['preview_token' => $early['token']])->assertForbidden();
+        $this->get(route('admin.reservations.document.print', $record))->assertForbidden();
+        $this->post(route('admin.reservations.check-in.store', $record), ['confirm_checkin' => 1])->assertSessionHasNoErrors();
+        $arrival = $record->checkinLogs()->sole()->getAttributes();
+        $artifact = $this->get(route('admin.reservations.document-preview.show', $record))->assertOk()->viewData('artifact');
+        $this->assertSame($early['token'], $artifact['token'], 'The preview already reviewed at Approved is reused.');
+        $reviewedBytes = Storage::disk('local')->get($artifact['path']);
         $this->get(route('admin.reservations.document-preview.pdf', [$record, 'preview' => $artifact['token']]))
             ->assertOk()->assertContent($reviewedBytes);
         $this->post($finalize, ['preview_token' => $artifact['token']])->assertSessionHasNoErrors();
@@ -144,12 +162,8 @@ class EndToEndWorkflowIntegrityTest extends TestCase
         $this->post($finalize, ['preview_token' => $artifact['token']])->assertSessionHasErrors('document');
         $this->assertSame(hash('sha256', $reviewedBytes), $document->content_hash);
         $this->assertSame($reviewedBytes, app(GeneratedReservationDocuments::class)->bytes($record->fresh()));
-        $this->transition($record, 'approved', 'ready_for_pickup');
-        $payload = $record->fresh()->qrTicket->encodedPayload();
-        $this->postJson('/admin/qr-verification', ['payload' => $payload])->assertJsonPath('valid', true);
-        $this->assertDatabaseCount('checkin_logs', 0);
-        $this->post(route('admin.reservations.check-in.store', $record), ['confirm_checkin' => 1])->assertSessionHasNoErrors();
-        $arrival = $record->checkinLogs()->sole()->getAttributes();
+        $print = $this->get(route('admin.reservations.document.print', $record))->assertRedirect()->headers->get('Location');
+        $this->get($print.'/pdf')->assertOk()->assertContent($reviewedBytes);
         $this->postJson('/admin/qr-verification', ['payload' => $payload])->assertJsonPath('valid', true);
         $this->post(route('admin.reservations.check-in.store', $record), ['confirm_checkin' => 1])->assertSessionHasNoErrors();
         $this->assertSame($arrival, $record->checkinLogs()->sole()->getAttributes());
@@ -179,7 +193,10 @@ class EndToEndWorkflowIntegrityTest extends TestCase
         $finalMetadata = $document->fresh()->getAttributes();
         $this->put(route('resident.profile.update'), [...$identity, 'first_name' => 'Changed', 'address_street' => 'Changed Sample Street'])
             ->assertSessionHasNoErrors();
-        $this->get(route('resident.reservations.generated.pdf', $record))->assertOk()->assertContent($reviewedBytes);
+        // The owner never receives the finalized PDF online, even after Completed; the preview page only points to the office.
+        $this->get(route('resident.reservations.generated.pdf', $record))->assertNotFound();
+        $this->get(route('resident.reservations.document-preview.show', $record))->assertOk()
+            ->assertSee('Your certificate is ready. Collect it at the barangay office.')->assertDontSee('generated-document', false);
         $this->assertSame($finalMetadata, $document->fresh()->getAttributes());
         $this->assertSame($snapshots[0], $record->fresh()->resident_snapshot);
         $this->asUser(User::factory()->residencyApproved()->create(['role' => UserRole::Resident, 'is_active' => true]));

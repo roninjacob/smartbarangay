@@ -14,7 +14,8 @@ class ReservationDocumentController extends Controller
 {
     public function print(Request $request, Reservation $reservation, CertificatePrintRenderer $renderer): RedirectResponse
     {
-        abort_unless($reservation->status->canPrepareDocument(), 403);
+        // Ready for Pickup with a recorded check-in; the document check below keeps its existing message.
+        abort_if(app(GeneratedReservationDocuments::class)->finalizeBlock($reservation) !== null, 403);
         if (! $reservation->document()->exists()) {
             return to_route('admin.reservations.show', $reservation)->withErrors(['document' => GeneratedReservationDocuments::UNAVAILABLE]);
         }

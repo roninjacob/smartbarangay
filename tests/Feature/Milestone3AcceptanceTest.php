@@ -18,10 +18,13 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Validation\ValidationException;
 use setasign\Fpdi\Tfpdf\Fpdi;
+use Tests\Support\RecordsCheckIn;
 use Tests\TestCase;
 
 class Milestone3AcceptanceTest extends TestCase
 {
+    use RecordsCheckIn;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -125,6 +128,12 @@ class Milestone3AcceptanceTest extends TestCase
         }
         $reservation->refresh();
         $this->assertNotNull($reservation->qrTicket);
+        // The certificate is finalized at the counter: Ready for Pickup, verified scan, recorded check-in.
+        $this->patch(route('admin.reservations.status', $reservation), ['expected_status' => 'approved', 'status' => 'ready_for_pickup',
+            'confirm_ready' => 1, 'notes' => 'Certificate is finalized after check-in.'])->assertSessionHasNoErrors();
+        $this->postJson('/admin/qr-verification', ['payload' => $reservation->qrTicket->encodedPayload()])->assertJsonPath('valid', true);
+        $this->post(route('admin.reservations.check-in.store', $reservation), ['confirm_checkin' => 1])->assertSessionHasNoErrors();
+        $reservation->refresh();
         $before = $reservation->getAttributes();
         $histories = $reservation->statusHistories()->count();
         $preview = $this->get(route('admin.reservations.document-preview.show', $reservation))->assertOk()
@@ -137,7 +146,7 @@ class Milestone3AcceptanceTest extends TestCase
         $this->assertSame($before, $reservation->fresh()->getAttributes());
         $this->assertSame($histories, $reservation->statusHistories()->count());
         $this->assertNull($reservation->qrTicket->fresh()->used_at);
-        $this->assertDatabaseCount('checkin_logs', 0);
+        $this->assertDatabaseCount('checkin_logs', 1); // the recorded arrival only
         $this->assertDatabaseCount('reservation_payments', 0);
         $printUrl = $this->get(route('admin.reservations.document.print', $reservation))->assertRedirect()->headers->get('Location');
         $print = $this->get($printUrl)->assertOk()->assertSee('data-print-document', false)->assertSee('data-certificate-browser-print', false);
@@ -165,7 +174,7 @@ class Milestone3AcceptanceTest extends TestCase
             file_put_contents($directory.'/print.html', str_replace('</head>', $assets.'</head>', $html));
             file_put_contents($directory.'/acceptance.json', json_encode(['environment' => 'isolated SQLite + synthetic data',
                 'page_sizes_points' => $sizes, 'exact_reviewed_bytes' => true, 'sha256' => hash('sha256', $reviewed),
-                'qr_issued' => true, 'qr_consumed' => false, 'status_after_print' => 'approved'], JSON_PRETTY_PRINT));
+                'qr_issued' => true, 'qr_consumed' => false, 'status_after_print' => 'ready_for_pickup'], JSON_PRETTY_PRINT));
         }
     }
 

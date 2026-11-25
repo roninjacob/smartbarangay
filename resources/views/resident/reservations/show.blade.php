@@ -72,7 +72,6 @@
             <div class="rv-section-body">
                 @include('resident.reservations.historical-requirements')
                 @include('resident.reservations.attachments', ['attachmentRoute' => 'resident.reservations.attachments.download'])
-                @include('reservations.generated-actions', ['documentRole' => 'resident'])
                 @if($reservation->document_template_snapshot)<a class="btn btn-outline-primary mt-3" href="{{ route('resident.reservations.document-preview.show', $reservation) }}">Preview Document</a>@endif
             </div>
         </section>

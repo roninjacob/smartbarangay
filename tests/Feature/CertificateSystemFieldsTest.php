@@ -18,10 +18,13 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 use Tests\Support\CertificatePdf;
+use Tests\Support\RecordsCheckIn;
 use Tests\TestCase;
 
 class CertificateSystemFieldsTest extends TestCase
 {
+    use RecordsCheckIn;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -76,6 +79,7 @@ class CertificateSystemFieldsTest extends TestCase
         $reservation = $resident->reservations()->create(['service_id' => $service->id, 'schedule_id' => $schedule->id, 'status' => 'approved']);
         $information = app(ReservationDocumentInformation::class);
         $information->store($reservation, $template->load('fields'), [], $information->profile($resident));
+        $reservation = $this->recordCheckIn($reservation, $admin->id);
 
         return [$resident, $admin, $service, $template, $reservation];
     }

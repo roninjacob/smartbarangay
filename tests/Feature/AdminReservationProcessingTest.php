@@ -13,10 +13,13 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use PHPUnit\Framework\Attributes\DataProvider;
+use Tests\Support\RecordsCheckIn;
 use Tests\TestCase;
 
 class AdminReservationProcessingTest extends TestCase
 {
+    use RecordsCheckIn;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -115,6 +118,9 @@ class AdminReservationProcessingTest extends TestCase
         $this->actingAs($admin);
         $previous = Status::Pending;
         foreach ([Status::UnderReview, Status::Approved, Status::ReadyForPickup, Status::Completed] as $index => $next) {
+            if ($next === Status::Completed) {
+                $this->recordCheckIn($reservation, $admin->id);
+            }
             $this->patch('/admin/reservations/1/status', ['status' => $next->value, 'expected_status' => $previous->value,
                 'notes' => 'Checked '.$index, 'confirm_ready' => $next === Status::ReadyForPickup ? 1 : null, 'changed_by' => $reservation->user_id, 'user_id' => $admin->id, 'service_id' => 999])
                 ->assertRedirect(route('admin.reservations.show', $reservation))->assertSessionHas('status');
@@ -133,9 +139,8 @@ class AdminReservationProcessingTest extends TestCase
         $this->get('/admin/reservations/1')->assertOk()->assertSee('Checked 0')->assertSee('Checked 3')->assertSee($admin->name)->assertDontSee('id="next-status"', false);
         $this->actingAs($reservation->user)->get('/resident/reservations/1')->assertOk()->assertSee('Completed')->assertDontSee('Checked 0');
         $this->assertDatabaseCount('qr_tickets', 1);
-        foreach (['checkin_logs', 'reservation_attachments'] as $table) {
-            $this->assertDatabaseCount($table, 0);
-        }
+        $this->assertDatabaseCount('checkin_logs', 1); // the arrival recorded before completion
+        $this->assertDatabaseCount('reservation_attachments', 0);
     }
 
     public function test_all_other_transition_pairs_are_rejected_without_history(): void

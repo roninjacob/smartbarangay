@@ -2,7 +2,9 @@
 
 namespace App\Services;
 
+use App\Enums\ReservationStatus;
 use App\Enums\UserRole;
+use App\Models\CheckinLog;
 use App\Models\Reservation;
 use App\Models\ReservationDocument;
 use App\Models\Service;
@@ -20,6 +22,32 @@ class GeneratedReservationDocuments
 
     public const INVALID = 'The saved certificate is unavailable or invalid. Review this request with the administrator. Existing files will not be replaced automatically.';
 
+    public const CHECKIN_REQUIRED = 'Record check-in first.';
+
+    public const READY_REQUIRED = 'Available only when the reservation is Ready for Pickup.';
+
+    /** The resident's arrival recorded by CheckInReservations. A verified scan alone is not a check-in. */
+    public function checkedIn(Reservation $reservation): bool
+    {
+        return $reservation->checkinLogs()->where('verification_result', CheckinLog::ARRIVAL)->exists();
+    }
+
+    /** Finalize (generate) is allowed only for a Ready for Pickup reservation with a recorded check-in. */
+    public function finalizeBlock(Reservation $reservation): ?string
+    {
+        if ($reservation->status !== ReservationStatus::ReadyForPickup) {
+            return self::READY_REQUIRED;
+        }
+
+        return $this->checkedIn($reservation) ? null : self::CHECKIN_REQUIRED;
+    }
+
+    /** Print additionally needs the finalized document. Viewing and downloading by an Admin are not gated. */
+    public function printBlock(Reservation $reservation): ?string
+    {
+        return $this->finalizeBlock($reservation) ?? ($reservation->document()->exists() ? null : self::UNAVAILABLE);
+    }
+
     /** Lightweight UI hint; bytes() remains authoritative on every private file request. */
     public function availability(Reservation $reservation): array
     {
@@ -32,7 +60,9 @@ class GeneratedReservationDocuments
             && $document->file_size > 0 && $disk->exists($document->stored_path)
             && $disk->size($document->stored_path) === $document->file_size;
 
-        return ['available' => (bool) $available, 'can_print' => $available && $reservation->status->canPrepareDocument(),
+        $printBlock = $available ? $this->printBlock($reservation) : null;
+
+        return ['available' => (bool) $available, 'can_print' => $available && $printBlock === null, 'print_block' => $printBlock,
             'message' => $available ? null : ($document ? self::INVALID : self::UNAVAILABLE)];
     }
 
@@ -44,7 +74,7 @@ class GeneratedReservationDocuments
                 $admin = app(AccountEligibility::class)->lock($admin, UserRole::Admin);
                 $service = Service::lockForUpdate()->findOrFail($reservation->service_id);
                 $record = Reservation::lockForUpdate()->findOrFail($reservation->id);
-                abort_unless($record->status->canPrepareDocument(), 403);
+                abort_if($this->finalizeBlock($record) !== null, 403);
                 if ($record->document()->exists()) {
                     throw ValidationException::withMessages(['document' => 'A certificate has already been generated for this reservation. The historical document will not be overwritten.']);
                 }

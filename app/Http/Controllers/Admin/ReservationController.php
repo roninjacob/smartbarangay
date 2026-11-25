@@ -27,6 +27,8 @@ use Illuminate\View\View;
 
 class ReservationController extends Controller
 {
+    public const COMPLETION_CHECKIN_REQUIRED = 'Record check-in before marking this request Completed.';
+
     public function index(FilterReservationsRequest $request): View
     {
         $filters = $request->validated();
@@ -82,21 +84,23 @@ class ReservationController extends Controller
             ...$this->shellData('Request #'.$reservation->id), 'reservation' => $reservation,
             'paymentStatus' => app(ReservationPayments::class)->status($reservation),
             'completionBlockReason' => $reservation->status === ReservationStatus::ReadyForPickup
-                ? app(ReservationPayments::class)->completionBlockReason($reservation) : null,
+                ? (app(ReservationPayments::class)->completionBlockReason($reservation)
+                    ?? ($generated->checkedIn($reservation) ? null : self::COMPLETION_CHECKIN_REQUIRED)) : null,
             'transitions' => $reservation->status->allowedTransitions(),
             'hasPreparedCertificate' => $prepared,
             'certificateState' => $certificateState,
             'documentPreviewAvailable' => $previewAvailable,
-            'canGenerateCertificate' => $reservation->status->canPrepareDocument() && $previewAvailable
+            'finalizeBlock' => $generated->finalizeBlock($reservation),
+            'canGenerateCertificate' => $generated->finalizeBlock($reservation) === null && $previewAvailable
                 && is_int($snapshot['version'] ?? null) && $snapshot['version'] > 0,
             'activities' => app(ReservationActivityTimeline::class)->forReservation($reservation->id),
         ]);
     }
 
-    public function updateStatus(UpdateReservationStatusRequest $request, Reservation $reservation, QrTicketIssuer $tickets, CertificatePreparationState $documents): RedirectResponse
+    public function updateStatus(UpdateReservationStatusRequest $request, Reservation $reservation, QrTicketIssuer $tickets): RedirectResponse
     {
         $data = $request->validated();
-        DB::transaction(function () use ($request, $reservation, $data, $tickets, $documents) {
+        DB::transaction(function () use ($request, $reservation, $data, $tickets) {
             app(AccountEligibility::class)->lock($request->user(), UserRole::Admin);
             $locked = Reservation::lockForUpdate()->findOrFail($reservation->id);
             $next = ReservationStatus::from($data['status']);
@@ -109,10 +113,10 @@ class ReservationController extends Controller
             if ($next === ReservationStatus::Completed && ($reason = app(ReservationPayments::class)->completionBlockReason($locked))) {
                 throw ValidationException::withMessages(['status' => $reason]);
             }
-            $previous = $locked->status;
-            if ($next === ReservationStatus::ReadyForPickup && ! $documents->isPrepared($locked) && blank($data['notes'] ?? null)) {
-                throw ValidationException::withMessages(['notes' => 'No prepared certificate/document was found for this request. Enter a reason to continue, such as "Existing certificate was prepared manually."']);
+            if ($next === ReservationStatus::Completed && ! app(GeneratedReservationDocuments::class)->checkedIn($locked)) {
+                throw ValidationException::withMessages(['status' => self::COMPLETION_CHECKIN_REQUIRED]);
             }
+            $previous = $locked->status;
             $changedAt = now();
             $locked->update(['status' => $next]);
             if ($next === ReservationStatus::Approved) {

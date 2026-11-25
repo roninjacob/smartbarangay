@@ -5,12 +5,16 @@
     <div class="dashboard-panel-heading"><div><h2>{{ $reservation->service->name }}</h2><p class="panel-description">Review the personalized certificate. Finalizing saves this exact PDF without changing request status.</p></div></div>
     <div class="builder-body">
         @if($errors->any())<div class="alert alert-danger" role="alert">{{ $errors->first() }}</div>@endif
-        @if(!$artifact)
+        @if($previewNotice ?? null)
+            <p class="alert alert-info" role="status">{{ $previewNotice }}</p>
+        @elseif(!$artifact)
             <p class="alert alert-warning" role="alert">{{ $previewError ?? \App\Services\ReservationDocumentPreview::UNAVAILABLE }}</p>
         @else
             @if($artifact['issue_date'] ?? null)<p class="app-note">Document issue date for this preview · {{ $artifact['date_values']['document_date_full'] }}. Finalize on this Philippine date, or open and review a new preview. Age reflects the date the request was submitted.</p>@endif
             @include('admin.services.document-preview', ['preview' => ['kind' => 'pdf', 'url' => route($documentRole.'.reservations.document-preview.pdf', [$reservation, 'preview' => $artifact['token']])], 'previewHeading' => 'Personalized Certificate Preview'])
-            @if($documentRole === 'admin' && $reservation->status->canPrepareDocument())
+            @if($documentRole === 'admin' && ($finalizeBlock ?? null))
+                <p class="app-note mt-3">Finalize: {{ $finalizeBlock }}</p>
+            @elseif($documentRole === 'admin' && $reservation->status->canPrepareDocument())
                 <form method="POST" action="{{ route('admin.reservations.generated.store', $reservation) }}" class="mt-3" data-finalize-preview>
                     @csrf
                     <input type="hidden" name="preview_token" value="{{ $artifact['token'] }}">

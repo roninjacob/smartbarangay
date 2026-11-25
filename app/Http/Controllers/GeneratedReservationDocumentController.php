@@ -20,8 +20,11 @@ class GeneratedReservationDocumentController extends Controller
 
     private function reservation(Request $request, string $reservation): Reservation
     {
-        return ($request->user()->role === UserRole::Admin ? Reservation::query() : $request->user()->reservations())
-            ->whereKey($reservation)->firstOrFail();
+        // The finalized (stamped) certificate is released at the office only: residents, including the
+        // owner, never receive it online. 404 matches the existing "not found" response and reveals nothing.
+        abort_unless($request->user()->role === UserRole::Admin, 404);
+
+        return Reservation::query()->whereKey($reservation)->firstOrFail();
     }
 
     public function show(Request $request, string $reservation, GeneratedReservationDocuments $documents): Response

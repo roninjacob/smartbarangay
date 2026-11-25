@@ -27,6 +27,7 @@
                     <a class="btn btn-sm btn-outline-primary" href="{{ route('admin.reservations.generated.download', $reservation) }}">Download<span class="visually-hidden"> for Request #{{ $reservation->id }}</span></a>
                     @if($certificateStates[$reservation->id]['can_print'])<a class="btn btn-sm btn-primary" href="{{ route('admin.reservations.document.print', $reservation) }}">Print Certificate<span class="visually-hidden"> for Request #{{ $reservation->id }}</span></a>@endif
                 </div>
+                @if($certificateStates[$reservation->id]['print_block'] ?? null)<p class="app-note">Print: {{ $certificateStates[$reservation->id]['print_block'] }}</p>@endif
             @else
                 <p class="app-note">{{ $certificateStates[$reservation->id]['message'] }}</p>
             @endif

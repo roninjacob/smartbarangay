@@ -45,12 +45,12 @@
                         <p>{{ match($status) {
                             ReservationStatus::Pending => 'Review the submitted requirements, then move this request to Under Review.',
                             ReservationStatus::UnderReview => 'Check the recorded information and supporting files before approving or rejecting.',
-                            ReservationStatus::Approved => 'Review and finalize the certificate, or record manual preparation before marking Ready for Pickup.',
-                            ReservationStatus::ReadyForPickup => 'Review arrival and payment details, then mark Completed when the transaction is finished.',
+                            ReservationStatus::Approved => 'Mark Ready for Pickup when the resident can collect. The certificate is finalized after check-in.',
+                            ReservationStatus::ReadyForPickup => 'Record check-in when the resident arrives, then finalize and print the certificate, record payment, and mark Completed.',
                             default => 'This request is closed. Its recorded information remains available.',
                         } }}</p>
                         @if($residentExplanation)<p><strong>Explanation shared with the Resident:</strong> {{ $residentExplanation }}</p>@endif
-                        @if($status === ReservationStatus::Approved)<a class="btn btn-sm btn-primary" href="#certificate-heading">Prepare certificate</a>
+                        @if($status === ReservationStatus::ReadyForPickup && $completionBlockReason === \App\Http\Controllers\Admin\ReservationController::COMPLETION_CHECKIN_REQUIRED)<a class="btn btn-sm btn-primary" href="#checkin-heading">Record check-in</a>
                         @elseif($status === ReservationStatus::ReadyForPickup && $completionBlockReason)<a class="btn btn-sm btn-primary" href="#payment-heading">Review payment</a>@endif
                     </div>
                 </div>
@@ -71,13 +71,11 @@
                         <select id="next-status" name="status" class="form-select" required data-reservation-status><option value="">Choose a status</option>@foreach($transitions as $next)<option value="{{ $next->value }}" @selected(old('status') === $next->value)>{{ $next->label() }}</option>@endforeach</select>
                         @if($status === ReservationStatus::Approved)
                             <div class="mt-3" data-ready-confirmation data-certificate-prepared="{{ $hasPreparedCertificate ? '1' : '0' }}" @if(old('status') !== 'ready_for_pickup') hidden @endif>
-                                @if(! $hasPreparedCertificate)
-                                    <div class="alert alert-warning" role="alert">No prepared certificate/document was found for this request. The resident may arrive without a system-generated certificate. Do you want to continue? Enter a reason below, such as “Existing certificate was prepared manually.”</div>
-                                @endif
+                                @if(! $hasPreparedCertificate)<p class="app-note">Certificate is finalized after check-in.</p>@endif
                                 <div class="form-check"><input class="form-check-input" type="checkbox" id="confirm-ready" name="confirm_ready" value="1" data-ready-accepted><label class="form-check-label" for="confirm-ready">Mark this request as Ready for Pickup?</label></div>
                                 @error('confirm_ready')<p class="text-danger mb-0" role="alert">{{ $message }}</p>@enderror
                             </div>
-                            <noscript><p class="app-note mt-3">Before marking Ready for Pickup, confirm the action below. If no prepared certificate exists, a reason is required.</p><div class="form-check"><input class="form-check-input" type="checkbox" id="confirm-ready-noscript" name="confirm_ready" value="1"><label class="form-check-label" for="confirm-ready-noscript">Mark this request as Ready for Pickup?</label></div></noscript>
+                            <noscript><p class="app-note mt-3">Before marking Ready for Pickup, confirm the action below. Certificate is finalized after check-in.</p><div class="form-check"><input class="form-check-input" type="checkbox" id="confirm-ready-noscript" name="confirm_ready" value="1"><label class="form-check-label" for="confirm-ready-noscript">Mark this request as Ready for Pickup?</label></div></noscript>
                         @endif
                         <div class="mt-3" data-rejection-message>
                             <label class="form-label" for="resident-message">Resident explanation for rejection</label>
@@ -86,7 +84,7 @@
                         </div>
                         <label class="form-label mt-3" for="processing-notes">Processing note</label>
                         <textarea class="form-control" id="processing-notes" name="notes" rows="3" maxlength="2000" aria-describedby="notes-help" data-reservation-notes>{{ old('notes') }}</textarea>
-                        <p id="notes-help" class="form-text">Required for rejection, or for Ready for Pickup without a prepared certificate. Visible to Admin users only. Each change is recorded with your name and time.</p>
+                        <p id="notes-help" class="form-text">Required for rejection, optional otherwise. Visible to Admin users only. Each change is recorded with your name and time.</p>
                         <button type="submit" class="btn btn-primary w-100 mt-2" data-saving-label="Saving…">{{ $status === ReservationStatus::ReadyForPickup ? 'Mark Completed' : 'Update status' }}</button>
                     </form>
                     @if($status === ReservationStatus::Approved)
@@ -94,13 +92,10 @@
                         <div class="modal fade reservation-confirmation" id="ready-confirmation-modal" tabindex="-1" aria-labelledby="ready-modal-heading" aria-hidden="true">
                             <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable"><div class="modal-content"><div class="modal-header"><h3 class="modal-title h5" id="ready-modal-heading">Mark this request as Ready for Pickup?</h3><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
                                 <div class="modal-body">
-                                    @if(! $hasPreparedCertificate)
-                                        <p class="alert alert-warning">No prepared certificate/document was found for this request. Confirm that the certificate was prepared manually before continuing.</p>
-                                        <label class="form-label" for="ready-reason">Reason</label><textarea id="ready-reason" class="form-control" rows="3" maxlength="2000" required placeholder="Existing certificate was prepared manually." data-ready-reason></textarea>
-                                        <p class="form-text">The reason will be recorded in the request's status history.</p>
+                                    @if(! $hasPreparedCertificate)<p>Certificate is finalized after check-in. This status change will be recorded in history.</p>
                                     @else<p>The prepared certificate is available. This status change will be recorded in history.</p>@endif
                                 </div>
-                                <div class="modal-footer"><button class="btn btn-outline-secondary" type="button" data-bs-dismiss="modal">Cancel</button><button class="btn btn-primary" type="button" data-ready-continue>{{ $hasPreparedCertificate ? 'Confirm Ready for Pickup' : 'Continue Anyway' }}</button></div>
+                                <div class="modal-footer"><button class="btn btn-outline-secondary" type="button" data-bs-dismiss="modal">Cancel</button><button class="btn btn-primary" type="button" data-ready-continue>Confirm Ready for Pickup</button></div>
                             </div></div>
                         </div>
                         @endpush

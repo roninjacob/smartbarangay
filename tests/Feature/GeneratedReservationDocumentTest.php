@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Enums\UserRole;
+use App\Models\CheckinLog;
 use App\Models\Schedule;
 use App\Models\Service;
 use App\Models\User;
@@ -21,10 +22,13 @@ use setasign\Fpdi\PdfParser\PdfParser;
 use setasign\Fpdi\PdfParser\StreamReader;
 use setasign\Fpdi\PdfReader\PdfReader;
 use setasign\Fpdi\Tfpdf\Fpdi;
+use Tests\Support\RecordsCheckIn;
 use Tests\TestCase;
 
 class GeneratedReservationDocumentTest extends TestCase
 {
+    use RecordsCheckIn;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -116,15 +120,21 @@ class GeneratedReservationDocumentTest extends TestCase
 
     public static function statuses(): array
     {
-        return [['pending', false], ['under_review', false], ['approved', true], ['ready_for_pickup', true], ['completed', false], ['rejected', false], ['cancelled', false]];
+        // [status, recorded check-in, allowed]: finalizing needs Ready for Pickup AND a recorded check-in.
+        return [['pending', true, false], ['under_review', true, false], ['approved', false, false], ['approved', true, false],
+            ['ready_for_pickup', false, false], ['ready_for_pickup', true, true], ['completed', true, false], ['rejected', true, false], ['cancelled', true, false]];
     }
 
     #[DataProvider('statuses')]
-    public function test_only_approved_workflow_states_can_generate(string $status, bool $allowed): void
+    public function test_only_checked_in_ready_for_pickup_requests_can_generate(string $status, bool $checkedIn, bool $allowed): void
     {
         [, , , $reservation] = $this->fixture();
         $reservation->update(['status' => $status]);
         $this->actingAs($this->admin());
+        if ($checkedIn) {
+            // Written directly so the status stays as given: a check-in alone never unlocks another status.
+            $reservation->checkinLogs()->create(['verification_result' => CheckinLog::ARRIVAL, 'verified_at' => now('UTC'), 'verified_by' => auth()->id()]);
+        }
         $response = $this->generate($reservation);
         if ($allowed) {
             $response->assertRedirect(route('admin.reservations.show', $reservation))->assertSessionHasNoErrors();
@@ -138,7 +148,7 @@ class GeneratedReservationDocumentTest extends TestCase
     public function test_pdf_is_historical_private_and_preserves_master_and_business_records(): void
     {
         [$resident, $service, $template, $reservation, $purpose] = $this->fixture();
-        $reservation->update(['status' => 'approved']);
+        $this->recordCheckIn($reservation, $this->admin()->id);
         $before = $reservation->fresh()->getAttributes();
         $answers = $reservation->documentAnswers()->get()->toJson();
         $master = Storage::disk('local')->get($service->documentTemplate->stored_path);
@@ -171,24 +181,26 @@ class GeneratedReservationDocumentTest extends TestCase
         $this->assertSame($before, $reservation->fresh()->getAttributes());
         $this->assertSame($answers, $reservation->documentAnswers()->get()->toJson());
         $this->assertDatabaseCount('qr_tickets', 0);
-        $this->assertDatabaseCount('checkin_logs', 0);
+        $this->assertDatabaseCount('checkin_logs', 1); // the fixture's check-in only; finalizing adds none
         $this->assertDatabaseCount('reservation_status_histories', 0);
         $this->get(route('admin.reservations.show', $reservation))->assertSee('Preview Generated Document')->assertSee('Template Version')->assertDontSee('Generate Certificate');
         $this->get(route('admin.reservations.generated.show', $reservation))->assertOk()->assertDontSee($document->stored_path, false);
-        $this->actingAs($resident)->get(route('resident.reservations.generated.pdf', $reservation))->assertOk()->assertHeader('Cache-Control', 'no-store, private');
-        $this->get(route('resident.reservations.generated.download', $reservation))->assertOk()->assertHeader('Content-Disposition', 'attachment; filename="Certificate.pdf"');
-        $this->actingAs(User::factory()->create(['role' => UserRole::Resident, 'is_active' => true]));
-        foreach (['show', 'pdf', 'download'] as $action) {
-            $this->get(route('resident.reservations.generated.'.$action, $reservation))->assertNotFound();
-            $this->get(route('admin.reservations.generated.'.$action, $reservation))->assertForbidden();
+        $this->get(route('admin.reservations.generated.download', $reservation))->assertOk()->assertHeader('Content-Disposition', 'attachment; filename="Certificate.pdf"');
+        // Residents, including the owner, never receive the finalized PDF online.
+        foreach ([$resident, User::factory()->create(['role' => UserRole::Resident, 'is_active' => true])] as $user) {
+            $this->actingAs($user);
+            foreach (['show', 'pdf', 'download'] as $action) {
+                $this->get(route('resident.reservations.generated.'.$action, $reservation))->assertNotFound();
+                $this->get(route('admin.reservations.generated.'.$action, $reservation))->assertForbidden();
+            }
         }
     }
 
     public function test_repeated_submission_cannot_overwrite_and_print_uses_generated_pdf_after_master_replacement(): void
     {
         [, $service, , $reservation] = $this->fixture();
-        $reservation->update(['status' => 'approved']);
         $this->actingAs($admin = $this->admin());
+        $this->recordCheckIn($reservation);
         $this->generate($reservation)->assertSessionHasNoErrors();
         $document = $reservation->fresh()->document;
         $before = $document->getAttributes();
@@ -213,8 +225,8 @@ class GeneratedReservationDocumentTest extends TestCase
     public function test_missing_snapshots_replaced_source_and_invalid_layout_fail_without_saving(): void
     {
         [, $service, , $reservation] = $this->fixture();
-        $reservation->update(['status' => 'approved']);
         $this->actingAs($this->admin());
+        $this->recordCheckIn($reservation);
         $saved = $reservation->document_template_snapshot;
         unset($saved['source']);
         $reservation->forceFill(['document_template_snapshot' => $saved])->save();

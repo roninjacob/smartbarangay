@@ -17,10 +17,13 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\Support\CertificatePdf;
+use Tests\Support\RecordsCheckIn;
 use Tests\TestCase;
 
 class PaymentCompletionTest extends TestCase
 {
+    use RecordsCheckIn;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -43,6 +46,8 @@ class PaymentCompletionTest extends TestCase
         $reservation->forceFill(['fee_snapshot' => $fee])->save();
         app(QrTicketIssuer::class)->issue($reservation);
         $this->actingAs($admin);
+        // Completion also requires a recorded check-in; these tests cover the payment rule.
+        $reservation = $this->recordCheckIn($reservation, $admin->id);
 
         return [$admin, $owner, $reservation];
     }
@@ -92,9 +97,10 @@ class PaymentCompletionTest extends TestCase
         $this->assertSame($before, $reservation->fresh()->getAttributes());
         $this->assertSame($ticket, $reservation->qrTicket->fresh()->getAttributes());
         $this->assertSame($payments, ReservationPayment::all()->toArray());
-        foreach (['reservation_status_histories', 'checkin_logs', 'reservation_documents'] as $table) {
+        foreach (['reservation_status_histories', 'reservation_documents'] as $table) {
             $this->assertDatabaseCount($table, 0);
         }
+        $this->assertDatabaseCount('checkin_logs', 1); // the fixture's arrival only
         $this->assertSame([], Storage::disk('local')->allFiles());
         $this->verify($reservation); // A rejected completion does not consume/invalidate the same QR.
     }
@@ -143,7 +149,7 @@ class PaymentCompletionTest extends TestCase
         $this->assertSame($original, $document->fresh()->getAttributes());
         $this->assertSame($bytes, app(GeneratedReservationDocuments::class)->bytes($reservation));
         $this->assertDatabaseCount('reservation_payments', $fee === '50.00' ? 1 : 0);
-        $this->assertDatabaseCount('checkin_logs', 0);
+        $this->assertDatabaseCount('checkin_logs', 1); // the fixture's check-in; completion adds none
         $this->postJson('/admin/qr-verification', ['payload' => $reservation->qrTicket->encodedPayload()])->assertJsonPath('valid', false);
         $this->actingAs($owner)->get(route('resident.reservations.show', $reservation))->assertOk()->assertSee($fee === null ? 'Fee Not Recorded' : ($fee === '0.00' ? 'No Payment Required' : 'Paid'));
     }

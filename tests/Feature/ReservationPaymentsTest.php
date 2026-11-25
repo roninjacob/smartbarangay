@@ -18,10 +18,13 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use LogicException;
 use PHPUnit\Framework\Attributes\DataProvider;
+use Tests\Support\RecordsCheckIn;
 use Tests\TestCase;
 
 class ReservationPaymentsTest extends TestCase
 {
+    use RecordsCheckIn;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -220,6 +223,7 @@ class ReservationPaymentsTest extends TestCase
     {
         [$admin, , $reservation] = $this->fixture();
         app(QrTicketIssuer::class)->issue($reservation);
+        $this->recordCheckIn($reservation, $admin->id);
         if ($paid) {
             $this->post(route('admin.reservations.payment.store', $reservation), ['confirm_payment' => 1])->assertSessionHasNoErrors();
         }

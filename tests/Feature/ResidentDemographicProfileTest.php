@@ -20,10 +20,13 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\Support\CertificatePdf;
+use Tests\Support\RecordsCheckIn;
 use Tests\TestCase;
 
 class ResidentDemographicProfileTest extends TestCase
 {
+    use RecordsCheckIn;
+
     private User $resident;
 
     protected function setUp(): void
@@ -203,8 +206,8 @@ class ResidentDemographicProfileTest extends TestCase
         $data = app(ReservationDocumentPreview::class)->data($reservation->fresh());
         $this->assertSame(['Single', 'Teacher', '2000-02-29', 'Sample Street', 'Purok 1'], array_column($data['placements'], 'text'));
         $this->assertSame('Single', $reservation->resident_snapshot['resident_civil_status']);
-        $reservation->update(['status' => 'approved']);
         $admin = User::factory()->create(['role' => UserRole::Admin, 'is_active' => true]);
+        $reservation = $this->recordCheckIn($reservation, $admin->id);
         $artifact = app(CanonicalDocumentPreview::class)->create($reservation->fresh(), $admin);
         $reviewed = app(CanonicalDocumentPreview::class)->reviewed($reservation->fresh(), $admin, $artifact['token']);
         app(GeneratedReservationDocuments::class)->generate($reservation->fresh(), $admin, $artifact['token']);
