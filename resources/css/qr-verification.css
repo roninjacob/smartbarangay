@@ -84,3 +84,29 @@
 .iot-diagnostic-feed li { border-bottom: 1px solid var(--border-color); padding: 16px 0; }
 .iot-diagnostic-feed p { margin: 6px 0; overflow-wrap: anywhere; }
 .iot-diagnostic-feed time { color: var(--muted-text); font-size: 12px; }
+
+/* Verification sound preferences (per browser and Admin account). */
+.qr-audio-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
+.qr-audio-volume { width: 140px; }
+.qr-audio-status { flex-basis: 100%; }
+
+/* IoT control center */
+.iot-overview-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
+.iot-readiness { display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px; border-radius: 999px; font-size: 14px; font-weight: 700;
+    color: var(--main-text); background: color-mix(in srgb, var(--muted-text) 14%, transparent); }
+.iot-readiness::before { content: ""; width: 9px; height: 9px; border-radius: 50%; background: currentColor; }
+.iot-readiness[data-tone="success"] { color: var(--community-green); background: color-mix(in srgb, var(--community-green) 14%, transparent); }
+.iot-readiness[data-tone="warning"] { color: var(--ds-gold-dark); background: color-mix(in srgb, var(--ds-gold) 22%, transparent); }
+.iot-readiness[data-tone="danger"] { color: var(--danger); background: color-mix(in srgb, var(--danger) 14%, transparent); }
+.iot-control-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; padding: 16px;
+    border: 1px solid var(--border-color); border-radius: 10px; }
+.iot-control-row .form-check-input { width: 2.6em; height: 1.4em; margin-top: .1em; }
+.iot-control-row .form-check-label { display: flex; flex-direction: column; gap: 2px; padding-left: 6px; }
+.iot-control-row .btn { min-height: 44px; }
+.iot-control-state { margin: 12px 0 0; min-height: 1.5em; font-size: 14px; font-weight: 600; }
+.iot-control-state:empty { display: none; }
+.iot-command-list { margin: 12px 0 0; padding-left: 1.2rem; font-size: 13px; color: var(--muted-text); }
+.iot-command-list li { margin-bottom: 4px; overflow-wrap: anywhere; }
+.iot-command-list li[data-status="applied"] { color: var(--main-text); }
+.iot-command-list li[data-status="failed"], .iot-command-list li[data-status="expired"] { color: var(--danger); }
+@media (max-width: 575.98px) { .iot-control-row { flex-direction: column; align-items: stretch; } }

@@ -16,4 +16,5 @@ const char *statusText();
 int httpStatus();
 int tlsStatus();
 bool enabled();
+bool scannerEnabled(); // Admin ON/OFF state (persisted); false stops QR scanning and preview
 } // namespace deviceiot

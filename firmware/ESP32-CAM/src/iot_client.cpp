@@ -15,6 +15,9 @@
 #include "cJSON.h"
 #include "mbedtls/base64.h"
 #include "esp_heap_caps.h"
+#include <Preferences.h>
+
+uint32_t feedbackLastRequestMs(); // feedback_bridge.cpp: last authenticated request from the DevKit
 #include "lwip/dns.h"
 #include "lwip/tcpip.h"
 
@@ -88,6 +91,29 @@ struct ResultDisplay {
 portMUX_TYPE feedbackMux = portMUX_INITIALIZER_UNLOCKED;
 ResultDisplay shownResult; // guarded by feedbackMux
 std::atomic<uint32_t> lastApiOkAt{0};
+
+// Software scanner control from Laravel. Persisted in NVS so a scanner switched OFF stays OFF
+// across power cycles; flash is written only when an accepted value changes.
+std::atomic<bool> scannerOn{true}, restartPending{false};
+std::atomic<uint32_t> controlRevision{0}, restartRevision{0}, restartAt{0};
+void loadControl() {
+    Preferences store;
+    if (!store.begin("sbctl", true)) return; // never written yet: enabled, revision 0
+    scannerOn = store.getBool("en", true);
+    controlRevision = store.getUInt("rev", 0);
+    restartRevision = store.getUInt("rr", 0);
+    store.end();
+}
+bool saveControl() {
+    Preferences store;
+    if (!store.begin("sbctl", false)) return false;
+    const bool ok = store.putBool("en", scannerOn.load()) == 1 && store.putUInt("rev", controlRevision.load()) == 4
+        && store.putUInt("rr", restartRevision.load()) == 4;
+    store.end();
+    return ok;
+}
+// QR timing summaries for telemetry (guarded by performanceMux in recordQrAttempt).
+uint32_t halfEwmaUs = 0, fullEwmaUs = 0, rateWindowStart = 0, rateWindowAttempts = 0, scanRateX10 = 0;
 
 ResultDisplay resultSnapshot() {
     portENTER_CRITICAL(&feedbackMux);
@@ -363,16 +389,22 @@ Reply send(const char *input, size_t inputLength, const char *path, uint64_t acq
     char statusJson[1025];
     if (control) {
         QrPerformance performance;
+        uint32_t halfUs, fullUs, rateX10;
         portENTER_CRITICAL(&performanceMux);
         performance = qrPerformance;
+        halfUs = halfEwmaUs; fullUs = fullEwmaUs; rateX10 = scanRateX10;
         portEXIT_CRITICAL(&performanceMux);
+        const uint32_t feedbackAt = feedbackLastRequestMs();
         const int length = snprintf(statusJson, sizeof(statusJson),
             "{\"boot_id\":\"%s\",\"captured_at_ms\":%llu,\"camera_state\":\"%s\",\"telemetry\":{"
-            "\"firmware\":\"sb-iot-16.4\",\"uptime_ms\":%llu,\"rssi\":%d,\"heap\":%lu,\"largest\":%lu,\"psram\":%lu,"
+            "\"firmware\":\"sb-iot-16.6\",\"uptime_ms\":%llu,\"rssi\":%d,\"heap\":%lu,\"largest\":%lu,\"psram\":%lu,"
             "\"attempts\":%lu,\"decodes\":%lu,\"capture_fail\":%lu,\"avg_us\":%lu,\"p95_us\":%lu,"
             "\"capture_us\":%lu,\"convert_us\":%lu,\"gray_us\":%lu,\"detect_us\":%lu,\"decode_us\":%lu,"
-            "\"preview_copy_us\":%lu,\"preview_sent\":%lu,\"http_ms\":%lu,\"http_code\":%d,\"error\":\"%s\",\"alloc_fail\":%lu,\"reset\":%d}}",
-            boot, static_cast<unsigned long long>(utcMs()), transport::cameraHealth(cameraOk.load(), decoderOk.load()),
+            "\"preview_copy_us\":%lu,\"preview_sent\":%lu,\"http_ms\":%lu,\"http_code\":%d,\"error\":\"%s\",\"alloc_fail\":%lu,\"reset\":%d,"
+            "\"min_heap\":%lu,\"channel\":%d,\"scanner_enabled\":%d,\"control_revision\":%lu,\"restart_revision\":%lu,"
+            "\"feedback_age_ms\":%lu,\"half_us\":%lu,\"full_us\":%lu,\"scan_rate_x10\":%lu}}",
+            // A scanner switched OFF has no decoder by design; that is not a decoder fault.
+            boot, static_cast<unsigned long long>(utcMs()), transport::cameraHealth(cameraOk.load(), decoderOk.load() || !scannerOn.load()),
             static_cast<unsigned long long>(monotonicMs()), WiFi.RSSI(),
             static_cast<unsigned long>(heap_caps_get_free_size(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)),
             static_cast<unsigned long>(heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)),
@@ -382,7 +414,11 @@ Reply send(const char *input, size_t inputLength, const char *path, uint64_t acq
             static_cast<unsigned long>(performance.last.captureUs), static_cast<unsigned long>(performance.last.convertUs),
             static_cast<unsigned long>(performance.last.grayUs), static_cast<unsigned long>(performance.last.detectUs), static_cast<unsigned long>(performance.last.decodeUs),
             static_cast<unsigned long>(previewCopyUs.load()), static_cast<unsigned long>(previewSent.load()), static_cast<unsigned long>(lastDurationMs.load()),
-            lastHttp.load(), lastCategory, static_cast<unsigned long>(allocationFailures.load()), static_cast<int>(esp_reset_reason()));
+            lastHttp.load(), lastCategory, static_cast<unsigned long>(allocationFailures.load()), static_cast<int>(esp_reset_reason()),
+            static_cast<unsigned long>(heap_caps_get_minimum_free_size(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)), static_cast<int>(WiFi.channel()),
+            scannerOn.load() ? 1 : 0, static_cast<unsigned long>(controlRevision.load()), static_cast<unsigned long>(restartRevision.load()),
+            static_cast<unsigned long>(feedbackAt ? millis() - feedbackAt : 4294967295UL),
+            static_cast<unsigned long>(halfUs), static_cast<unsigned long>(fullUs), static_cast<unsigned long>(rateX10));
         if (length <= 0 || static_cast<size_t>(length) >= sizeof(statusJson)) {
             client.metrics.category = "local_configuration_or_body_invalid";
             return finish();
@@ -470,6 +506,20 @@ Reply send(const char *input, size_t inputLength, const char *path, uint64_t acq
             } else if (cJSON_IsNull(result)) {
                 reply.resultReason = ResultReason::Released;
             }
+            // Desired scanner state and any open restart (servers before control support omit it).
+            const cJSON *control = cJSON_GetObjectItemCaseSensitive(root, "control");
+            const cJSON *revision = cJSON_GetObjectItemCaseSensitive(control, "revision");
+            const cJSON *enabled = cJSON_GetObjectItemCaseSensitive(control, "enabled");
+            const cJSON *restart = cJSON_GetObjectItemCaseSensitive(control, "restart");
+            if (cJSON_IsObject(control) && cJSON_IsNumber(revision) && revision->valuedouble >= 0
+                && revision->valuedouble <= 4294967295.0 && cJSON_IsBool(enabled)) {
+                reply.controlKnown = true;
+                reply.controlRevision = static_cast<uint32_t>(revision->valuedouble);
+                reply.controlEnabled = cJSON_IsTrue(enabled);
+                if (cJSON_IsNumber(restart) && restart->valuedouble >= 1 && restart->valuedouble <= 4294967295.0) {
+                    reply.restartRevision = static_cast<uint32_t>(restart->valuedouble);
+                }
+            }
         } else if (!strcmp(path, "/api/iot/v1/scans")) {
             const cJSON *valid = cJSON_GetObjectItemCaseSensitive(root, "valid");
             const cJSON *id = cJSON_GetObjectItemCaseSensitive(root, "event_id");
@@ -510,6 +560,30 @@ void connectionFailed() {
     publish(recent ? Status::Recovering : Status::Unknown);
 }
 
+// Apply Laravel's desired ON/OFF state and restart. Laravel only ever sends its newest desired
+// revision, so any difference is authoritative (this also recovers after a server-side reset).
+void applyControl(const Reply &reply) {
+    if (!reply.controlKnown) return;
+    bool changed = false;
+    if (reply.controlRevision != controlRevision.load() || reply.controlEnabled != scannerOn.load()) {
+        if (!reply.controlEnabled && scannerOn.load()) { invalidate(); previewWanted = false; }
+        scannerOn = reply.controlEnabled;
+        controlRevision = reply.controlRevision;
+        changed = true;
+        Serial.printf("[CONTROL] scanner=%s revision=%lu\n", reply.controlEnabled ? "on" : "off",
+            static_cast<unsigned long>(reply.controlRevision));
+    }
+    // Record the restart revision in NVS before acknowledging it: after the reboot the same
+    // revision is already done, so a repeated delivery can never cause a reboot loop.
+    if (reply.restartRevision > restartRevision.load()) {
+        restartRevision = reply.restartRevision;
+        restartPending = true;
+        changed = true;
+        Serial.printf("[CONTROL] restart revision=%lu accepted\n", static_cast<unsigned long>(reply.restartRevision));
+    }
+    if (changed && !saveControl()) Serial.println("[CONTROL] NVS write failed; the state applies until the next reboot.");
+}
+
 // Follow Laravel's decision for the result currently shown (hold, release, recorded).
 void applyServerResult(const Reply &reply) {
     const ResultDisplay current = resultSnapshot();
@@ -547,6 +621,16 @@ void worker(void *) {
             memset(&pending, 0, sizeof(pending));
             continue;
         }
+        // An accepted restart runs after its acknowledgment, or after 10 s if the server is unreachable.
+        if (restartPending.load()) {
+            static uint32_t acceptedAt = 0;
+            if (!acceptedAt) acceptedAt = millis();
+            if ((restartAt.load() && static_cast<int32_t>(millis() - restartAt.load()) >= 0) || millis() - acceptedAt >= 10000) {
+                Serial.println("[CONTROL] Restarting by authorized request.");
+                Serial.flush();
+                esp_restart();
+            }
+        }
         if (monotonicMs() < backoff) { memset(&pending, 0, sizeof(pending)); continue; }
         // Drop a result whose local bound has passed (standalone, recorded or absolute cap).
         if (!resultVisible(resultSnapshot(), millis())) setResultMode(ResultMode::None);
@@ -563,7 +647,11 @@ void worker(void *) {
                 nextControl = monotonicMs() + CONTROL_RETRY_MS;
             } else {
                 lastApiOkAt = millis();
+                const bool acknowledgedRestart = restartPending.load(); // this heartbeat reported it
+                applyControl(reply);
                 applyServerResult(reply);
+                if (restartPending.load() && !acknowledgedRestart) nextControl = monotonicMs(); // acknowledge now
+                else if (acknowledgedRestart && !restartAt.load()) restartAt = millis() + 500;
                 const ResultDisplay shown = resultSnapshot();
                 const bool showing = resultVisible(shown, millis());
                 if (!showing && monotonicMs() - finishedAt >= 2000) publish(Status::Paired);
@@ -585,7 +673,7 @@ void worker(void *) {
             // not latched; they are read again once the result is released. A standalone or
             // recorded result may be replaced by a different ticket.
             const ResultMode mode = resultSnapshot().mode;
-            const bool held = mode == ResultMode::Pending || mode == ResultMode::Hold;
+            const bool held = mode == ResultMode::Pending || mode == ResultMode::Hold || !scannerOn.load();
             // Latch stationary tickets; two empty captures re-arm the presentation.
             const bool sent = !held && lastQr != event.payload;
             if (sent) {
@@ -674,11 +762,15 @@ uint8_t feedbackState() {
     if (status == Status::Unknown) return Offline;
     const uint32_t okAt = lastApiOkAt.load();
     if (status == Status::Recovering) return okAt ? Reconnecting : Starting;
+    if (restartPending.load()) return Restarting;
     if (status == Status::Disabled || status == Status::NeedTime || !okAt) return Starting;
     if (millis() - okAt > OFFLINE_AFTER_MS) return Offline;
-    if (!cameraOk.load() || !decoderOk.load()) return CameraError;
+    // A result under review stays visible even after the scanner is switched OFF.
     const ResultDisplay result = resultSnapshot();
-    if (resultVisible(result, millis())) {
+    const bool showing = resultVisible(result, millis());
+    if (!showing && !scannerOn.load()) return ScannerOff;
+    if (!showing && (!cameraOk.load() || !decoderOk.load())) return CameraError;
+    if (showing) {
         if (result.mode == ResultMode::Recorded) return CheckInRecorded;
         if (!result.valid) return Denied;
         switch (result.outcome) {
@@ -693,10 +785,14 @@ uint8_t feedbackState() {
 int httpStatus() { return lastHttp.load(); }
 int tlsStatus() { return lastTls.load(); }
 bool enabled() { return configured; }
+bool scannerEnabled() { return scannerOn.load(); }
 bool start(const char *bootId) {
     if (!configured || started || !hex(bootId, 32)) return started;
     heap_caps_register_failed_alloc_callback(allocationFailed);
     memcpy(boot, bootId, sizeof(boot));
+    loadControl(); // before QR scanning may start; a scanner switched OFF stays OFF
+    Serial.printf("[CONTROL] loaded scanner=%s revision=%lu restart_revision=%lu\n", scannerOn.load() ? "on" : "off",
+        static_cast<unsigned long>(controlRevision.load()), static_cast<unsigned long>(restartRevision.load()));
     observations = xQueueCreate(1, sizeof(Pending));
     frames = xQueueCreate(1, sizeof(Frame));
     if (!observations || !frames) { publish(Status::Unknown); Serial.println("[IoT] communication queue allocation failed"); return false; }
@@ -716,7 +812,7 @@ bool start(const char *bootId) {
     return true;
 }
 void observe(const uint8_t *payload, size_t length, uint64_t acquiredMs, uint32_t scannerSession, uint32_t sequence) {
-    if (!observations || length > 69 || classify(payload, length) != Kind::Ticket || !clockReady() || WiFi.status() != WL_CONNECTED) return;
+    if (!observations || !scannerOn.load() || length > 69 || classify(payload, length) != Kind::Ticket || !clockReady() || WiFi.status() != WL_CONNECTED) return;
     Pending pending{};
     memcpy(pending.payload, payload, length); pending.length = length; pending.acquiredMs = acquiredMs;
     pending.session = scannerSession; pending.sequence = sequence; pending.generation = generation.load();
@@ -726,8 +822,21 @@ void observe(const uint8_t *payload, size_t length, uint64_t acquiredMs, uint32_
     memset(&pending, 0, sizeof(pending));
 }
 void recordQrAttempt(const QrAttemptTiming &sample) {
+    const uint32_t now = millis();
     portENTER_CRITICAL(&performanceMux);
     qrPerformance.record(sample);
+    if (sample.captured) {
+        uint32_t &ewma = sample.full ? fullEwmaUs : halfEwmaUs;
+        ewma = ewma ? (ewma * 7 + sample.totalUs) / 8 : sample.totalUs;
+    }
+    // Attempts per second (x10) over windows of at least 10 s.
+    if (!rateWindowStart) rateWindowStart = now;
+    rateWindowAttempts++;
+    if (now - rateWindowStart >= 10000) {
+        scanRateX10 = rateWindowAttempts * 10000 / (now - rateWindowStart);
+        rateWindowStart = now;
+        rateWindowAttempts = 0;
+    }
     portEXIT_CRITICAL(&performanceMux);
 }
 void sceneEmpty(bool empty) {
@@ -741,7 +850,7 @@ void sceneEmpty(bool empty) {
 void cameraState(bool ready, bool decoderReady) { cameraOk = ready; decoderOk = decoderReady; }
 void offerFrame(const uint8_t *jpeg, size_t length, uint64_t acquiredMs) {
     static uint64_t lastOffered = 0;
-    if (!frames || !previewWanted || !clockReady() || previewExpires.load() <= utcMs()
+    if (!frames || !scannerOn.load() || !previewWanted || !clockReady() || previewExpires.load() <= utcMs()
         || monotonicMs() - lastOffered < PREVIEW_INTERVAL_MS || length < 4 || jpeg[0] != 0xff || jpeg[1] != 0xd8) return;
     previewOffered++;
     if (length > 32768) { previewTooLarge++; return; }

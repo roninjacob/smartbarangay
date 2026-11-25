@@ -12,6 +12,17 @@
             <button type="button" class="btn btn-outline-primary" data-scanner-mode="iot" aria-pressed="false"
                 @disabled(! config('iot.enabled') || config('session.driver') !== 'database')>IoT Scanner</button>
         </div>
+        <div class="qr-audio-controls px-4 pt-3" data-iot-audio data-audio-scope="{{ auth()->id() }}" role="group" aria-label="Verification sounds">
+            <div class="form-check form-switch m-0">
+                <input class="form-check-input" type="checkbox" role="switch" id="iot-audio-enabled" data-iot-audio-enabled>
+                <label class="form-check-label" for="iot-audio-enabled">Verification sounds</label>
+            </div>
+            <label class="visually-hidden" for="iot-audio-volume">Sound volume</label>
+            <input type="range" class="form-range qr-audio-volume" id="iot-audio-volume" min="0" max="100" step="5" data-iot-audio-volume>
+            <button type="button" class="btn btn-sm btn-outline-secondary" data-iot-audio-test>Test sound</button>
+            <button type="button" class="btn btn-sm btn-primary" data-iot-audio-activate hidden>Enable sound</button>
+            <p class="app-note m-0 qr-audio-status" data-iot-audio-status role="status" aria-live="polite"></p>
+        </div>
         @if (! config('iot.enabled') || config('session.driver') !== 'database')
             <p class="app-note px-4 pt-3 mb-0">IoT Scanner is unavailable in this environment. Laptop Camera remains available.</p>
         @endif

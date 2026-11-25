@@ -81,6 +81,9 @@ struct Reply {
     Outcome outcome = Outcome::Denied;     // scans: what the ticket permits
     char resultEvent[37] = {};             // status: the result Laravel is tracking
     ResultReason resultReason = ResultReason::Absent;
+    bool controlKnown = false;             // status: Laravel sent the desired scanner state
+    bool controlEnabled = true;
+    uint32_t controlRevision = 0, restartRevision = 0;
 };
 
 // Single owner on the communication worker. No unbounded queue or persisted QR.

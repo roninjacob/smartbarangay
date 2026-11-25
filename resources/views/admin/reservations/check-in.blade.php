@@ -1,3 +1,6 @@
+@if (session('checkin_recorded'))
+    <div data-iot-sound="checkin" data-audio-scope="{{ auth()->id() }}" hidden></div>
+@endif
 <section class="card dashboard-panel rv-section" aria-labelledby="checkin-heading">
     <div class="dashboard-panel-heading"><h2 id="checkin-heading"><span class="panel-icon is-teal" aria-hidden="true"><x-app-icon name="qr"/></span>Resident Check-In</h2></div>
     <div class="rv-section-body">

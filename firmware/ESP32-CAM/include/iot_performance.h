@@ -14,6 +14,7 @@ struct QrAttemptTiming {
     uint32_t totalUs = 0;
     bool captured = false;
     bool decoded = false;
+    bool full = true; // full 640x480 attempt, or half-scale 320x240
 };
 
 class QrPerformance {

@@ -169,6 +169,8 @@ if (root) {
             }
         }
         resultModal.show();
+        // For the optional verification sound: only server answers reach this point.
+        document.dispatchEvent(new CustomEvent('qr:result-shown', { detail: { valid: result.valid, outcome, event_id: review.eventId } }));
         status(result.valid ? `${copy.panel}. Review the result window.` : 'Ticket denied. Review the result window.');
     };
     const verify = async (payload, current) => {

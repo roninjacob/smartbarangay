@@ -49,7 +49,10 @@ const Screen SCREENS[] = {
     {"Checked In", "Proceed to counter", LedGreen, "ALREADY_CHECKED_IN"},
     {"Not Ready Yet", "Please approach staff", LedYellow, "NOT_READY"},
     {"Camera Error", "Scanner unavailable", LedYellowBlink, "CAMERA_ERROR"},
+    {"Scanner Off", "Enable from website", LedOff, "SCANNER_OFF"},
+    {"Restarting", "Please wait", LedYellow, "RESTARTING"},
 };
+static_assert(sizeof(SCREENS) / sizeof(SCREENS[0]) == LastState + 1, "one screen per scanner state");
 
 bool oledReady = false;
 bool pending = false;

@@ -45,6 +45,8 @@ State numbers are defined once in `include/feedback_states.h` (identical copy in
 | One request failed, retrying | Reconnecting / Restoring connection | Yellow blinking |
 | No Wi-Fi, no server answer for 20 s, or scanner unreachable | Device Offline / Scanner unavailable | Yellow blinking |
 | Camera or decoder unavailable | Camera Error / Scanner unavailable | Yellow blinking |
+| Switched OFF from the website (still connected) | Scanner Off / Enable from website | Off |
+| Authorized restart about to run | Restarting / Please wait | Yellow |
 | Authentication failure | Authentication Error | Yellow blinking |
 | Rate limited | Please Wait | Yellow blinking |
 

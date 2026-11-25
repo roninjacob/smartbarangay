@@ -147,6 +147,11 @@ Route::middleware('auth')->group(function () {
         Route::get('/reports/documents', [RecordedEventReportController::class, 'documents'])->name('reports.documents');
         Route::get('/iot-dashboard', [IotDashboardController::class, 'index'])->name('iot-dashboard.index');
         Route::get('/iot-dashboard/data', [IotDashboardController::class, 'data'])->middleware('throttle:30,1')->name('iot-dashboard.data');
+        // Software scanner control (authorized in the Phase 3-5 prompt): ON/OFF and restart.
+        Route::post('/iot-dashboard/devices/{device}/scanner', [IotDashboardController::class, 'scanner'])
+            ->whereUuid('device')->middleware('throttle:20,1')->name('iot-dashboard.scanner');
+        Route::post('/iot-dashboard/devices/{device}/restart', [IotDashboardController::class, 'restart'])
+            ->whereUuid('device')->middleware('throttle:3,1')->name('iot-dashboard.restart');
         Route::get('/qr-verification', [QrVerificationController::class, 'index'])->name('qr-verification.index');
         Route::prefix('iot-scanner')->name('iot-scanner.')->middleware('throttle:240,1')->group(function () {
             Route::post('/connect', [IotScannerController::class, 'connect'])->block()->name('connect');

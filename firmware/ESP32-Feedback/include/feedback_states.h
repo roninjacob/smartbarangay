@@ -19,6 +19,8 @@ enum State : uint8_t {
     AlreadyCheckedIn = 11,
     NotReady = 12,     // valid ticket, reservation not yet Ready for Pickup
     CameraError = 13,
-    LastState = CameraError,
+    ScannerOff = 14,   // switched OFF by an Admin from the website; still connected
+    Restarting = 15,   // an authorized restart is about to run
+    LastState = Restarting,
 };
 } // namespace sbfeedback

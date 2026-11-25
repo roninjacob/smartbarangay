@@ -156,7 +156,7 @@ class IotMonitoringTest extends TestCase
         $this->getJson('/admin/iot-dashboard/data?device='.$this->device->id)->assertUnauthorized();
         $this->actingAs(User::factory()->create(['role' => UserRole::Resident, 'is_active' => true]))
             ->getJson('/admin/iot-dashboard/data?device='.$this->device->id)->assertForbidden();
-        $this->actingAs($this->admin)->get('/admin/iot-dashboard')->assertOk()->assertSee('Device monitoring');
+        $this->actingAs($this->admin)->get('/admin/iot-dashboard')->assertOk()->assertSee('IoT control center');
         $this->getJson('/admin/iot-dashboard/data?device=invalid')->assertStatus(422);
         $this->getJson('/admin/iot-dashboard/data?device='.Str::uuid())->assertNotFound();
         $this->heartbeat()->assertOk();

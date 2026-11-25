@@ -1,4 +1,5 @@
 #include "feedback_protocol.h"
+#include <atomic>
 
 namespace deviceiot {
 uint8_t feedbackState();
@@ -10,10 +11,16 @@ static const uint8_t DEVKIT_MAC[6] = {
 
 // Answers each authenticated request as soon as it arrives, independent of the main loop and
 // of QR processing, so the feedback device never mistakes a slow loop for a lost scanner.
+static std::atomic<uint32_t> lastRequestAt{0};
+
+// Evidence of real peer communication for telemetry: last authenticated DevKit request.
+uint32_t feedbackLastRequestMs() { return lastRequestAt.load(); }
+
 static void responder(void *) {
     sbfeedback::Packet packet{};
     for (;;) {
         if (!sbfeedback::read(packet, pdMS_TO_TICKS(1000)) || packet.kind != 1) continue;
+        lastRequestAt = millis();
         packet.kind = 2;
         packet.state = deviceiot::feedbackState();
         sbfeedback::send(packet);

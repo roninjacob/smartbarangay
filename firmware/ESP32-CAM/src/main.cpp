@@ -521,7 +521,7 @@ void recordQrTiming(QrTimings timing, int64_t started) {
     timing.totalUs = static_cast<uint32_t>(esp_timer_get_time() - started);
     timing.completedMs = millis();
     deviceiot::recordQrAttempt({timing.captureUs, timing.convertUs, timing.grayUs, timing.detectUs,
-        timing.decodeUs, timing.totalUs, timing.captured, timing.decoded});
+        timing.decodeUs, timing.totalUs, timing.captured, timing.decoded, timing.full});
     // Headroom is judged on the common half-scale attempts; periodic full-VGA attempts neither
     // count nor reset it. Memory health uses internal RAM, not PSRAM-inflated totals.
     if (!timing.full || !timing.processed) {
@@ -1003,6 +1003,15 @@ void feedbackTick();
 
 void loop() {
     deviceiot::tick();
+    // Follow the Admin ON/OFF state (edge-triggered, so a failed QR start is not retried in a loop).
+    static bool lastControlOn = true;
+    if (deviceiot::enabled()) {
+        const bool on = deviceiot::scannerEnabled();
+        if (on != lastControlOn && !modeSwitching) {
+            lastControlOn = on;
+            qrRequested = on;
+        }
+    }
     feedbackTick();
     reportDiagnostics();
     if (!credentialsReady) {
@@ -1016,7 +1025,8 @@ void loop() {
             uint8_t nonce[16]; esp_fill_random(nonce, sizeof(nonce));
             for (size_t i = 0; i < sizeof(nonce); ++i) { snprintf(bootId + i * 2, 3, "%02x", nonce[i]); }
         }
-        if (deviceiot::start(bootId)) { qrRequested = true; }
+        // QR scanning starts only if the persisted/authoritative control state allows it.
+        if (deviceiot::start(bootId)) { qrRequested = deviceiot::scannerEnabled(); }
         const String ip = WiFi.localIP().toString();
         Serial.printf("[WiFi] Connected; RSSI=%d dBm.\n", WiFi.RSSI());
         Serial.printf("[WiFi] Metadata page: http://%s/\n", ip.c_str());

@@ -24,6 +24,11 @@ class ReservationCheckInController extends Controller
             app(IotVerificationEvents::class)->recorded($request->input('iot_event'), hash('sha256', $request->session()->getId()));
         }
 
+        // One-time flag for the optional check-in sound on the next page (a refresh does not replay it).
+        if ($log->wasRecentlyCreated) {
+            $request->session()->flash('checkin_recorded', true);
+        }
+
         return to_route('admin.reservations.show', $reservation)->with('status', $log->wasRecentlyCreated
             ? 'Checked In. Reservation status, payment and QR usage remain unchanged.' : 'Already checked in. The original arrival record is unchanged.');
     }

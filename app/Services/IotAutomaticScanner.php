@@ -61,6 +61,7 @@ class IotAutomaticScanner
             $state = $this->state($device, $body['boot_id']);
             // An older delayed heartbeat cannot roll a newer boot backwards.
             abort_if($body['captured_at_ms'] < $state->last_status_capture, 409);
+            $previousBoot = $state->boot_id;
             app(IotTelemetry::class)->heartbeat($state, $body);
             if ($state->boot_id !== $body['boot_id']) {
                 $this->deleteFrame($device->id);
@@ -69,14 +70,23 @@ class IotAutomaticScanner
             }
             $state->forceFill(['last_seen_at' => now('UTC'), 'camera_state' => $body['camera_state'],
                 'last_status_capture' => $body['captured_at_ms'], 'heartbeat_at' => now('UTC')])->save();
+            // Desired ON/OFF and any open restart; reconciled with what this heartbeat reports.
+            $control = app(IotDeviceControl::class)->heartbeat($device, $previousBoot, $body['boot_id'],
+                is_array($body['telemetry'] ?? null) ? $body['telemetry'] : []);
             $lease = IotScannerPairing::find($device->id);
             $adminLive = $lease && $lease->automatic && app(IotScannerSessions::class)->live($lease, $device);
-            $preview = $adminLive && $lease->preview_until?->isFuture();
+            // A disabled scanner never captures preview images.
+            $preview = $adminLive && $control['enabled'] && $lease->preview_until?->isFuture();
+            if (! $control['enabled']) {
+                $this->deleteFrame($device->id);
+            }
 
             return ['ok' => true, 'preview' => (bool) $preview, 'lease_id' => $preview ? $lease->id : null,
                 'preview_expires_at' => $preview ? $lease->preview_until->toIso8601String() : null,
-                // Older firmware ignores this key; newer firmware holds or clears its LED/OLED result.
-                'result' => app(IotVerificationEvents::class)->forDevice($device->id, (bool) $adminLive)];
+                // Older firmware ignores these keys; newer firmware holds or clears its LED/OLED result
+                // and applies the desired ON/OFF state and restart.
+                'result' => app(IotVerificationEvents::class)->forDevice($device->id, (bool) $adminLive),
+                'control' => $control];
         }, 3);
     }
 
@@ -87,6 +97,8 @@ class IotAutomaticScanner
             $this->fresh($body['captured_at_ms']);
             $state = $this->state($device, $body['boot_id']);
             abort_unless($state->boot_id === $body['boot_id'], 409);
+            // A scanner switched OFF by an Admin verifies nothing, even before it applies the command.
+            abort_unless(app(IotDeviceControl::class)->desired($device->id)['enabled'], 409);
             abort_if($body['scanner_session'] < $state->last_session
                 || ($body['scanner_session'] === (int) $state->last_session && $body['sequence'] <= $state->last_sequence)
                 || $body['captured_at_ms'] < $state->last_capture, 409);
@@ -231,7 +243,7 @@ class IotAutomaticScanner
                 $lease = IotScannerPairing::lockForUpdate()->find($device->id);
             }
             abort_unless($lease && $lease->automatic && $lease->id === $body['lease_id'] && $lease->preview_until?->isFuture()
-                && app(IotScannerSessions::class)->live($lease, $device), 409);
+                && app(IotScannerSessions::class)->live($lease, $device) && app(IotDeviceControl::class)->desired($device->id)['enabled'], 409);
             $state = IotDeviceState::find($device->id);
             abort_unless($state && $state->boot_id === $body['boot_id'], 409);
             if ($state->frame_lease === $lease->id) {
@@ -256,7 +268,8 @@ class IotAutomaticScanner
         return DB::transaction(function () use ($request, $known) {
             [$device, $lease] = $this->browserLease($request);
             $state = IotDeviceState::find($device->id);
-            abort_unless($lease->preview_until?->isFuture() && $state?->frame_lease === $lease->id
+            abort_unless($lease->preview_until?->isFuture() && app(IotDeviceControl::class)->desired($device->id)['enabled']
+                && $state?->frame_lease === $lease->id
                 && $state->frame_at?->gt(now()->subSeconds(5)) && Storage::disk('local')->exists($this->framePath($device->id)), 404);
             $age = now()->getTimestampMs() - ($state->frame_captured_ms ?? 0);
             abort_unless($age >= 0 && $age < 5000, 404);

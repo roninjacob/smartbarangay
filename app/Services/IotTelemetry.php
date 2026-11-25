@@ -24,6 +24,9 @@ class IotTelemetry
         'uptime_ms', 'heap', 'largest', 'psram', 'attempts', 'decodes', 'capture_fail',
         'avg_us', 'p95_us', 'capture_us', 'convert_us', 'gray_us', 'detect_us', 'decode_us',
         'preview_copy_us', 'preview_sent', 'http_ms', 'alloc_fail', 'reset',
+        // Scanner firmware 16.6+: control state, memory floor, Wi-Fi channel and feedback link.
+        'min_heap', 'channel', 'scanner_enabled', 'control_revision', 'restart_revision', 'feedback_age_ms',
+        'half_us', 'full_us', 'scan_rate_x10',
     ];
 
     public function validate(mixed $telemetry): array
@@ -37,6 +40,8 @@ class IotTelemetry
         $rules = array_fill_keys(self::NUMBERS, ['sometimes', 'integer', 'min:0', 'max:4294967295']);
         $rules['uptime_ms'] = ['sometimes', 'integer', 'min:0', 'max:9999999999999'];
         $rules['rssi'] = ['sometimes', 'integer', 'between:-127,0'];
+        $rules['scanner_enabled'] = ['sometimes', 'integer', 'in:0,1'];
+        $rules['channel'] = ['sometimes', 'integer', 'between:0,14'];
         $rules['http_code'] = ['sometimes', 'integer', 'between:-20,599'];
         $rules['error'] = ['sometimes', 'string', 'in:'.implode(',', self::CATEGORIES)];
         $rules['firmware'] = ['sometimes', 'string', 'regex:/\Asb-iot-[0-9]{1,2}\.[0-9]{1,2}\z/'];
@@ -82,6 +87,12 @@ class IotTelemetry
             $state->invalid_count++;
         }
         $this->event($state->device_id, $valid ? 'scan_valid' : 'scan_invalid');
+    }
+
+    /** Device activity entry (control actions, restarts). Callers hold the device lock. */
+    public function record(string $id, string $kind, array $details = []): void
+    {
+        $this->event($id, $kind, $details);
     }
 
     private function event(string $id, string $kind, array $details = []): void
