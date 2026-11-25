@@ -6,8 +6,10 @@ if (root) {
     let version = 0;
     let active = false;
     let online = false;
-    let handoff = false;
     let frameRunning = false;
+    // Scanner event under review in the result window; each poll renews its hardware hold.
+    let reviewing;
+    const delivered = new Set();
     let pollTimer, frameTimer, expiryTimer, frameUrl;
     let frameSequence;
     let mutations = Promise.resolve();
@@ -133,7 +135,7 @@ if (root) {
     const poll = async (current) => {
         if (!isCurrent(current)) return;
         try {
-            const data = await api('poll', {});
+            const data = await api('poll', reviewing ? { review: reviewing } : {});
             if (!isCurrent(current)) return;
             if (data.state !== 'connected' || !data.preview) throw new Error('Viewing session expired. Resume the scanner.');
             online = data.online === true;
@@ -147,15 +149,17 @@ if (root) {
             } else if (!frameRunning && !frameTimer) {
                 void frame(current);
             }
-            if (data.result) {
-                document.dispatchEvent(new CustomEvent('qr:iot-result', { detail: data.result }));
-                if (data.result.valid) {
-                    handoff = true;
-                    stop('Ticket verified. Opening reservation details');
-                    void mutate('preview', { enabled: false }).catch(() => {});
-                    return;
-                }
-                message(data.result.message || 'Invalid ticket. Present another SmartBarangay ticket.', true);
+            // A fresh result, or the one this session is still reviewing after a refresh. Event ids
+            // make delivery idempotent: a repeated or delayed copy never reopens the window.
+            const incoming = data.result ?? data.active?.result;
+            const eventId = data.result?.event_id ?? data.active?.event_id;
+            if (incoming && typeof eventId === 'string' && ! delivered.has(eventId)) {
+                delivered.add(eventId);
+                if (delivered.size > 50) delivered.delete(delivered.values().next().value);
+                reviewing = eventId;
+                document.dispatchEvent(new CustomEvent('qr:iot-result', { detail: incoming }));
+                message(incoming.valid ? 'Ticket verified. Review the result window.'
+                    : incoming.message || 'Ticket denied. Review the result window.', ! incoming.valid);
             }
             pollTimer = setTimeout(() => void poll(current), 1000);
         } catch (error) {
@@ -168,7 +172,6 @@ if (root) {
     const select = async () => {
         const id = node('device').value;
         const current = stop(id ? 'Connecting to the scanner' : 'Select a scanner');
-        handoff = false;
         node('retry').hidden = true;
         message(id ? 'Connecting securely and opening the camera...' : 'Select a scanner to begin.');
         try {
@@ -201,7 +204,6 @@ if (root) {
         if (button.disabled || button.dataset.scannerMode === root.dataset.scannerMode) return;
         const previous = root.dataset.scannerMode;
         stop('Select a scanner');
-        handoff = false;
         root.dataset.scannerMode = button.dataset.scannerMode;
         document.dispatchEvent(new Event('qr:mode-change'));
         modes.forEach((mode) => {
@@ -219,8 +221,15 @@ if (root) {
     node('retry').addEventListener('click', () => void select());
     node('refresh').addEventListener('click', async () => { await disconnect(); await refresh(); });
     node('disconnect').addEventListener('click', () => { void disconnect(); message('Scanner paused. Resume when ready.'); });
-    window.addEventListener('pagehide', () => { if (!handoff && root.dataset.scannerMode === 'iot') void disconnect(true); });
+    // Done in the result window releases exactly that event on the scanner.
+    document.addEventListener('qr:iot-ack', (event) => {
+        const id = event.detail?.event_id;
+        if (typeof id !== 'string') return;
+        if (reviewing === id) reviewing = undefined;
+        void api('poll', { ack: id }, event.detail.keepalive === true).catch(() => {});
+    });
+    window.addEventListener('pagehide', () => { if (root.dataset.scannerMode === 'iot') void disconnect(true); });
     document.addEventListener('visibilitychange', () => {
-        if (document.hidden && !handoff && root.dataset.scannerMode === 'iot') void disconnect(true);
+        if (document.hidden && root.dataset.scannerMode === 'iot') void disconnect(true);
     });
 }

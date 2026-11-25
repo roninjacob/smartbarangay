@@ -7,7 +7,26 @@
 
 namespace deviceiot {
 enum class Kind { Other, Pair, Ticket };
-enum class Status { Disabled, NeedTime, NeedPair, Paired, Processing, Valid, Invalid, Unknown, Revoked, RateLimited };
+enum class Status { Disabled, NeedTime, NeedPair, Paired, Processing, Valid, Invalid, Unknown, Revoked, RateLimited, Recovering };
+// Transaction meaning of a server answer. Display only: the scanner never performs a transaction.
+enum class Outcome : uint8_t { Denied, Authorized, CheckedIn, NotReady };
+// What Laravel says about the scanner's latest verification result (status response "result").
+enum class ResultReason : uint8_t { Absent, Hold, Standalone, Recorded, Released };
+inline Outcome outcomeFrom(const char *value) {
+    if (!value) return Outcome::Denied;
+    if (!std::strcmp(value, "check_in_authorized")) return Outcome::Authorized;
+    if (!std::strcmp(value, "checked_in")) return Outcome::CheckedIn;
+    if (!std::strcmp(value, "not_ready")) return Outcome::NotReady;
+    return Outcome::Denied;
+}
+inline ResultReason reasonFrom(const char *value) {
+    if (!value) return ResultReason::Absent;
+    if (!std::strcmp(value, "pickup") || !std::strcmp(value, "review")) return ResultReason::Hold;
+    if (!std::strcmp(value, "standalone")) return ResultReason::Standalone;
+    if (!std::strcmp(value, "recorded")) return ResultReason::Recorded;
+    if (!std::strcmp(value, "released") || !std::strcmp(value, "expired")) return ResultReason::Released;
+    return ResultReason::Absent;
+}
 inline Kind classify(const uint8_t *value, size_t length) {
     if (readiness::smartBarangayFormat(value, length)) return Kind::Ticket;
     if (!value || length != 69 || std::memcmp(value, "SBP1:", 5)) return Kind::Other;
@@ -58,6 +77,10 @@ struct Reply {
     bool wellFormed = false, valid = false;
     char pairingId[37] = {};
     uint64_t expiresUtcMs = 0;
+    char eventId[37] = {};                 // scans: server event identifier
+    Outcome outcome = Outcome::Denied;     // scans: what the ticket permits
+    char resultEvent[37] = {};             // status: the result Laravel is tracking
+    ResultReason resultReason = ResultReason::Absent;
 };
 
 // Single owner on the communication worker. No unbounded queue or persisted QR.
@@ -138,7 +161,7 @@ inline Lights lights(Status status, uint64_t elapsedMs) {
     if (status == Status::Valid) return {true, false, false};
     if (status == Status::Invalid) return {false, true, false};
     if (status == Status::Processing) return {false, false, true};
-    if (status == Status::Unknown || status == Status::Revoked || status == Status::RateLimited)
+    if (status == Status::Unknown || status == Status::Revoked || status == Status::RateLimited || status == Status::Recovering)
         return {false, false, (elapsedMs % 1200 < 150) || (elapsedMs % 1200 >= 300 && elapsedMs % 1200 < 450)};
     return {};
 }

@@ -13,34 +13,85 @@ if (root) {
     let generation = 0;
     let scanning = false;
     let busy = false;
-    let redirectTimer;
-    let pendingNavigation;
-    const successModal = Modal.getOrCreateInstance(element('success-modal'), { backdrop: 'static', keyboard: false });
-    element('success-modal').addEventListener('shown.bs.modal', () => {
-        const navigation = pendingNavigation;
-        if (! navigation || navigation.generation !== generation) return;
-        // Begin the delay only after the confirmation is visible.
-        redirectTimer = setTimeout(() => {
-            if (pendingNavigation !== navigation || navigation.generation !== generation || document.hidden) return;
-            pendingNavigation = undefined;
-            window.location.assign(navigation.url);
-        }, 1500);
-    });
+    // The result being reviewed: its scanner event (IoT only) and whether check-in is being submitted.
+    let review;
+    const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+    const resultModal = Modal.getOrCreateInstance(element('result-modal'), { backdrop: 'static', keyboard: true });
+
+    // Wording follows the server's transaction outcome. Scanning never performs the transaction.
+    const OUTCOMES = {
+        check_in_authorized: { title: 'Check-in Authorized', panel: 'Check-in authorized',
+            lead: 'This resident may proceed. Confirm their arrival to record check-in. Payment and completion remain separate steps.' },
+        checked_in: { title: 'Already Checked In', panel: 'Already checked in',
+            lead: 'Arrival is already recorded. Continue with payment or completion on the reservation page.' },
+        not_ready: { title: 'Valid Ticket, Not Yet Ready', panel: 'Not yet ready for pickup',
+            lead: 'This ticket is valid, but check-in opens only when the reservation is Ready for Pickup.' },
+        denied: { title: 'Access Denied', panel: 'Access denied',
+            lead: 'No transaction was recorded. Ask the resident to approach the barangay staff.' },
+    };
 
     const status = (message) => { element('status').textContent = message; };
+    const sameOriginPath = (value, pattern) => {
+        if (typeof value !== 'string') return undefined;
+        const url = new URL(value, window.location.href);
+        return url.origin === window.location.origin && ! url.search && ! url.hash && pattern.test(url.pathname) ? url : undefined;
+    };
+    const fillDetails = (reservation) => {
+        const values = reservation ?? {};
+        ['resident', 'service', 'schedule'].forEach((name) => { element(name).textContent = values[name] ?? ''; });
+        element('reservation-status').textContent = values.status ?? '';
+        ['resident', 'reference', 'service', 'schedule', 'status'].forEach((name) => { element(`modal-${name}`).textContent = values[name] ?? ''; });
+    };
+    const resetModal = () => {
+        review = undefined;
+        fillDetails();
+        ['title', 'lead', 'note', 'verified'].forEach((name) => { element(`modal-${name}`).textContent = ''; });
+        element('modal-checkin').hidden = true;
+        element('modal-checkin').removeAttribute('action');
+        element('modal-event').disabled = true;
+        element('modal-event').value = '';
+        element('modal-open').hidden = true;
+        element('modal-open').removeAttribute('href');
+        element('modal-confirm').disabled = false;
+        element('modal-done').disabled = false;
+    };
     const clearResult = () => {
         element('result').classList.remove('is-valid', 'is-invalid');
         element('details').hidden = true;
         element('success-icon').hidden = true;
-        clearTimeout(redirectTimer);
-        redirectTimer = undefined;
-        pendingNavigation = undefined;
-        successModal.hide();
-        ['resident', 'service', 'schedule', 'status'].forEach((name) => { element(`modal-${name}`).textContent = ''; });
-        ['resident', 'service', 'schedule', 'reservation-status'].forEach((name) => { element(name).textContent = ''; });
         element('result-message').textContent = 'No ticket scanned yet.';
         element('result-title').textContent = 'Verification result';
+        const reviewing = review;
+        resetModal();
+        if (! reviewing) return;
+        // Closing a result acknowledges exactly its scanner event; it never checks anyone in.
+        if (reviewing.eventId && ! reviewing.submitting) {
+            document.dispatchEvent(new CustomEvent('qr:iot-ack', { detail: { event_id: reviewing.eventId } }));
+        }
+        resultModal.hide();
     };
+    const finishReview = () => {
+        if (! review || review.submitting) return;
+        clearResult();
+        next.hidden = root.dataset.scannerMode === 'iot';
+        status(root.dataset.scannerMode === 'iot' ? 'Ready. The scanner is waiting for the next ticket.'
+            : 'Result closed. Select Scan Next Ticket to continue.');
+    };
+    element('result-modal').addEventListener('hidden.bs.modal', finishReview);
+    element('modal-done').addEventListener('click', () => resultModal.hide());
+    element('modal-open').addEventListener('click', () => {
+        if (review?.eventId) document.dispatchEvent(new CustomEvent('qr:iot-ack', { detail: { event_id: review.eventId, keepalive: true } }));
+        if (review) review.submitting = true;
+    });
+    element('modal-checkin').addEventListener('submit', (event) => {
+        if (! review || review.submitting) { event.preventDefault(); return; }
+        // The server revalidates eligibility and evidence and records the arrival at most once.
+        review.submitting = true;
+        element('modal-confirm').disabled = true;
+        element('modal-done').disabled = true;
+        element('modal-note').textContent = 'Recording check-in…';
+    });
+
     const releaseCamera = () => {
         scanning = false;
         controls?.stop();
@@ -66,34 +117,59 @@ if (root) {
         status('Camera stopped. Start the camera to scan a ticket.');
     };
     const showResult = (result, current) => {
-            if (typeof result.valid !== 'boolean' || (result.valid && ! result.reservation)) {
-                throw new Error('Verification is unavailable. Please try again.');
-            }
-            let reservationUrl;
-            if (result.valid) {
-                // Only use the server-generated destination. Never build a URL from scanned/client IDs.
-                if (typeof result.reservation_url !== 'string') throw new Error('Verification is unavailable. Please try again.');
-                reservationUrl = new URL(result.reservation_url, window.location.href);
-                if (reservationUrl.origin !== window.location.origin || reservationUrl.search || reservationUrl.hash
-                    || ! /^\/admin\/reservations\/[1-9]\d*$/.test(reservationUrl.pathname)) {
+        if (typeof result.valid !== 'boolean') throw new Error('Verification is unavailable. Please try again.');
+        const outcome = result.valid ? result.outcome ?? 'check_in_authorized' : 'denied';
+        if (! OUTCOMES[outcome] || (result.valid && (outcome === 'denied' || ! result.reservation))) {
+            throw new Error('Verification is unavailable. Please try again.');
+        }
+        let reservationUrl;
+        let checkInUrl;
+        if (result.valid) {
+            // Only use server-generated destinations. Never build a URL from scanned/client IDs.
+            reservationUrl = sameOriginPath(result.reservation_url, /^\/admin\/reservations\/[1-9]\d*$/);
+            if (! reservationUrl) throw new Error('Verification is unavailable. Please try again.');
+            if (outcome === 'check_in_authorized') {
+                checkInUrl = sameOriginPath(result.check_in_url, /^\/admin\/reservations\/[1-9]\d*\/check-in$/);
+                if (! checkInUrl || checkInUrl.pathname !== `${reservationUrl.pathname}/check-in`) {
                     throw new Error('Verification is unavailable. Please try again.');
                 }
             }
-            element('result').classList.add(result.valid ? 'is-valid' : 'is-invalid');
-            element('result-title').textContent = result.valid ? 'QR Verified Successfully' : 'Invalid QR Ticket';
-            element('result-message').textContent = result.valid ? 'This QR ticket is valid. Opening its reservation details…' : result.message;
-            if (result.valid) {
-                ['resident', 'service', 'schedule'].forEach((name) => { element(name).textContent = result.reservation[name]; });
-                element('reservation-status').textContent = result.reservation.status;
-                element('details').hidden = false;
-                element('success-icon').hidden = false;
-                ['resident', 'service', 'schedule'].forEach((name) => { element(`modal-${name}`).textContent = result.reservation[name]; });
-                element('modal-status').textContent = result.reservation.status;
-                pendingNavigation = { url: reservationUrl.href, generation: current };
-                successModal.show();
+        }
+        const copy = OUTCOMES[outcome];
+        resetModal();
+        review = { eventId: UUID.test(result.event_id ?? '') ? result.event_id : undefined, generation: current, submitting: false };
+
+        element('result').classList.add(result.valid ? 'is-valid' : 'is-invalid');
+        element('result-title').textContent = copy.panel;
+        element('result-message').textContent = result.valid ? copy.lead : result.message;
+        element('details').hidden = ! result.valid;
+        element('success-icon').hidden = ! result.valid;
+        if (result.valid) fillDetails(result.reservation);
+
+        element('modal-content').classList.toggle('is-denied', ! result.valid);
+        element('modal-icon-success').hidden = ! result.valid;
+        element('modal-icon-denied').hidden = result.valid;
+        element('modal-title').textContent = copy.title;
+        element('modal-lead').textContent = result.valid ? copy.lead : `${result.message} ${copy.lead}`;
+        element('modal-details').hidden = ! result.valid;
+        element('modal-verified').textContent = new Date().toLocaleString();
+        if (outcome === 'checked_in' && result.reservation.checked_in_at) {
+            element('modal-note').textContent = `Arrival recorded ${result.reservation.checked_in_at} (Philippine time).`;
+        }
+        if (reservationUrl) {
+            element('modal-open').href = reservationUrl.href;
+            element('modal-open').hidden = false;
+        }
+        if (checkInUrl) {
+            element('modal-checkin').action = checkInUrl.href;
+            element('modal-checkin').hidden = false;
+            if (review.eventId) {
+                element('modal-event').value = review.eventId;
+                element('modal-event').disabled = false;
             }
-            status(result.valid ? 'QR verified. Opening reservation details…'
-                : 'Verification complete. Select Scan Next Ticket to continue.');
+        }
+        resultModal.show();
+        status(result.valid ? `${copy.panel}. Review the result window.` : 'Ticket denied. Review the result window.');
     };
     const verify = async (payload, current) => {
         if (busy || ! scanning || current !== generation) return;
@@ -136,7 +212,7 @@ if (root) {
                 start.disabled = true;
                 start.hidden = true;
                 stop.hidden = true;
-                next.hidden = Boolean(pendingNavigation);
+                next.hidden = Boolean(review);
             }
         }
     };
@@ -198,13 +274,15 @@ if (root) {
     document.addEventListener('qr:mode-change', stopScanning);
     document.addEventListener('qr:iot-result', (event) => {
         if (root.dataset.scannerMode !== 'iot' || document.hidden) return;
-        stopScanning();
+        // One result at a time: a delayed or duplicate delivery never replaces the one under review.
+        if (review) return;
+        releaseCamera();
         try { showResult(event.detail, generation); }
         catch { status('Verification is unavailable. Please resume the scanner and scan again.'); }
     });
     start.addEventListener('click', startScanning);
     next.addEventListener('click', startScanning);
     stop.addEventListener('click', stopScanning);
-    window.addEventListener('pagehide', stopScanning);
-    document.addEventListener('visibilitychange', () => { if (document.hidden) stopScanning(); });
+    window.addEventListener('pagehide', () => { if (! review?.submitting) stopScanning(); });
+    document.addEventListener('visibilitychange', () => { if (document.hidden && ! review) stopScanning(); });
 }

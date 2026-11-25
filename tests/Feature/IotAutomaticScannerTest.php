@@ -8,12 +8,14 @@ use App\Models\IotDevice;
 use App\Models\IotDeviceScanEvent;
 use App\Models\IotDeviceState;
 use App\Models\IotScannerPairing;
+use App\Models\QrTicket;
 use App\Models\Schedule;
 use App\Models\Service;
 use App\Models\User;
 use App\Services\CheckInReservations;
 use App\Services\IotAutomaticScanner;
 use App\Services\IotScannerSessions;
+use App\Services\IotVerificationEvents;
 use App\Services\QrTicketIssuer;
 use Illuminate\Http\Request;
 use Illuminate\Session\ArraySessionHandler;
@@ -359,5 +361,150 @@ class IotAutomaticScannerTest extends TestCase
         $this->assertSame(IMAGETYPE_JPEG, getimagesizefromstring($snapshot['jpeg'])[2]);
         $this->travel(9)->seconds();
         $this->control()->assertOk()->assertJsonPath('preview', false);
+    }
+
+    private function readyTicket(string $name = 'Synthetic lifecycle clearance'): QrTicket
+    {
+        $resident = User::factory()->create(['role' => UserRole::Resident, 'is_active' => true]);
+        $service = Service::create(['name' => $name]);
+        $hour = 8 + Schedule::count();
+        $schedule = Schedule::create(['date' => now('Asia/Manila')->addDay()->toDateString(),
+            'start_time' => sprintf('%02d:00', $hour), 'end_time' => sprintf('%02d:00', $hour + 1), 'capacity' => 10]);
+        $reservation = $resident->reservations()->create(['service_id' => $service->id, 'schedule_id' => $schedule->id, 'status' => ReservationStatus::ReadyForPickup]);
+
+        return app(QrTicketIssuer::class)->issue($reservation);
+    }
+
+    private function pollWith(array $input): array
+    {
+        $this->browser->merge($input);
+        try {
+            return $this->automatic()->poll($this->browser);
+        } finally {
+            foreach (array_keys($input) as $key) {
+                $this->browser->request->remove($key);
+            }
+        }
+    }
+
+    private function scannerResult(): ?array
+    {
+        return $this->control(['captured_at_ms' => (int) now()->getTimestampMs()])->assertOk()->json('result');
+    }
+
+    public function test_reviewed_result_holds_scanner_until_its_own_acknowledgment(): void
+    {
+        $this->automatic()->connect($this->browser, $this->device->id);
+        $ticket = $this->readyTicket();
+        $scan = $this->api('/api/iot/v1/scans', $this->scanBody(['payload' => $ticket->encodedPayload()]))
+            ->assertOk()->assertJsonPath('outcome', 'check_in_authorized')->json();
+        $pickup = $this->scannerResult();
+        $this->assertSame([$scan['event_id'], true, 'pickup'], [$pickup['event_id'], $pickup['hold'], $pickup['reason']]);
+
+        $delivered = $this->automatic()->poll($this->browser)['result'];
+        $this->assertSame($scan['event_id'], $delivered['event_id']);
+        $this->assertSame('check_in_authorized', $delivered['outcome']);
+        $this->assertSame(route('admin.reservations.check-in.store', $ticket->reservation), $delivered['check_in_url']);
+        $this->assertSame('review', $this->scannerResult()['reason']);
+
+        // A long review stays held while the open modal keeps renewing its lease.
+        for ($i = 0; $i < 4; $i++) {
+            $this->travel(8)->seconds();
+            $this->pollWith(['review' => $scan['event_id']]);
+        }
+        $this->assertTrue($this->scannerResult()['hold']);
+
+        // A stale or foreign acknowledgment cannot clear this result; duplicates are harmless.
+        $this->pollWith(['ack' => (string) Str::uuid()]);
+        $this->assertSame('review', $this->scannerResult()['reason']);
+        $this->pollWith(['ack' => $scan['event_id']]);
+        $this->pollWith(['ack' => $scan['event_id']]);
+        $released = $this->scannerResult();
+        $this->assertSame(['released', false], [$released['reason'], $released['hold']]);
+        $this->assertDatabaseCount('checkin_logs', 0);
+        $this->assertNull($ticket->fresh()->used_at);
+    }
+
+    public function test_abandoned_review_expires_and_the_absolute_cap_bounds_every_hold(): void
+    {
+        $this->automatic()->connect($this->browser, $this->device->id);
+        $this->api('/api/iot/v1/scans', $this->scanBody(['payload' => $this->readyTicket()->encodedPayload()]))->assertOk();
+        $event = $this->automatic()->poll($this->browser)['result']['event_id'];
+        $this->travel(11)->seconds();
+        $this->assertSame(['expired', false], [$this->scannerResult()['reason'], $this->scannerResult()['hold']]);
+        $this->pollWith(['review' => $event]);
+        $this->assertFalse($this->scannerResult()['hold'], 'An expired lease is not revived by a late renewal.');
+
+        $this->api('/api/iot/v1/scans', $this->scanBody(['sequence' => 2, 'captured_at_ms' => (int) now()->getTimestampMs(),
+            'payload' => $this->readyTicket('Second')->encodedPayload()]))->assertOk();
+        $second = $this->automatic()->poll($this->browser)['result']['event_id'];
+        for ($i = 0; $i < 14; $i++) {
+            $this->travel(9)->seconds();
+            $this->pollWith(['review' => $second]);
+        }
+        $this->assertSame('expired', $this->scannerResult()['reason'], 'Renewal cannot extend beyond the absolute cap.');
+    }
+
+    public function test_scan_during_active_review_neither_overwrites_nor_reaches_the_admin(): void
+    {
+        $this->automatic()->connect($this->browser, $this->device->id);
+        $this->api('/api/iot/v1/scans', $this->scanBody(['payload' => $this->readyTicket()->encodedPayload()]))->assertOk();
+        $first = $this->automatic()->poll($this->browser)['result'];
+        $this->travel(1)->seconds();
+        $this->api('/api/iot/v1/scans', $this->scanBody(['sequence' => 2, 'captured_at_ms' => (int) now()->getTimestampMs(),
+            'payload' => $this->readyTicket('Second')->encodedPayload()]))->assertOk();
+        $this->assertSame($first['event_id'], $this->scannerResult()['event_id']);
+        $poll = $this->pollWith(['review' => $first['event_id']]);
+        $this->assertNull($poll['result']);
+        $this->assertSame($first['event_id'], $poll['active']['event_id']);
+    }
+
+    public function test_refreshed_page_recovers_its_active_result_without_a_second_delivery(): void
+    {
+        $this->automatic()->connect($this->browser, $this->device->id);
+        $this->api('/api/iot/v1/scans', $this->scanBody(['payload' => $this->readyTicket()->encodedPayload()]))->assertOk();
+        $first = $this->automatic()->poll($this->browser);
+        $again = $this->automatic()->poll($this->browser);
+        $this->assertNull($again['result']);
+        $this->assertSame($first['result'], $again['active']['result']);
+        $this->assertDatabaseCount('checkin_logs', 0);
+    }
+
+    public function test_without_an_admin_the_scanner_shows_a_standalone_result(): void
+    {
+        $this->api('/api/iot/v1/scans', $this->scanBody(['payload' => $this->readyTicket()->encodedPayload()]))->assertOk()->assertJsonPath('valid', true);
+        $result = $this->scannerResult();
+        $this->assertSame(['standalone', false], [$result['reason'], $result['hold']]);
+        $this->assertSame(['age_ms', 'event_id', 'hold', 'reason'], collect(array_keys($result))->sort()->values()->all());
+        $this->assertDatabaseCount('checkin_logs', 0);
+    }
+
+    public function test_confirmed_check_in_records_once_and_marks_the_reviewed_event_recorded(): void
+    {
+        $this->automatic()->connect($this->browser, $this->device->id);
+        $ticket = $this->readyTicket();
+        $this->api('/api/iot/v1/scans', $this->scanBody(['payload' => $ticket->encodedPayload()]))->assertOk();
+        $event = $this->automatic()->poll($this->browser)['result']['event_id'];
+        $evidence = $this->browser->session()->get(CheckInReservations::SESSION_KEY);
+        $first = app(CheckInReservations::class)->record($ticket->reservation, $this->admin, $evidence);
+        $second = app(CheckInReservations::class)->record($ticket->reservation, $this->admin, $evidence);
+        $this->assertSame($first->id, $second->id);
+        $this->assertDatabaseCount('checkin_logs', 1);
+        app(IotVerificationEvents::class)->recorded($event, hash('sha256', $this->browser->session()->getId()));
+        $this->assertSame('recorded', $this->scannerResult()['reason']);
+        // A later scan of the same ticket reports the arrival instead of authorizing a second check-in.
+        $this->travel(4)->seconds();
+        $this->api('/api/iot/v1/scans', $this->scanBody(['sequence' => 2, 'captured_at_ms' => (int) now()->getTimestampMs(),
+            'payload' => $ticket->encodedPayload()]))->assertOk()->assertJsonPath('outcome', 'checked_in');
+    }
+
+    public function test_denied_ticket_is_held_for_review_with_a_safe_reason(): void
+    {
+        $this->automatic()->connect($this->browser, $this->device->id);
+        $this->api('/api/iot/v1/scans', $this->scanBody())->assertOk()->assertJsonPath('outcome', 'denied');
+        $result = $this->automatic()->poll($this->browser)['result'];
+        $this->assertSame(['denied', 'unknown', false], [$result['outcome'], $result['reason'], $result['valid']]);
+        $this->assertArrayNotHasKey('reservation', $result);
+        $this->assertSame('review', $this->scannerResult()['reason']);
     }
 }

@@ -34,6 +34,9 @@ class IotScannerController extends Controller
 
     public function poll(Request $request, IotScannerSessions $scanners): JsonResponse
     {
+        // Optional: acknowledge or keep reviewing one delivered verification event.
+        $request->validate(['ack' => ['sometimes', 'nullable', 'uuid'], 'review' => ['sometimes', 'nullable', 'uuid']]);
+
         return $this->respond($scanners->poll($request));
     }
 

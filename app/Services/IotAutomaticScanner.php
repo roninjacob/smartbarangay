@@ -62,11 +62,13 @@ class IotAutomaticScanner
             $state->forceFill(['last_seen_at' => now('UTC'), 'camera_state' => $body['camera_state'],
                 'last_status_capture' => $body['captured_at_ms'], 'heartbeat_at' => now('UTC')])->save();
             $lease = IotScannerPairing::find($device->id);
-            $preview = $lease && $lease->automatic && $lease->preview_until?->isFuture()
-                && app(IotScannerSessions::class)->live($lease, $device);
+            $adminLive = $lease && $lease->automatic && app(IotScannerSessions::class)->live($lease, $device);
+            $preview = $adminLive && $lease->preview_until?->isFuture();
 
             return ['ok' => true, 'preview' => (bool) $preview, 'lease_id' => $preview ? $lease->id : null,
-                'preview_expires_at' => $preview ? $lease->preview_until->toIso8601String() : null];
+                'preview_expires_at' => $preview ? $lease->preview_until->toIso8601String() : null,
+                // Older firmware ignores this key; newer firmware holds or clears its LED/OLED result.
+                'result' => app(IotVerificationEvents::class)->forDevice($device->id, (bool) $adminLive)];
         }, 3);
     }
 
@@ -92,11 +94,12 @@ class IotAutomaticScanner
                 'captured_at_ms' => $body['captured_at_ms'], 'payload' => $body['payload'],
                 'expires_at' => Carbon::createFromTimestampMsUTC($body['captured_at_ms'])->addSeconds(5)])->save();
             app(IotTelemetry::class)->scan($state, $result['valid']);
+            app(IotVerificationEvents::class)->opened($device->id, $event->id, $result['valid'], $result['outcome']);
             $state->forceFill(['last_seen_at' => now('UTC'), 'last_session' => $body['scanner_session'],
                 'last_sequence' => $body['sequence'], 'last_capture' => $body['captured_at_ms'],
                 'last_payload_hash' => $hash, 'last_scan_at' => now('UTC'), 'last_result' => $result['valid'] ? 'valid' : 'invalid'])->save();
 
-            return ['ok' => true, 'event_id' => $event->id, 'valid' => $result['valid']];
+            return ['ok' => true, 'event_id' => $event->id, 'valid' => $result['valid'], 'outcome' => $result['outcome']];
         }, 3);
     }
 
@@ -134,13 +137,25 @@ class IotAutomaticScanner
                 $lease->preview_until = now('UTC')->addSeconds(10)->min($lease->expires_at);
             }
             $lease->save();
+            $events = app(IotVerificationEvents::class);
+            $session = hash('sha256', $request->session()->getId());
+            // Acknowledge first, then renew: both apply only to the named event and this session.
+            if (is_string($request->input('ack'))) {
+                $events->acknowledge($device->id, $request->input('ack'), $session);
+            }
+            if (is_string($request->input('review'))) {
+                $events->renew($device->id, $request->input('review'), $session);
+            }
             $state = IotDeviceState::find($device->id);
-            $event = IotDeviceScanEvent::where('device_id', $device->id)->whereNull('consumed_at')
-                ->where('captured_at_ms', '>=', $lease->monitor_started_ms)
-                ->where('captured_at_ms', '>', now()->getTimestampMs() - 5000)
-                ->where('captured_at_ms', '<=', now()->getTimestampMs())
-                ->orderBy('captured_at_ms')->orderBy('id')->lockForUpdate()->first();
             $result = null;
+            // One result at a time. While this Admin reviews one, later scans are not delivered; they
+            // expire with their five-second capture lifetime and never perform a transaction.
+            $event = $events->underReview($events->current($device->id)) ? null
+                : IotDeviceScanEvent::where('device_id', $device->id)->whereNull('consumed_at')
+                    ->where('captured_at_ms', '>=', $lease->monitor_started_ms)
+                    ->where('captured_at_ms', '>', now()->getTimestampMs() - 5000)
+                    ->where('captured_at_ms', '<=', now()->getTimestampMs())
+                    ->orderBy('captured_at_ms')->orderBy('id')->lockForUpdate()->first();
             if ($event && IotDeviceScanEvent::whereKey($event->id)->whereNull('consumed_at')->update(['consumed_at' => now('UTC'), 'payload' => null]) === 1) {
                 $request->session()->forget(CheckInReservations::SESSION_KEY);
                 $evidence = null;
@@ -149,9 +164,13 @@ class IotAutomaticScanner
                 });
                 if (now()->getTimestampMs() - $event->captured_at_ms >= 5000) {
                     $result = null;
-                } elseif ($evidence) {
-                    $state?->forceFill(['last_handoff_age_ms' => now()->getTimestampMs() - $event->captured_at_ms])->save();
-                    $request->session()->put(CheckInReservations::SESSION_KEY, $evidence);
+                } else {
+                    if ($evidence) {
+                        $state?->forceFill(['last_handoff_age_ms' => now()->getTimestampMs() - $event->captured_at_ms])->save();
+                        $request->session()->put(CheckInReservations::SESSION_KEY, $evidence);
+                    }
+                    $result['event_id'] = $event->id;
+                    $events->reviewing($device->id, $event->id, $session, $result);
                 }
             }
 
@@ -159,6 +178,7 @@ class IotAutomaticScanner
                 'online' => (bool) $state?->heartbeat_at?->gt(now()->subSeconds(15)),
                 'last_seen_at' => $state?->last_seen_at->toIso8601String(), 'camera_state' => $state?->camera_state,
                 'last_scan_at' => $state?->last_scan_at?->toIso8601String(), 'last_result' => $state?->last_result,
+                'active' => $events->activeFor($device->id, $session),
                 'preview' => (bool) $lease->preview_until?->isFuture(), 'result' => $result];
         }, 3);
     }

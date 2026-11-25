@@ -1,5 +1,8 @@
 @extends('layouts.authenticated')
 @section('dashboard')
+@if ($errors->has('checkin'))
+    <div class="alert alert-danger qr-checkin-error" role="alert">{{ $errors->first('checkin') }} The reservation was not changed.</div>
+@endif
 <div class="qr-verification" data-qr-verification data-verify-url="{{ route('admin.qr-verification.verify') }}"
      data-iot-url="{{ url('/admin/iot-scanner') }}">
     <section class="dashboard-panel qr-scanner-panel" aria-labelledby="scanner-heading">
@@ -41,7 +44,7 @@
             </div>
             <dl class="iot-scanner-summary"><div><dt>Device activity</dt><dd data-iot-activity>Not connected</dd></div>
                 <div><dt>Latest scan</dt><dd data-iot-latest>No scan received</dd></div></dl>
-            <p class="app-note mb-0">The camera opens automatically for your session. Keep the complete ticket QR visible. Check-in requires your confirmation on the reservation page.</p>
+            <p class="app-note mb-0">The camera opens automatically for your session. Keep the complete ticket QR visible. Each result stays on screen, and on the scanner's lights and display, until you select Done or confirm check-in.</p>
         </div>
     </section>
     <section class="dashboard-panel qr-result-panel" tabindex="-1" aria-labelledby="result-heading" aria-live="polite" aria-atomic="true" data-qr-result>
@@ -53,18 +56,41 @@
             </dl>
         </div>
     </section>
-    <div class="modal qr-success-modal" tabindex="-1" aria-labelledby="qr-success-heading" aria-describedby="qr-success-message" data-qr-success-modal>
+    {{-- One result window for every outcome. It stays open until the Admin acts; the scanner's LED and OLED follow it. --}}
+    <div class="modal qr-result-modal" tabindex="-1" aria-labelledby="qr-result-modal-title" aria-describedby="qr-result-modal-lead" data-qr-result-modal>
         <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
-            <div class="modal-content">
-                <div class="modal-header"><h2 class="modal-title h5" id="qr-success-heading"><span class="qr-success-icon"><x-app-icon name="check"/></span>QR Verified Successfully</h2></div>
+            <div class="modal-content" data-qr-modal-content>
+                <div class="modal-header">
+                    <span class="qr-outcome-icon is-success" data-qr-modal-icon-success aria-hidden="true"><x-app-icon name="check"/></span>
+                    <span class="qr-outcome-icon is-denied" data-qr-modal-icon-denied aria-hidden="true" hidden>
+                        <svg class="app-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" focusable="false"><circle cx="12" cy="12" r="9"/><path d="m9 9 6 6m0-6-6 6"/></svg>
+                    </span>
+                    <div class="qr-outcome-heading">
+                        <p class="qr-outcome-eyebrow" data-qr-modal-eyebrow>QR ticket verification</p>
+                        <h2 class="modal-title h5" id="qr-result-modal-title" data-qr-modal-title></h2>
+                    </div>
+                </div>
                 <div class="modal-body">
-                    <dl class="qr-result-details mt-0">
+                    <p class="qr-outcome-lead" id="qr-result-modal-lead" data-qr-modal-lead></p>
+                    <dl class="qr-outcome-details" data-qr-modal-details>
                         <div><dt>Resident</dt><dd data-qr-modal-resident></dd></div>
+                        <div><dt>Reference</dt><dd data-qr-modal-reference></dd></div>
                         <div><dt>Service</dt><dd data-qr-modal-service></dd></div>
                         <div><dt>Schedule</dt><dd data-qr-modal-schedule></dd></div>
-                        <div><dt>Status</dt><dd data-qr-modal-status></dd></div>
+                        <div><dt>Reservation status</dt><dd data-qr-modal-status></dd></div>
+                        <div><dt>Verified</dt><dd data-qr-modal-verified></dd></div>
                     </dl>
-                    <p class="qr-verification-note mt-4 mb-0" id="qr-success-message" role="status">This QR ticket is valid. Opening reservation details…</p>
+                    <p class="qr-outcome-note" data-qr-modal-note role="status" aria-live="polite"></p>
+                </div>
+                <div class="modal-footer qr-outcome-actions">
+                    <button type="button" class="btn btn-outline-secondary" data-qr-modal-done>Done</button>
+                    <a class="btn btn-outline-primary" data-qr-modal-open hidden>Open reservation</a>
+                    <form method="POST" data-qr-modal-checkin hidden>
+                        @csrf
+                        <input type="hidden" name="confirm_checkin" value="1">
+                        <input type="hidden" name="iot_event" data-qr-modal-event disabled>
+                        <button class="btn btn-primary" type="submit" data-qr-modal-confirm>Confirm Check-in</button>
+                    </form>
                 </div>
             </div>
         </div>

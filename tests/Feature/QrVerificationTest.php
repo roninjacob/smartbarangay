@@ -71,10 +71,16 @@ class QrVerificationTest extends TestCase
         for ($i = 0; $i < 2; $i++) {
             $response = $this->postJson('/admin/qr-verification', ['payload' => $ticket->encodedPayload(),
                 'reservation_id' => 999, 'user_id' => 999, 'status' => 'completed', 'valid' => true]);
+            // Ready for Pickup authorizes a separate check-in; Approved is valid but not yet ready.
+            $ready = $status === Status::ReadyForPickup;
             $response->assertOk()->assertExactJson(['valid' => true, 'message' => 'Valid QR Ticket',
-                'reservation_url' => route('admin.reservations.show', $ticket->reservation), 'reservation' => [
+                'outcome' => $ready ? 'check_in_authorized' : 'not_ready',
+                'reservation_url' => route('admin.reservations.show', $ticket->reservation),
+                'check_in_url' => $ready ? route('admin.reservations.check-in.store', $ticket->reservation) : null,
+                'reservation' => [
+                    'reference' => '#'.$ticket->reservation->id,
                     'resident' => $resident->name, 'service' => 'Barangay Clearance',
-                    'schedule' => 'November 1, 2026 · 09:00–10:00', 'status' => $status->label(),
+                    'schedule' => 'November 1, 2026 · 09:00–10:00', 'status' => $status->label(), 'checked_in_at' => null,
                 ]])->assertHeader('X-Content-Type-Options', 'nosniff');
             $this->assertStringContainsString('no-store', $response->headers->get('Cache-Control'));
             foreach ([$resident->email, $resident->password, $resident->address, $ticket->qr_payload] as $private) {
@@ -99,7 +105,7 @@ class QrVerificationTest extends TestCase
     {
         $this->ticket(Status::Approved);
         $this->actingAs($this->user(UserRole::Admin))->postJson('/admin/qr-verification', ['payload' => $payload])
-            ->assertOk()->assertExactJson(['valid' => false, 'message' => 'Unknown or invalid QR ticket.']);
+            ->assertOk()->assertExactJson(['valid' => false, 'outcome' => 'denied', 'reason' => 'unknown', 'message' => 'Unknown or invalid QR ticket.']);
         $this->assertDatabaseCount('qr_tickets', 1);
         $this->assertDatabaseCount('checkin_logs', 0);
     }
@@ -116,8 +122,9 @@ class QrVerificationTest extends TestCase
         $ticket->reservation->update(['status' => $status]);
         $before = $this->snapshot();
         $this->actingAs($this->user(UserRole::Admin))->postJson('/admin/qr-verification', ['payload' => $ticket->encodedPayload()])
-            ->assertOk()->assertExactJson(['valid' => false, 'message' => $status === Status::Completed
-                ? 'This QR ticket has already completed its transaction.' : 'This reservation is not eligible for QR verification.']);
+            ->assertOk()->assertExactJson($status === Status::Completed
+                ? ['valid' => false, 'outcome' => 'denied', 'reason' => 'completed', 'message' => 'This QR ticket has already completed its transaction.']
+                : ['valid' => false, 'outcome' => 'denied', 'reason' => 'not_eligible', 'message' => 'This reservation is not eligible for QR verification.']);
         $this->assertSame($before, $this->snapshot());
     }
 

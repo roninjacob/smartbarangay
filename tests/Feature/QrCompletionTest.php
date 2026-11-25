@@ -60,7 +60,7 @@ class QrCompletionTest extends TestCase
         $this->get(route('admin.reservations.show', $reservation))->assertSee('Used / Historical')->assertSee($admin->name)
             ->assertSee(now('Asia/Manila')->format('F j, Y, g:i A'))->assertDontSee($ticket->qr_payload, false);
         $this->postJson('/admin/qr-verification', ['payload' => $ticket->encodedPayload()])->assertExactJson([
-            'valid' => false, 'message' => 'This QR ticket has already completed its transaction.',
+            'valid' => false, 'outcome' => 'denied', 'reason' => 'completed', 'message' => 'This QR ticket has already completed its transaction.',
         ]);
         $before = $ticket->getAttributes();
         $this->travel(5)->minutes();
@@ -129,7 +129,7 @@ class QrCompletionTest extends TestCase
         $admin = $this->user(UserRole::Admin);
         $ticket->forceFill(['used_at' => now(), 'used_by' => $admin->id])->save();
         $this->actingAs($admin)->postJson('/admin/qr-verification', ['payload' => $ticket->encodedPayload()])->assertExactJson([
-            'valid' => false, 'message' => 'This QR ticket has already completed its transaction.',
+            'valid' => false, 'outcome' => 'denied', 'reason' => 'completed', 'message' => 'This QR ticket has already completed its transaction.',
         ]);
     }
 

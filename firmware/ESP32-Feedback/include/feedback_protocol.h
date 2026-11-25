@@ -113,9 +113,9 @@ inline bool send(Packet &p) {
     ) == ESP_OK;
 }
 
-inline bool read(Packet &p) {
+inline bool read(Packet &p, TickType_t wait = 0) {
     return queue &&
-        xQueueReceive(queue, &p, 0) == pdTRUE &&
+        xQueueReceive(queue, &p, wait) == pdTRUE &&
         authenticated(p);
 }
 

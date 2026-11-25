@@ -172,7 +172,8 @@ class IotMonitoringTest extends TestCase
         $this->api('/api/iot/v1/status', $body, $headers)->assertOk();
         $this->api('/api/iot/v1/status', $body, $headers)->assertUnauthorized();
         // The existing middleware budget also charges rejected replay attempts.
-        for ($i = 0; $i < 18; $i++) {
+        // Budget: 60 status requests per minute per device (1.5 s polling while a result is held).
+        for ($i = 0; $i < 58; $i++) {
             $this->assertSame(200, $this->api('/api/iot/v1/status', $body)->status(), 'Status request '.$i);
         }
         $this->api('/api/iot/v1/status', $body)->assertStatus(429);

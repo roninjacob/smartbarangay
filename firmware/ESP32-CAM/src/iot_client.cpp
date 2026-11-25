@@ -2,6 +2,7 @@
 #include "iot_protocol.h"
 #include "iot_crypto.h"
 #include "iot_transport_policy.h"
+#include "feedback_states.h"
 #include <Arduino.h>
 #include <WiFi.h>
 #include <WiFiClientSecure.h>
@@ -64,26 +65,68 @@ uint64_t monotonicMs() { return static_cast<uint64_t>(esp_timer_get_time() / 100
 uint64_t utcMs() { timeval time{}; gettimeofday(&time, nullptr); return static_cast<uint64_t>(time.tv_sec) * 1000 + time.tv_usec / 1000; }
 bool clockReady() { return synchronized.load() && static_cast<uint32_t>(millis() - syncedAt.load()) < 900000 && utcMs() >= 1767225600000ULL; }
 void synchronizedTime(timeval *) { syncedAt = millis(); synchronized = true; }
+void publish(Status status) { currentStatus = static_cast<int>(status); }
+
+// Connectivity health and the verification result are separate. A held result never hides a
+// connection problem, and a healthy scanner is never "offline" just because a result is shown.
+// Laravel decides how long a result is held (status "result"); these local limits only bound it.
+constexpr uint32_t OFFLINE_AFTER_MS = 20000;    // no authenticated answer for this long = offline
+constexpr uint32_t STANDALONE_RESULT_MS = 15000; // config iot.result.standalone_seconds
+constexpr uint32_t RECORDED_RESULT_MS = 4000;    // config iot.result.recorded_seconds
+constexpr uint32_t MAX_RESULT_MS = 120000;       // config iot.result.max_hold_seconds
+constexpr uint32_t CONTROL_IDLE_MS = 5000, CONTROL_RESULT_MS = 1500, CONTROL_RETRY_MS = 1000;
+enum class ResultMode : uint8_t { None, Pending, Hold, Standalone, Recorded };
+struct ResultDisplay {
+    char eventId[37] = {};
+    ResultMode mode = ResultMode::None;
+    bool valid = false;
+    Outcome outcome = Outcome::Denied;
+    uint32_t startedAt = 0, modeAt = 0;
+};
 portMUX_TYPE feedbackMux = portMUX_INITIALIZER_UNLOCKED;
-uint32_t feedbackResultAt = 0;
-std::atomic<uint32_t> feedbackControlAt{0};
+ResultDisplay shownResult; // guarded by feedbackMux
+std::atomic<uint32_t> lastApiOkAt{0};
 
-void publish(Status status) {
-    uint32_t now = millis();
-
+ResultDisplay resultSnapshot() {
     portENTER_CRITICAL(&feedbackMux);
-
-    if (status == Status::Valid ||
-        status == Status::Invalid)
-        feedbackResultAt = now;
-
-    if (status == Status::Unknown ||
-        status == Status::Revoked)
-        feedbackControlAt = 0;
-
-    currentStatus = static_cast<int>(status);
-
+    const ResultDisplay copy = shownResult;
     portEXIT_CRITICAL(&feedbackMux);
+    return copy;
+}
+// Local bounds: standalone and recorded results time out, nothing is held past the absolute cap.
+bool resultVisible(const ResultDisplay &result, uint32_t now) {
+    switch (result.mode) {
+        case ResultMode::None: return false;
+        case ResultMode::Recorded: return now - result.modeAt < RECORDED_RESULT_MS;
+        case ResultMode::Hold: return now - result.startedAt < MAX_RESULT_MS;
+        default: return now - result.startedAt < STANDALONE_RESULT_MS; // Pending or Standalone
+    }
+}
+void showResult(const char *eventId, bool valid, Outcome outcome) {
+    const uint32_t now = millis();
+    portENTER_CRITICAL(&feedbackMux);
+    shownResult = {};
+    memcpy(shownResult.eventId, eventId, sizeof(shownResult.eventId) - 1);
+    shownResult.mode = ResultMode::Pending;
+    shownResult.valid = valid;
+    shownResult.outcome = outcome;
+    shownResult.startedAt = shownResult.modeAt = now;
+    portEXIT_CRITICAL(&feedbackMux);
+}
+void setResultMode(ResultMode mode) {
+    portENTER_CRITICAL(&feedbackMux);
+    if (mode == ResultMode::None) shownResult = {};
+    else if (shownResult.mode != mode) { shownResult.mode = mode; shownResult.modeAt = millis(); }
+    portEXIT_CRITICAL(&feedbackMux);
+}
+const char *modeName(ResultMode mode) {
+    switch (mode) {
+        case ResultMode::Pending: return "pending";
+        case ResultMode::Hold: return "hold";
+        case ResultMode::Standalone: return "standalone";
+        case ResultMode::Recorded: return "recorded";
+        default: return "none";
+    }
 }
 
 std::atomic<uint32_t> allocationFailures{0}, failedBytes{0};
@@ -93,6 +136,7 @@ void allocationFailed(size_t bytes, uint32_t caps, const char *) {
 struct TransportMetrics {
     const char *category = "ok";
     uint32_t dnsMs = 0, connectMs = 0, tlsMs = 0, httpMs = 0, verifyFlags = 0;
+    int readError = 0; // first mbedTLS read error that made the client close the socket
     bool reused = false;
     size_t heapBefore = 0, largestBefore = 0;
 };
@@ -103,10 +147,10 @@ std::atomic<uint32_t> previewCopyUs{0}, previewSent{0}, lastDurationMs{0};
 const char *lastCategory = "ok"; // Static allowlisted strings only, owned by transport task.
 void diagnose(const char *operation, const TransportMetrics &metrics, uint64_t began, int http, int tls) {
     if (!diagnosticGate.allow(monotonicMs(), !strcmp(metrics.category, "ok"))) return;
-    Serial.printf("[IoT-DIAG] op=%s category=%s dns_ms=%lu connect_ms=%lu tls_ms=%lu http_ms=%lu total_ms=%lu reused=%d http=%d tls=%d verify=%lu heap_before=%lu largest_before=%lu heap=%lu largest=%lu min_heap=%lu alloc_fail=%lu failed_bytes=%lu stack=%lu clock_age_ms=%lu camera=%s\n",
+    Serial.printf("[IoT-DIAG] op=%s category=%s dns_ms=%lu connect_ms=%lu tls_ms=%lu http_ms=%lu total_ms=%lu reused=%d http=%d tls=%d read_err=%d verify=%lu heap_before=%lu largest_before=%lu heap=%lu largest=%lu min_heap=%lu alloc_fail=%lu failed_bytes=%lu stack=%lu clock_age_ms=%lu camera=%s\n",
         operation, metrics.category, static_cast<unsigned long>(metrics.dnsMs), static_cast<unsigned long>(metrics.connectMs),
         static_cast<unsigned long>(metrics.tlsMs), static_cast<unsigned long>(metrics.httpMs), static_cast<unsigned long>(monotonicMs() - began),
-        metrics.reused, http, tls, static_cast<unsigned long>(metrics.verifyFlags),
+        metrics.reused, http, tls, metrics.readError, static_cast<unsigned long>(metrics.verifyFlags),
         static_cast<unsigned long>(metrics.heapBefore), static_cast<unsigned long>(metrics.largestBefore),
         static_cast<unsigned long>(heap_caps_get_free_size(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)),
         static_cast<unsigned long>(heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)),
@@ -194,7 +238,20 @@ public:
         _connected = true;
         return 1;
     }
-    int available() override { return alive() ? WiFiClientSecure::available() : 0; }
+    // Same as the SDK's available(), but records why a connection is dropped. A failed probe
+    // here is what turns a fresh TLS session into "connection_closed_before_request".
+    int available() override {
+        if (!alive()) return 0;
+        const int peeked = sslclient->peek_buf >= 0 ? 1 : 0;
+        if (!_connected) return peeked;
+        const int pending = data_to_read(sslclient.get());
+        if (pending < 0) {
+            if (!metrics.readError) metrics.readError = pending;
+            stop();
+            return peeked;
+        }
+        return pending + peeked;
+    }
     uint8_t connected() override { return alive() ? WiFiClientSecure::connected() : 0; }
     int read() override { return alive() ? WiFiClientSecure::read() : -1; }
     int read(uint8_t *data, size_t size) override { return alive() ? WiFiClientSecure::read(data, size) : -1; }
@@ -390,11 +447,27 @@ Reply send(const char *input, size_t inputLength, const char *path, uint64_t acq
                 }
             }
             reply.wellFormed = cJSON_IsBool(show);
+            // Older servers omit "result"; then the scanner keeps a standalone result.
+            const cJSON *result = cJSON_GetObjectItemCaseSensitive(root, "result");
+            const cJSON *event = cJSON_GetObjectItemCaseSensitive(result, "event_id");
+            const cJSON *reason = cJSON_GetObjectItemCaseSensitive(result, "reason");
+            if (cJSON_IsObject(result) && cJSON_IsString(event) && uuid(event->valuestring) && cJSON_IsString(reason)) {
+                memcpy(reply.resultEvent, event->valuestring, sizeof(reply.resultEvent) - 1);
+                reply.resultReason = reasonFrom(reason->valuestring);
+            } else if (cJSON_IsNull(result)) {
+                reply.resultReason = ResultReason::Released;
+            }
         } else if (!strcmp(path, "/api/iot/v1/scans")) {
             const cJSON *valid = cJSON_GetObjectItemCaseSensitive(root, "valid");
             const cJSON *id = cJSON_GetObjectItemCaseSensitive(root, "event_id");
+            const cJSON *outcome = cJSON_GetObjectItemCaseSensitive(root, "outcome");
             reply.wellFormed = cJSON_IsBool(valid) && cJSON_IsString(id) && uuid(id->valuestring);
             reply.valid = cJSON_IsTrue(valid);
+            if (reply.wellFormed) memcpy(reply.eventId, id->valuestring, sizeof(reply.eventId) - 1);
+            // A valid ticket from an older server (no outcome) still shows as authorized.
+            reply.outcome = !reply.valid ? Outcome::Denied
+                : cJSON_IsString(outcome) ? outcomeFrom(outcome->valuestring) : Outcome::Authorized;
+            if (reply.valid && reply.outcome == Outcome::Denied) reply.outcome = Outcome::Authorized;
         } else reply.wellFormed = true;
     }
     cJSON_Delete(root);
@@ -404,6 +477,42 @@ Reply send(const char *input, size_t inputLength, const char *path, uint64_t acq
 
 Reply send(const std::string &json, const char *path, uint64_t acquiredMs) {
     return send(json.data(), json.size(), path, acquiredMs);
+}
+
+// A fresh TLS session occasionally closes before its first request (read_err in [IoT-DIAG]).
+// Nothing was sent then, so one immediate retry is safe; scans keep their capture-lifetime
+// check and Laravel rejects a duplicate sequence.
+Reply request(const std::string &body, const char *path, uint64_t acquiredMs) {
+    Reply reply = send(body, path, acquiredMs);
+    if (reply.http == -1 && !strcmp(lastCategory, "connection_closed_before_request")) {
+        reply = send(body, path, acquiredMs);
+    }
+    return reply;
+}
+
+// One failed request is a recoverable hiccup. Only sustained silence is reported as offline.
+void connectionFailed() {
+    const uint32_t okAt = lastApiOkAt.load();
+    const bool recent = okAt ? millis() - okAt < OFFLINE_AFTER_MS : millis() < 60000;
+    publish(recent ? Status::Recovering : Status::Unknown);
+}
+
+// Follow Laravel's decision for the result currently shown (hold, release, recorded).
+void applyServerResult(const Reply &reply) {
+    const ResultDisplay current = resultSnapshot();
+    if (current.mode == ResultMode::None) return;
+    if (reply.resultReason == ResultReason::Absent) {
+        // Older server without result tracking: keep the standalone behaviour.
+        if (current.mode == ResultMode::Pending) setResultMode(ResultMode::Standalone);
+        return;
+    }
+    if (strcmp(reply.resultEvent, current.eventId) != 0) { setResultMode(ResultMode::None); return; }
+    switch (reply.resultReason) {
+        case ResultReason::Hold: setResultMode(ResultMode::Hold); break;
+        case ResultReason::Standalone: setResultMode(ResultMode::Standalone); break;
+        case ResultReason::Recorded: setResultMode(ResultMode::Recorded); break;
+        default: setResultMode(ResultMode::None); break;
+    }
 }
 
 void worker(void *) {
@@ -426,15 +535,30 @@ void worker(void *) {
             continue;
         }
         if (monotonicMs() < backoff) { memset(&pending, 0, sizeof(pending)); continue; }
+        // Drop a result whose local bound has passed (standalone, recorded or absolute cap).
+        if (!resultVisible(resultSnapshot(), millis())) setResultMode(ResultMode::None);
         // Register a new boot before any queued ticket; control polling cannot starve
         // while QR codes remain in view. A stale observation is never retried.
         if (monotonicMs() >= nextControl) {
-            const Reply reply = send("{}", "/api/iot/v1/status", monotonicMs());
-            nextControl = monotonicMs() + 5000; lastHttp = reply.http;
-            if (reply.http == 200 && reply.wellFormed) feedbackControlAt = millis();
+            const Reply reply = request("{}", "/api/iot/v1/status", monotonicMs());
+            lastHttp = reply.http;
             if (reply.http == 401 || reply.http == 403) { previewWanted = false; publish(Status::Revoked); backoff = UINT64_MAX; }
-            else if (!reply.wellFormed || reply.http != 200) { previewWanted = false; publish(Status::Unknown); }
-            else if (monotonicMs() - finishedAt >= 2000) publish(Status::Paired);
+            else if (reply.http == 429) { previewWanted = false; publish(Status::RateLimited); nextControl = monotonicMs() + 60000; }
+            else if (!reply.wellFormed || reply.http != 200) {
+                previewWanted = false;
+                connectionFailed();
+                nextControl = monotonicMs() + CONTROL_RETRY_MS;
+            } else {
+                lastApiOkAt = millis();
+                applyServerResult(reply);
+                const ResultDisplay shown = resultSnapshot();
+                const bool showing = resultVisible(shown, millis());
+                if (!showing && monotonicMs() - finishedAt >= 2000) publish(Status::Paired);
+                // Poll faster only while Laravel holds the result for an Admin, so an acknowledgment
+                // clears it promptly. Standalone results (and older servers) keep the idle rate.
+                const bool held = showing && (shown.mode == ResultMode::Hold || shown.mode == ResultMode::Pending);
+                nextControl = monotonicMs() + (held ? CONTROL_RESULT_MS : CONTROL_IDLE_MS);
+            }
             if (backoff == UINT64_MAX) continue;
         }
         if (received && pending.generation == generation.load() && pending.presentation == presentation.load() && monotonicMs() >= pending.acquiredMs
@@ -444,17 +568,29 @@ void worker(void *) {
             event.kind = Kind::Ticket; event.acquiredMs = pending.acquiredMs;
             event.capturedUtcMs = utcMs() - (monotonicMs() - pending.acquiredMs);
             event.session = pending.session; event.sequence = pending.sequence;
+            // While a result is pending pickup or under Admin review, new tickets are not sent and
+            // not latched; they are read again once the result is released. A standalone or
+            // recorded result may be replaced by a different ticket.
+            const ResultMode mode = resultSnapshot().mode;
+            const bool held = mode == ResultMode::Pending || mode == ResultMode::Hold;
             // Latch stationary tickets; two empty captures re-arm the presentation.
-            const bool sent = lastQr != event.payload;
+            const bool sent = !held && lastQr != event.payload;
             if (sent) {
                 lastQr = event.payload;
                 publish(Status::Processing);
-                const Reply reply = send(automaticBody(event, boot), "/api/iot/v1/scans", event.acquiredMs);
+                const Reply reply = request(automaticBody(event, boot), "/api/iot/v1/scans", event.acquiredMs);
                 lastHttp = reply.http; finishedAt = monotonicMs();
                 if (reply.http == 401 || reply.http == 403) { publish(Status::Revoked); backoff = UINT64_MAX; }
                 else if (reply.http == 429) { publish(Status::RateLimited); backoff = monotonicMs() + 60000; }
-                else if (reply.http == 200 && reply.wellFormed) publish(reply.valid ? Status::Valid : Status::Invalid);
-                else { publish(Status::Unknown); backoff = monotonicMs() + 3000; lastQr.clear(); }
+                else if (reply.http == 200 && reply.wellFormed) {
+                    lastApiOkAt = millis();
+                    showResult(reply.eventId, reply.valid, reply.outcome);
+                    publish(reply.valid ? Status::Valid : Status::Invalid);
+                    nextControl = monotonicMs(); // learn at once whether an Admin is reviewing it
+                } else {
+                    // No decision was made: never shown as a denial. Re-read the ticket after the backoff.
+                    connectionFailed(); backoff = monotonicMs() + 3000; lastQr.clear();
+                }
             }
             memset(&event, 0, sizeof(event)); memset(&pending, 0, sizeof(pending));
             if (sent) continue;
@@ -505,52 +641,36 @@ const char *statusText() {
         case Status::Invalid: return "server_invalid";
         case Status::Revoked: return "authentication_or_authorization_failed";
         case Status::RateLimited: return "rate_limited_wait_60_seconds";
+        case Status::Recovering: return "reconnecting";
         default: return "connection_unavailable";
     }
 }
 uint8_t feedbackState() {
-    if (WiFi.status() != WL_CONNECTED)
-        return 0;
-
-    if (!clockReady()) return 1;
-
-    portENTER_CRITICAL(&feedbackMux);
-
-    const Status status =
-        static_cast<Status>(currentStatus.load());
-
-    const uint32_t resultAt = feedbackResultAt;
-
-    portEXIT_CRITICAL(&feedbackMux);
-
-    const uint32_t now = millis();
-    const uint32_t controlAt = feedbackControlAt.load();
-
-    if (status == Status::Revoked) return 6;
-    if (status == Status::RateLimited) return 7;
-    if (status == Status::Unknown) return 0;
-
-    if (!cameraOk.load() || !decoderOk.load())
-        return 1;
-
-    if (status == Status::Disabled ||
-        status == Status::NeedTime)
-        return 1;
-
-    if (status == Status::Valid ||
-        status == Status::Invalid) {
-
-        if (now - resultAt < 3000)
-            return status == Status::Valid ? 4 : 5;
+    using namespace sbfeedback;
+    if (WiFi.status() != WL_CONNECTED) return Offline;
+    if (!clockReady()) return Starting;
+    const Status status = static_cast<Status>(currentStatus.load());
+    // Health first: a connection or authorization problem always overrides a shown result.
+    if (status == Status::Revoked) return AuthError;
+    if (status == Status::RateLimited) return RateLimited;
+    if (status == Status::Unknown) return Offline;
+    const uint32_t okAt = lastApiOkAt.load();
+    if (status == Status::Recovering) return okAt ? Reconnecting : Starting;
+    if (status == Status::Disabled || status == Status::NeedTime || !okAt) return Starting;
+    if (millis() - okAt > OFFLINE_AFTER_MS) return Offline;
+    if (!cameraOk.load() || !decoderOk.load()) return CameraError;
+    const ResultDisplay result = resultSnapshot();
+    if (resultVisible(result, millis())) {
+        if (result.mode == ResultMode::Recorded) return CheckInRecorded;
+        if (!result.valid) return Denied;
+        switch (result.outcome) {
+            case Outcome::CheckedIn: return AlreadyCheckedIn;
+            case Outcome::NotReady: return NotReady;
+            default: return Authorized;
+        }
     }
-
-    if (!controlAt || now - controlAt > 15000)
-        return 0;
-
-    if (status == Status::Processing)
-        return 3;
-
-    return 2;
+    if (status == Status::Processing) return Verifying;
+    return Ready;
 }
 int httpStatus() { return lastHttp.load(); }
 int tlsStatus() { return lastTls.load(); }
@@ -629,9 +749,23 @@ void tick() {
     if (!clockReady()) publish(Status::NeedTime);
     previousWifi = connected;
     static int previous = -1;
+    static ResultMode previousMode = ResultMode::None;
     static uint32_t changedAt = 0;
     const int state = currentStatus.load();
-    if (state != previous) { previous = state; changedAt = millis(); Serial.printf("[IoT] state=%s http=%d tls=%d\n", statusText(), httpStatus(), tlsStatus()); }
+    const ResultDisplay result = resultSnapshot();
+    const ResultMode mode = resultVisible(result, millis()) ? result.mode : ResultMode::None;
+    if (state != previous || mode != previousMode) {
+        // Event ids are server UUIDs, safe for correlation; QR payloads are never logged.
+        Serial.printf("[IoT] state=%s result=%s event=%.8s feedback=%u http=%d tls=%d up_s=%lu heap=%lu min_heap=%lu rssi=%d ch=%d\n",
+            statusText(), modeName(mode), mode == ResultMode::None ? "-" : result.eventId, feedbackState(),
+            httpStatus(), tlsStatus(), static_cast<unsigned long>(millis() / 1000),
+            static_cast<unsigned long>(heap_caps_get_free_size(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)),
+            static_cast<unsigned long>(heap_caps_get_minimum_free_size(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)),
+            connected ? static_cast<int>(WiFi.RSSI()) : 0, connected ? static_cast<int>(WiFi.channel()) : 0);
+        if (state != previous) changedAt = millis();
+        previous = state;
+        previousMode = mode;
+    }
 #if SB_EXTERNAL_LEDS
     Lights output = lights(static_cast<Status>(state), static_cast<uint32_t>(millis() - changedAt));
     if ((state == static_cast<int>(Status::Valid) || state == static_cast<int>(Status::Invalid)) && millis() - changedAt >= 2000) output = {};

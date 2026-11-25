@@ -20,23 +20,42 @@ No buzzer is used.
 - Both boards join the same 2.4 GHz Wi-Fi network, so ESP-NOW uses the access
   point's current channel (peer channel 0).
 - Every 600 ms the feedback device sends a request with a fresh random 16-byte
-  nonce. The scanner answers with its state and the same nonce.
+  nonce. The scanner answers with its state and the same nonce from a dedicated
+  task, immediately on arrival, independent of QR processing and its main loop.
+  Serial logs `[LINK]` every 5 s: answered and missed requests and reply latency.
 - Both packets are HMAC-SHA256 signed, ESP-NOW unicast is encrypted with
   PMK/LMK keys, and the sender MAC must match the configured peer.
 - A reply is accepted only for the outstanding nonce within 550 ms. With no
   accepted reply for 1.2 s the display shows "Device Offline".
 
+State numbers are defined once in `include/feedback_states.h` (identical copy in
+`../ESP32-CAM/include/`).
+
 | Scanner state | OLED | LED |
 |---|---|---|
-| Starting / waiting for time or camera | Starting system | Yellow |
+| Starting, waiting for time, first server contact | Starting system | Yellow |
 | Wi-Fi connecting (this device) | Connecting to Wi-Fi | Yellow blinking |
-| Ready | Ready to Scan | Off |
-| Processing | Verifying Ticket | Yellow |
-| Server valid (3 s) | Ticket Verified | Green |
-| Server invalid (3 s) | Ticket Denied | Red |
-| Scanner unreachable or server/network error | Device Offline | Yellow blinking |
+| Ready | Ready to Scan / Present QR ticket | Off |
+| Verifying | Verifying Ticket / Please wait | Yellow |
+| Server: Ready for Pickup, check-in may proceed | Authorized / Proceed to counter | Green |
+| Server: arrival already recorded | Checked In / Proceed to counter | Green |
+| Admin confirmed check-in (shown 4 s) | Check-in OK / Check-in recorded | Green |
+| Server: valid ticket, not yet Ready for Pickup | Not Ready Yet / Please approach staff | Yellow |
+| Server rejected the ticket | Access Denied / Please approach staff | Red |
+| One request failed, retrying | Reconnecting / Restoring connection | Yellow blinking |
+| No Wi-Fi, no server answer for 20 s, or scanner unreachable | Device Offline / Scanner unavailable | Yellow blinking |
+| Camera or decoder unavailable | Camera Error / Scanner unavailable | Yellow blinking |
 | Authentication failure | Authentication Error | Yellow blinking |
 | Rate limited | Please Wait | Yellow blinking |
+
+### How long a result stays
+
+Laravel owns the result lifecycle (`config/iot.php`, `result`): while an Admin has the
+result window open the scanner keeps the result (renewed by the page every second,
+at most 120 s). Done releases it at once; a recorded check-in shows "Check-in OK"
+for 4 s. With no Admin reviewing, the result shows for 15 s, or until a different
+ticket is presented. A connection problem always replaces a shown result, so a
+stale green or red is never displayed. A green LED only follows a server answer.
 
 ## Private configuration
 

@@ -88,9 +88,31 @@ test('changing device serializes disconnect before reconnect with automatic prev
     const last = h.requests.indexOf(connections.at(-1));
     assert.ok(h.requests.slice(0, last).some((r) => r.url.endsWith('/disconnect')));
 });
-test('success hands off through existing verification UI and keeps manual check-in separate', async () => {
-    const h = harness({ poll: { result: { valid: true, reservation_url: '/admin/reservations/7' } } }); await connect(h);
-    assert.equal(h.dispatched.find((e) => e.type === 'qr:iot-result').detail.valid, true);
+const EVENT = '0b7d1e8a-6f1c-4c2a-9f3e-2d4b5a6c7d8e';
+const pollBodies = (h) => h.requests.filter((r) => r.url.endsWith('/poll')).map((r) => JSON.parse(r.options.body));
+const nextPoll = async (h) => {
+    const [id, timer] = [...h.timers].find(([, t]) => t.delay === 1000);
+    h.timers.delete(id); await timer.callback(); await flush();
+};
+
+test('a result is handed to the verification window once and keeps the scanner session alive', async () => {
+    const h = harness({ poll: { result: { valid: true, event_id: EVENT, reservation_url: '/admin/reservations/7' } } }); await connect(h);
+    assert.equal(h.dispatched.filter((e) => e.type === 'qr:iot-result').length, 1);
+    assert.equal(h.dispatched.find((e) => e.type === 'qr:iot-result').detail.event_id, EVENT);
     assert.ok(!h.requests.some((r) => /check-in|complete|payment/.test(r.url)));
-    assert.ok(h.requests.some((r) => r.url.endsWith('/preview') && JSON.parse(r.options.body).enabled === false));
+    assert.ok(!h.requests.some((r) => r.url.endsWith('/preview') && JSON.parse(r.options.body).enabled === false));
+    await nextPoll(h);
+    assert.equal(h.dispatched.filter((e) => e.type === 'qr:iot-result').length, 1, 'A repeated delivery is ignored.');
+    assert.deepEqual(pollBodies(h).at(-1), { review: EVENT }, 'Polling renews the hardware hold for the open result.');
+});
+
+test('a refreshed page recovers the active result, and Done acknowledges only that event', async () => {
+    const h = harness({ poll: { result: null, active: { event_id: EVENT, result: { valid: false, event_id: EVENT, message: 'Denied' } } } });
+    await connect(h);
+    assert.equal(h.dispatched.filter((e) => e.type === 'qr:iot-result').length, 1);
+    h.events['qr:iot-ack']({ detail: { event_id: EVENT } });
+    await flush();
+    assert.deepEqual(pollBodies(h).at(-1), { ack: EVENT });
+    await nextPoll(h);
+    assert.deepEqual(pollBodies(h).at(-1), {}, 'No renewal after acknowledgment.');
 });

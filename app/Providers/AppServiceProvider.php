@@ -26,7 +26,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        foreach (['status' => 20, 'preview' => 65] as $action => $limit) {
+        // Status: every 5 s idle, every 1.5 s while a verification result is shown, 1 s retries.
+        foreach (['status' => 60, 'preview' => 65] as $action => $limit) {
             RateLimiter::for('iot-'.$action.'-ip', fn (Request $request) => Limit::perMinute($limit * 2)
                 ->by('iot-'.$action.'-ip:'.hash('sha256', (string) $request->server('REMOTE_ADDR'))));
             RateLimiter::for('iot-'.$action.'-device', fn (Request $request) => Limit::perMinute($limit)
